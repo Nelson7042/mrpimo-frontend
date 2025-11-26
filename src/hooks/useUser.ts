@@ -4,7 +4,7 @@ import { toastConfigError, toastConfigSuccess } from '@/app/config/toast.config'
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { API_BASE_URL } from '@/utils/config';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || `${API_BASE_URL}`;
+const API_BASE = `${API_BASE_URL}`;
 
 interface UserProfile {
   _id: string;
