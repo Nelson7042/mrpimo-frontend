@@ -8,9 +8,9 @@ import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { WishlistResponse } from "@/types/wishlist.type";
 import { useWishlistStore } from "@/stores/useWishlistStore";
 import { useEffect } from "react";
+import { API_BASE_URL } from "@/utils/config";
 
-const API_BASE =
-  process.env.NEXT_PUBLIC_API_URL || "http://localhost:5800/api/v1";
+const API_BASE = `${API_BASE_URL}`;
 
 const wishlistApi = {
   getWishlist: async (): Promise<WishlistResponse> => {
