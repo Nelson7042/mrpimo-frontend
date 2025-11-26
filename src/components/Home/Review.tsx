@@ -54,10 +54,10 @@ export default function CustomerReviews() {
   return (
     <section className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-14 lg:py-18">
       <div className="text-center mb-12 lg:mb-16">
-        <h2 className="text-3xl lg:text-4xl font-bold text-gray-900">Customer Reviews</h2>
+        <h2 className="text-lg lg:text-2xl font-bold text-gray-900">Customer Reviews</h2>
       </div>
 
-        <div className="relative ">
+      <div className="relative">
           <div className="flex items-center justify-center">
             <Button
               variant="ghost"
@@ -140,7 +140,7 @@ export default function CustomerReviews() {
 
           <div className="flex justify-center space-x-2 mt-8">
             {reviews.map((_, index) => (
-              <button
+              <div
                 key={index}
                 onClick={() => goToReview(index)}
                 className={`w-4 h-2 rounded-full transition-all duration-300 ${
