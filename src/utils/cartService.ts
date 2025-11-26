@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './config';
 import { fetchWithAuth } from './fetchWithAuth';
 
 export interface AddToCartRequest {
@@ -26,7 +27,7 @@ export interface CartResponse {
   };
 }
 
-const BASE_URL = 'http://localhost:5800/api/v1';
+const BASE_URL = `${API_BASE_URL}`;
 
 export const cartService = {
   async getCart(): Promise<CartResponse> {

@@ -1,5 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 interface CreateProductResponse {
   success: boolean;
@@ -8,7 +9,7 @@ interface CreateProductResponse {
 }
 
 const createProductAPI = async (productData: any): Promise<CreateProductResponse> => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/products', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/products`, {
     method: 'POST',
     body: JSON.stringify(productData),
   });

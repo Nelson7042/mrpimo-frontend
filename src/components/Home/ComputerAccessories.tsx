@@ -41,7 +41,7 @@ export default function ComputerAccessories() {
     }
 
     const response = await fetch(
-      `http://localhost:5800/api/v1/products/categories/${electronicsCategory._id}?page=1&limit=12`
+      `${API_BASE_URL}/products/categories/${electronicsCategory._id}?page=1&limit=12`
     );
     if (!response.ok) {
       throw new Error("Failed to fetch electronics products");

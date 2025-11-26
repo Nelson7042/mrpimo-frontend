@@ -2,8 +2,9 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { toast } from 'react-toastify';
 import { toastConfigError, toastConfigSuccess } from '@/app/config/toast.config';
+import { API_BASE_URL } from '@/utils/config';
 
-const BASE_URL = 'http://localhost:5800/api/v1/notifications';
+const BASE_URL = `${API_BASE_URL}/notifications`;
 interface NotificationPreferences {
   stockAlert: boolean;
   orderStatus: boolean;

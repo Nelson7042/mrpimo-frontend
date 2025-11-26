@@ -42,7 +42,7 @@ const WalletPage = (props: Props) => {
 
   const fetchWalletData = async () => {
     try {
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/user', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/user', {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();

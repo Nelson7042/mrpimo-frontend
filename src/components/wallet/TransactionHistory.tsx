@@ -30,7 +30,7 @@ export default function TransactionHistory({ onRefresh }: TransactionHistoryProp
 
   const fetchTransactions = async (page = 1) => {
     try {
-      const response = await fetchWithAuth(`http://localhost:5800/api/v1/wallets/transactions?page=${page}&limit=10`);
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/transactions?page=${page}&limit=10`);
       const data = await response.json();
 
       if (data.data.transactions) {

@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import StripeSetupForm from './StripeSetupForm';
 import { getPaymentProvider, getAvailablePaymentMethods } from '@/utils/paymentProvider';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 interface AddPaymentMethodModalProps {
   onClose: () => void;
@@ -38,7 +39,7 @@ export default function AddPaymentMethodModal({ onClose, methodsCount, onSuccess
 
   const fetchUserProfile = async () => {
     try {
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/users/profile');
+      const response = await fetchWithAuth(`${API_BASE_URL}/users/profile`);
       const data = await response.json();
       if (data.success) {
         setUserCountry(data.user.country);

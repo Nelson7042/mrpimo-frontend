@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 export const useMessageRead = (chatId: string | null, userId: string | null) => {
   const observerRef = useRef<IntersectionObserver | null>(null);
@@ -7,7 +8,7 @@ export const useMessageRead = (chatId: string | null, userId: string | null) => 
 
   const markAsRead = async (chatId: string) => {
     try {
-      await fetchWithAuth(`http://localhost:5800/api/v1/messages/chat/${chatId}/read`, {
+      await fetchWithAuth(`${API_BASE_URL}/messages/chat/${chatId}/read`, {
         method: 'PATCH'
       });
     } catch (error) {

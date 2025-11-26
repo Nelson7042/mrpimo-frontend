@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 export interface IWalletTransaction {
   id: string;
@@ -53,7 +54,7 @@ export interface IWallet {
 
 // Fetch wallet balance
 const fetchWalletBalance = async (): Promise<{ wallet: IWallet }> => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/user');
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/user`);
   if (!response.ok) {
     throw new Error('Failed to fetch wallet balance');
   }
@@ -86,7 +87,7 @@ const fetchWalletTransactions = async (filters: TransactionFilters = {}): Promis
   if (filters.status) params.append('status', filters.status);
   if (filters.dateRange) params.append('dateRange', filters.dateRange);
   
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/wallets/transactions?${params.toString()}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/transactions?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch wallet transactions');
   }
@@ -105,7 +106,7 @@ export const useWalletTransactions = (filters: TransactionFilters = {}) => {
 
 // Fetch payment methods
 const fetchPaymentMethods = async () => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/payment-methods');
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/payment-methods`);
   if (!response.ok) {
     throw new Error('Failed to fetch payment methods');
   }

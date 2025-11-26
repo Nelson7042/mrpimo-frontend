@@ -1,6 +1,7 @@
 
 import React, { useState, ReactNode } from 'react';
 import { ChevronRight, Home } from 'lucide-react';
+import Link from 'next/link';
 
 // Types
 export interface BreadcrumbItem {
@@ -74,21 +75,21 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
   };
 
   return (
-    <nav className={`flex items-center space-x-1 text-sm ${className}`} aria-label="Breadcrumb">
-      <ol className="flex items-center space-x-1">
+    <nav className={`  text-sm ${className}`} aria-label="Breadcrumb">
+      <ul className="flex items-center">
         {/* Home Item */}
         {showHome && (
           <li className='flex items-center'>
             <a
               href="/home"
               onClick={(e) => handleItemClick({ label: 'Home', href: '/home' }, e)}
-              className="flex items-center text-gray-500 hover:text-gray-700 transition-colors duration-200"
+              className="flex flex-col justify-center  text-gray-500 hover:text-gray-700 transition-colors duration-200"
               aria-label="Home"
             >
-              {homeIcon} <span className="ml-1">Home</span> 
+            <div  className="flex items-start">{homeIcon} <span className="ml-1">Home</span> </div>  
             </a>
             {items.length > 0 && (
-              <span className="mx-2 flex items-center ">
+              <span className="mx-1 md:mx-2 flex items-center ">
                 {separator}
               </span>
             )}
@@ -97,21 +98,22 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
 
         {/* Breadcrumb Items */}
         {displayItems.map((item, index) => (
-          <li key={index} className="flex items-center">
+          <li key={index} className="flex items-center text-primary">
             {item.isEllipsis ? (
-              <span className="text-gray-400 px-2 flex items-center">...</span>
+              <span className="text-gray-400 px-2">...</span>
             ) : (
               <>
                 {item.href && index < displayItems.length - 1 ? (
-                  <a
+                  <Link
                     href={item.href}
+                    aria-current="page"
                     onClick={(e) => handleItemClick(item, e)}
-                    className="text-gray-500 hover:text-gray-700 transition-colors duration-200 hover:underline flex items-center"
+                    className="text-gray-500 leading-[16px]  flex flex-col justify-center  hover:text-gray-700 transition-colors duration-200 hover:underline"
                   >
-                    {item.label}
-                  </a>
+                 <p>{item.label}</p>   
+                  </Link>
                 ) : (
-                  <span className="text-blue-500 font-medium flex items-center" aria-current="page">
+                  <span className="text-blue-500 font-medium" aria-current="page">
                     {item.label}
                   </span>
                 )}
@@ -120,13 +122,13 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
             
             {/* Separator */}
             {index < displayItems.length - 1 && !item.isEllipsis && (
-              <span className="mx-2 flex items-center">
+              <span className="mx-2 ">
                 {separator}
               </span>
             )}
           </li>
         ))}
-      </ol>
+      </ul>
     </nav>
   );
 };

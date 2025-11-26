@@ -19,7 +19,7 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel })
   const initSetup = async () => {
     try {
       setLoading(true);
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/two-factor/setup', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/setup', {
         method: 'POST',
         body: JSON.stringify({})
       });
@@ -43,7 +43,7 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel })
   const verifyAndEnable = async () => {
     try {
       setLoading(true);
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/two-factor/enable', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/enable', {
         method: 'POST',
         body: JSON.stringify({ token: verificationCode })
       });

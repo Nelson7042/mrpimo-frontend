@@ -9,11 +9,10 @@ import {
   Settings,
   LogOut,
   MessageCircleMore,
-  Bell,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useNotifications } from "@/hooks/useNotifications";
+import { Notification1 } from "iconsax-react";
 
 // Define the base path for your user section
 const BASE_PATH = "/home/user";
@@ -24,21 +23,24 @@ const navigation = [
   { name: "Messages", href: "/messages", icon: MessageCircleMore },
   { name: "Wallet", href: "/wallet", icon: Wallet },
   { name: "Wishlists", href: "/wishlist", icon: Heart },
-  { name: "Notifications", href: "/notifications", icon: Bell, hasNotificationBadge: true },
+  { name: "Notifications", href: "/notifications", icon: Notification1 },
   { name: "Needs Reviews", href: "/reviews", icon: Star },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar({ openLogoutModal }: { openLogoutModal: () => void }) {
+export function Sidebar({ 
+  openLogoutModal, 
+  onNavigate 
+}: { 
+  openLogoutModal: () => void;
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
   const router = useRouter();
-  const { data: notificationsData, error } = useNotifications();
-  
-  const unreadCount = error ? 0 : (notificationsData?.notifications?.filter((n: any) => !n.isRead)?.length || 0);
-  const displayCount = unreadCount > 9 ? '9+' : unreadCount.toString();
 
   const handleClick = (link: string) => {
     router.push(link);
+    onNavigate?.(); // Close mobile sidebar if callback provided
   };
 
   return (
@@ -54,26 +56,24 @@ export function Sidebar({ openLogoutModal }: { openLogoutModal: () => void }) {
             key={item.name}
             onClick={() => handleClick(fullPath)}
             className={cn(
-              "w-full justify-start text-left font-normal hover:cursor-pointer relative",
+              "w-full justify-start text-left font-normal hover:cursor-pointer",
               isActive
                 ? "bg-blue-100 text-blue-700 border-l-4 border-blue-700"
                 : "text-gray-700 hover:bg-gray-100"
             )}
           >
-            <item.icon className={cn("mr-3 h-4 w-4", isActive ? "text-blue-700" : "text-gray-700")} />
+            <item.icon size={16} color={isActive ? "#dbeafe" : "#2e2e2e"} variant="Outline" className="mr-3 h-4 w-4" />
             {item.name}
-            {item.hasNotificationBadge && unreadCount > 0 && (
-              <span className="absolute -top-1 left-4 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center font-medium">
-                {displayCount}
-              </span>
-            )}
           </Button>
         );
       })}
       <Button
         variant="ghost"
-        onClick={() => openLogoutModal()}
-        className="w-full justify-start text-left font-normal text-gray-700 hover:bg-gray-100 mt-8 z-50 mb-8"
+        onClick={() => {
+          openLogoutModal();
+          onNavigate?.(); // Close mobile sidebar if callback provided
+        }}
+        className="w-full justify-start text-left font-normal text-gray-700 hover:bg-gray-100 mt-8 z-50"
       >
         <LogOut className="mr-3 h-4 w-4" />
         Logout{" "}

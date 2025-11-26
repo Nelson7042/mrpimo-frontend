@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 interface Country {
   _id: string;
@@ -11,7 +12,7 @@ export const useCountries = () => {
   return useQuery({
     queryKey: ['countries'],
     queryFn: async () => {
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/admin/countries');
+      const response = await fetchWithAuth(`${API_BASE_URL}/admin/countries`);
       if (!response.ok) {
         throw new Error('Failed to fetch countries');
       }

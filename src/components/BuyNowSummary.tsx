@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Package, CreditCard, Wallet, Shield } from 'lucide-react';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 interface BuyNowSummaryProps {
   isOpen: boolean;
@@ -56,7 +57,7 @@ export default function BuyNowSummary({
   const fetchWalletBalance = async () => {
     setIsLoadingWallet(true);
     try {
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/balance');
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/balance`);
       const data = await response.json();
       if (data.success) {
         setWalletBalance(data.balance || 0);

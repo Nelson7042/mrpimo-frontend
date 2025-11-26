@@ -2,6 +2,7 @@ import { useMutation } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { toast } from 'react-toastify';
 import { toastConfigSuccess, toastConfigError } from '@/app/config/toast.config';
+import { API_BASE_URL } from '@/utils/config';
 
 export const useProductImport = () => {
   return useMutation({
@@ -22,7 +23,7 @@ export const useProductImport = () => {
       }
 
       const response = await fetchWithAuth(
-        `http://localhost:5800/api/v1/products/import/${type}`,
+        `${API_BASE_URL}/products/import/${type}`,
         {
           method: 'POST',
           body: formData,

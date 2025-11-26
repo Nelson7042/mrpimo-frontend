@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { useUserStore } from '@/stores/useUserStore';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 type Transaction = {
   amount: string;
@@ -29,7 +30,7 @@ export const useWalletTransactions = () => {
         throw new Error('User not authenticated');
       }
       
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/crypto/get-wallet');
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/crypto/get-wallet`);
       
       if (!response.ok) {
         throw new Error('Failed to fetch wallet data');

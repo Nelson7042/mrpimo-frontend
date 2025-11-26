@@ -19,7 +19,7 @@ const DisableTwoFactor = ({ onComplete, onCancel }: Props) => {
 
     setLoading(true);
     try {
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/two-factor/disable', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/disable', {
         method: 'POST',
         body: JSON.stringify({ token: code })
       });

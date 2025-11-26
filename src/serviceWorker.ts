@@ -1,3 +1,5 @@
+import { API_BASE_URL } from "./utils/config";
+
 export function register() {
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -23,7 +25,7 @@ export function register() {
               .then(subscription => {
                 // Send subscription to server
                 if (localStorage.getItem('token')) {
-                  fetch('http://localhost:5800/api/v1/push/subscribe', {
+                  fetch(`${API_BASE_URL}/push/subscribe`, {
                     method: 'POST',
                     headers: {
                       'Content-Type': 'application/json',

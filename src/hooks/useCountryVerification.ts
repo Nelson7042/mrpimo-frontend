@@ -1,3 +1,4 @@
+import { API_BASE_URL } from "@/utils/config";
 import { useQuery } from "@tanstack/react-query";
 
 interface CountryVerificationResponse {
@@ -25,7 +26,7 @@ export const useCountryVerification = (country?: string) => {
     queryFn: async () => {
       const countryCode = country || 'NG'; // Default to NG if not provided
       const response = await fetch(
-        `http://localhost:5800/api/v1/verification/country/${countryCode}`
+        `${API_BASE_URL}/verification/country/${countryCode}`
       );
       if (!response.ok) {
         throw new Error('Failed to fetch country verification requirements');

@@ -130,7 +130,7 @@ const Drafts = ({ onEditDraft }: Props) => {
       try {
         // Try to delete from server regardless of ID format
         const response = await fetchWithAuth(
-          `http://localhost:5800/api/v1/products/drafts/${id}`,
+          `${API_BASE_URL}/products/drafts/${id}`,
           { method: "DELETE" }
         );
 

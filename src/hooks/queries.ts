@@ -1,12 +1,12 @@
 import { toastConfigError } from '@/app/config/toast.config';
 import { useUserStore } from '@/stores/useUserStore';
-import { AllProduct, AProduct, AProductBySlug } from '@/utils/config';
+import { AllProduct, API_BASE_URL, AProduct, AProductBySlug } from '@/utils/config';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 
 const googleLogin = async () => {
-  const response = await fetch('http://localhost:5800/api/v1/auth/google', {
+  const response = await fetch(`${API_BASE_URL}/auth/google`, {
     method: 'GET',
     headers: {
       'Content-Type': 'application/json'
@@ -34,7 +34,7 @@ export const useGoogleLogin = () => {
 
 // Fetch categories
 const fetchCategories = async () => {
-  const response = await fetch('http://localhost:5800/api/v1/categories');
+  const response = await fetch(`${API_BASE_URL}/categories`);
   if (!response.ok) {
     throw new Error('Failed to fetch categories');
   }
@@ -56,7 +56,7 @@ export const useCategories = () => {
 
 // Fetch best deals
 const fetchBestDeals = async () => {
-  const response = await fetch('http://localhost:5800/api/v1/products/best-deals');
+  const response = await fetch(`${API_BASE_URL}/products/best-deals`);
   if (!response.ok) {
     throw new Error('Failed to fetch best deals');
   }
@@ -77,7 +77,7 @@ export const useBestDeals = () => {
 
 
 const fetchUserSubscriptions = async () => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/push/user');
+  const response = await fetchWithAuth(`${API_BASE_URL}/push/user`);
   if (!response.ok) {
     throw new Error('Failed to fetch user subscriptions');
   }
@@ -96,7 +96,7 @@ export const useUserSubscriptions = () => {
 };
 
 const fetchProductBySlug = async (slug: string) => {
-  const response = await fetch(`http://localhost:5800/api/v1/products/slug/${slug}`);
+  const response = await fetch(`${API_BASE_URL}/products/slug/${slug}`);
   if (!response.ok) {
     throw new Error('Failed to fetch product');
   }
@@ -117,7 +117,7 @@ export const useFetchProductBySlug = (slug: string) => {
 
 const fetchProductById = async (productId: string) => {
   const user = useUserStore.getState().user;
-  const response = user?._id ? await fetchWithAuth(`http://localhost:5800/api/v1/products/${productId}`) : await fetch(`http://localhost:5800/api/v1/products/${productId}`);
+  const response = user?._id ? await fetchWithAuth(`${API_BASE_URL}/products/${productId}`) : await fetch(`${API_BASE_URL}/products/${productId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch product');
   }
@@ -140,7 +140,7 @@ const fetchProductAnalytics = async (
   entityId: string,
 ) => {
   const response = await fetchWithAuth(
-    `http://localhost:5800/api/v1/products/${entityId}/performance`
+    `${API_BASE_URL}/products/${entityId}/performance`
   );
   if (!response.ok) {
     throw new Error("Failed to fetch product analytics");
@@ -163,7 +163,7 @@ export const useFetchProductAnalytics = (
 };
 
 const fetchAllProducts = async () => {
-  const response = await fetch('http://localhost:5800/api/v1/products?page=1&limit=50');
+  const response = await fetch(`${API_BASE_URL}/products?page=1&limit=50`);
   if (!response.ok) {
     throw new Error('Failed to fetch products');
   }
@@ -195,7 +195,7 @@ const fetchProductsOnAuction = async (queryData: AuctionQueryDataType) => {
   if (queryData.status) params.append('status', queryData.status);
   if (queryData.categoryId) params.append('categoryId', queryData.categoryId);
 
-  const response = await fetch(`http://localhost:5800/api/v1/products/auctions?${params.toString()}`);
+  const response = await fetch(`${API_BASE_URL}/products/auctions?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch products on auction');
   }
@@ -217,7 +217,7 @@ export const useProductsOnAuction = (queryData: AuctionQueryDataType) => {
 
 
 const fetchVendorProducts = async (vendorId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/products/vendor/${vendorId}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/products/vendor/${vendorId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch user subscriptions');
   }
@@ -236,7 +236,7 @@ export const useVendorProducts = (vendorId: string) => {
 };
 
 const fetchVendorAnalytics= async (vendorId: string, range="7days") => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/dashboard/vendors/${vendorId}/analytics?range=${range}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/dashboard/vendors/${vendorId}/analytics?range=${range}`);
   if (!response.ok) {
     throw new Error('Failed to fetch user subscriptions');
   }
@@ -256,7 +256,7 @@ export const useVendorAnalytics= (vendorId: string, range?: string) => {
 };
 
 const fetchUserNotifications = async() => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/notifications`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/notifications`);
   if (!response.ok) {
     throw new Error('Failed to fetch user notifications');
   }
@@ -275,7 +275,7 @@ export const useUserNotifications = (enabled: boolean = true) => {
 };
 
 const fetchVendorOrders = async (vendorId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/orders/vendors/${vendorId}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/vendors/${vendorId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch vendor orders');
   }
@@ -294,7 +294,7 @@ export const useVendorOrders = (vendorId: string) => {
 };
 
 const fetchOrderById = async (orderId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/orders/${orderId}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch order');
   }
@@ -314,7 +314,7 @@ export const useOrderById = (orderId: string) => {
 
 // Chat queries
 const fetchChats = async () => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/messages/chats');
+  const response = await fetchWithAuth(`${API_BASE_URL}/messages/chats`);
   if (!response.ok) {
     throw new Error('Failed to fetch chats');
   }
@@ -331,7 +331,7 @@ export const useChats = () => {
 };
 
 const fetchMessages = async (chatId: string, page = 1, limit = 20) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/messages/chat/${chatId}/messages?page=${page}&limit=${limit}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/messages/chat/${chatId}/messages?page=${page}&limit=${limit}`);
   if (!response.ok) {
     throw new Error('Failed to fetch messages');
   }
@@ -350,7 +350,7 @@ export const useMessages = (chatId: string, page = 1) => {
 
 // Review queries
 const fetchVendorReviewAnalytics = async (vendorId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/reviews/vendor/${vendorId}/analytics`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/reviews/vendor/${vendorId}/analytics`);
   if (!response.ok) {
     throw new Error('Failed to fetch vendor review analytics');
   }
@@ -368,7 +368,7 @@ export const useVendorReviewAnalytics = (vendorId: string) => {
 };
 
 const fetchVendorReviews = async (vendorId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/reviews/vendor/${vendorId}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/reviews/vendor/${vendorId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch vendor reviews');
   }
@@ -386,7 +386,7 @@ export const useVendorReviews = (vendorId: string) => {
 };
 
 const fetchVendorOrderMetrics = async (vendorId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/orders/${vendorId}/metrics`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/${vendorId}/metrics`);
   if (!response.ok) {
     throw new Error('Failed to fetch vendor reviews');
   }
@@ -416,7 +416,7 @@ export const fetchAProducts = async (slug:string) => {
 
 
 const fetchAuctionProduct = async (productId: string) => {
-  const response = await fetch(`http://localhost:5800/api/v1/products/${productId}/bids`);
+  const response = await fetch(`${API_BASE_URL}/products/${productId}/bids`);
   if (!response.ok) {
     throw new Error('Failed to fetch product');
   }
@@ -435,7 +435,7 @@ export const useFetchAuctionProduct = (productId: string) => {
 };
 
 const fetchPlans = async () => {
-  const response = await fetch('http://localhost:5800/api/v1/subscriptions/plans');
+  const response = await fetch(`${API_BASE_URL}/subscriptions/plans`);
   if (!response.ok) {
     throw new Error('Failed to fetch plans');
   }
@@ -454,7 +454,7 @@ export const usePlans = () => {
 };
 
 const fetchVendorSubscription = async (vendorId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/subscriptions/vendor/${vendorId}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/subscriptions/vendor/${vendorId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch vendor subscription');
   }
@@ -474,7 +474,7 @@ export const useVendorSubscription = (vendorId: string) => {
 };
 
 const fetchCountrySubscriptionPrice = async (vendorId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/subscriptions/countrySubscriptionPrice/${vendorId}`);
+  const response = await fetchWithAuth(`${API_BASE_URL}/subscriptions/countrySubscriptionPrice/${vendorId}`);
   console.log(vendorId);
   if (!response.ok) {
     throw new Error('Failed to fetch country subscription price');

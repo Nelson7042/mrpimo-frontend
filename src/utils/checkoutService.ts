@@ -1,3 +1,4 @@
+import { API_BASE_URL } from './config';
 import { fetchWithAuth } from './fetchWithAuth';
 
 export interface CartValidationResponse {
@@ -49,14 +50,14 @@ export interface CheckoutData {
 
 export const checkoutService = {
   async createOrder(data: CheckoutData) {
-    const response = await fetchWithAuth('http://localhost:5800/api/v1/orders', {
+    const response = await fetchWithAuth(`${API_BASE_URL}/orders`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
     return response.json();
   },
   async createPaymentIntent(data: { items: any[], paymentMethod: string, tokenType?: string }) {
-    const response = await fetchWithAuth('http://localhost:5800/api/v1/checkout/payment-intent', {
+    const response = await fetchWithAuth(`${API_BASE_URL}/checkout/payment-intent`, {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -65,7 +66,7 @@ export const checkoutService = {
 
   // : Promise<CartValidationResponse>
   async validateCart() {
-    const response = await fetchWithAuth('http://localhost:5800/api/v1/checkout/validate', {
+    const response = await fetchWithAuth(`${API_BASE_URL}/checkout/validate`, {
       method: 'POST',
     });
     const data = await response.json()
@@ -73,7 +74,7 @@ export const checkoutService = {
   },
 
   async getShippingRates(address: any) {
-    return fetchWithAuth('http://localhost:5800/api/v1/checkout/shipping-rates', {
+    return fetchWithAuth(`${API_BASE_URL}/checkout/shipping-rates`, {
       method: 'POST',
       body: JSON.stringify({ address }),
     });

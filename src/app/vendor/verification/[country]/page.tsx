@@ -257,7 +257,7 @@ export default function CountryVerification() {
     console.log('Structured payload for backend:', payload);
     
     try {
-      const response = await fetch('http://localhost:5800/api/v1/verification/stripe/initiate', {
+      const response = await fetch(`${API_BASE_URL}/verification/stripe/initiate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -270,7 +270,7 @@ export default function CountryVerification() {
 
       if (result.success) {
         // Fetch updated vendor data
-        const vendorResponse = await fetch('http://localhost:5800/api/v1/vendor/profile', {
+        const vendorResponse = await fetch(`${API_BASE_URL}/vendor/profile', {
           credentials: 'include',
         });
         const vendorData = await vendorResponse.json();

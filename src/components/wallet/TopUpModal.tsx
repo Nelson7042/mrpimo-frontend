@@ -7,6 +7,7 @@ import { toast } from 'react-toastify';
 import PaymentProcessor from './PaymentProcessor';
 import { loadStripe } from '@stripe/stripe-js';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 interface PaymentMethod {
   id: string;
@@ -116,7 +117,7 @@ export default function TopUpModal({ onClose, paymentMethods, onSuccess }: TopUp
     try {
       console.log('Confirming payment with backend, paymentIntentId:', paymentIntentId);
       
-      const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/confirm-payment', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/confirm-payment`, {
         method: 'POST',
         body: JSON.stringify({ paymentIntentId })
       });
@@ -185,7 +186,7 @@ export default function TopUpModal({ onClose, paymentMethods, onSuccess }: TopUp
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-60">
+    <div className="fixed inset-0  flex items-center justify-center z-60">
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <h3 className="text-xl font-bold">Top Up Wallet</h3>

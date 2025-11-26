@@ -576,7 +576,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     setIsSubmittingOffer(true);
     try {
       const response = await fetchWithAuth(
-        `http://localhost:5800/api/v1/products/offer/${productData._id}`,
+        `${API_BASE_URL}/products/offer/${productData._id}`,
         {
           method: "POST",
           body: JSON.stringify({

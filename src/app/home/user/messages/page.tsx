@@ -148,8 +148,8 @@ const Page = () => {
   };
 
   return (
-    <div className="px-6 lg:px-8">
-      <div className="px-2 md:px-3 lg:px-6 xl:px-5">
+    <div className="">
+      <div className="">
         <div className="hidden md:block md:mb-5 ">
           <div className="flex justify-between items-center">
             <div>

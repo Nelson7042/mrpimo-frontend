@@ -5,6 +5,7 @@ import { toastConfigError } from "@/app/config/toast.config";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import {IVendor} from "@/types/vendor.type";
 import ICryptoWallet from "@/types/wallet.type";
+import { API_BASE_URL } from "@/utils/config";
 
 interface SignUpData {
   firstName: string;
@@ -216,7 +217,7 @@ const resendPasswordResentToken = async (data: {
   email: string;
 }): Promise<{ message: string }> => {
   const response = await fetch(
-    `http://localhost:5800/api/v1/auth/resend-password-reset-token`,
+    `${API_BASE_URL}/auth/resend-password-reset-token`,
     {
       method: "POST",
       credentials: "include",
@@ -271,7 +272,7 @@ export const useSubscribeToPush = () => {
 
 const unsubscribeFromPushNotification = async (deviceId: string): Promise<{ message: string }> => {
   const response = await fetchWithAuth(
-    `http://localhost:5800/api/v1/push/unsubscribe/${deviceId}`,
+    `${API_BASE_URL}/push/unsubscribe/${deviceId}`,
     {
       method: "DELETE",
     }
@@ -294,7 +295,7 @@ export const useUnsubscribeFromPush = () => {
 
 const createWallet = async (): Promise<{wallet: ICryptoWallet}> => {
   const response = await fetchWithAuth(
-    `http://localhost:5800/api/v1/wallets/crypto/create-wallet`,
+    `${API_BASE_URL}/wallets/crypto/create-wallet`,
     {
       method: "POST",
     }
@@ -341,7 +342,7 @@ export const useSaveDraft = () => {
 
 const deleteDraft = async (id: string): Promise<{ message: string }> => {
   const response = await fetchWithAuth(
-    `http://localhost:5800/api/v1/products/drafts/${id}`,
+    `${API_BASE_URL}/products/drafts/${id}`,
     {method: "DELETE"}
   );
 
@@ -369,7 +370,7 @@ export const useDeleteDraft = (): UseMutationResult<
 // Toggle helpful mutation
 const toggleHelpful = async ({ productId, reviewId }: { productId: string; reviewId: string }) => {
   const response = await fetchWithAuth(
-    `http://localhost:5800/api/v1/product/${productId}/review/${reviewId}/helpful`,
+    `${API_BASE_URL}/product/${productId}/review/${reviewId}/helpful`,
     { method: 'PATCH' }
   );
   if (!response.ok) {
@@ -398,7 +399,7 @@ const addVendorResponse = async ({
   response: string; 
 }) => {
   const res = await fetchWithAuth(
-    `http://localhost:5800/api/v1/product/${productId}/review/${reviewId}/response`,
+    `${API_BASE_URL}/product/${productId}/review/${reviewId}/response`,
     {
 
       method: 'POST',
@@ -424,7 +425,7 @@ const makeBid = async (
   productId: string,
   maxBid: number
 ): Promise<{ message: string; currentAmountUsd: number; userBidUsd: number }> => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/products/${productId}/bids`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}/bids`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ userId, maxBid }),
@@ -449,7 +450,7 @@ export const useMakeBid = () => {
 // Update draft mutation
 const updateDraft = async ({ id, draft }: { id: string; draft: any }): Promise<{ message: string }> => {
   const response = await fetchWithAuth(
-    `http://localhost:5800/api/v1/products/drafts/${id}`,
+    `${API_BASE_URL}/products/drafts/${id}`,
     {
       method: "PUT",
       body: JSON.stringify(draft),
@@ -504,7 +505,7 @@ const createAdvertisement = async (data: {
   adType: string;
 }) => {
   const { vendorId, ...body } = data;
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/advertisements/${vendorId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/advertisements/${vendorId}`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -530,7 +531,7 @@ const createPaymentIntent = async (data: {
   vendorId: string;
   priceId: string;
 }) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/stripe/create-payment-intent`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/stripe/create-payment-intent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -564,7 +565,7 @@ const addPaymentMethod = async (data: {
   paymentMethodId?: string;
   paystackAuthorizationCode?: string;
 }) => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/payment-methods', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/payment-methods`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -591,7 +592,7 @@ const initiateTopUp = async (data: {
   method: 'card' | 'bank_transfer';
   paymentMethodId?: string;
 }) => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/topup', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/topup`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -614,7 +615,7 @@ export const useInitiateTopUp = () => {
 
 // Create setup intent for payment method
 const createSetupIntent = async () => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/wallets/setup-intent', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/setup-intent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -641,7 +642,7 @@ const buyNow = async (data: {
   optionId?: string;
   quantity?: number;
 }) => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/checkout/buy-now', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/checkout/buy-now`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -670,7 +671,7 @@ const createBuyNowPaymentIntent = async (data: {
   paymentMethod: string;
   tokenType?: string;
 }) => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/checkout/buy-now/payment-intent', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/checkout/buy-now/payment-intent`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'
@@ -693,7 +694,7 @@ export const useCreateBuyNowPaymentIntent = () => {
 
 // Delete payment method mutation
 const deletePaymentMethod = async (paymentMethodId: string) => {
-  const response = await fetchWithAuth(`http://localhost:5800/api/v1/wallets/payment-methods/${paymentMethodId}`, {
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/payment-methods/${paymentMethodId}`, {
     method: 'DELETE',
     headers: {
       'Content-Type': 'application/json'
@@ -734,7 +735,7 @@ const createBuyNowOrder = async (data: {
   paymentData: any;
   address: any;
 }) => {
-  const response = await fetchWithAuth('http://localhost:5800/api/v1/orders/', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/orders/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

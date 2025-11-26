@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 import { toastConfigError, toastConfigSuccess } from '@/app/config/toast.config';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 interface Address {
   _id?: string;
@@ -14,7 +15,7 @@ interface Address {
   isDefault: boolean;
 }
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5800/api/v1';
+const API_BASE = process.env.NEXT_PUBLIC_API_URL || `${API_BASE_URL}`;
 
 const addressApi = {
   getAddresses: async (): Promise<{ addresses: Address[] }> => {
