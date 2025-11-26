@@ -27,7 +27,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
       isRefreshing = true;
       
       try {
-        const refreshResponse = await fetch( `${API_BASE_URL}/api/v1/auth/refresh`, { 
+        const refreshResponse = await fetch( `${API_BASE_URL}/auth/refresh`, { 
           method: "POST", 
           credentials: "include"
         });
