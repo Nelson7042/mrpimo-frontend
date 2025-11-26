@@ -1,6 +1,9 @@
 import { useUserStore } from "@/stores/useUserStore";
+import { API_BASE_URL } from "./config";
+
 
 let isRefreshing = false;
+
 
 export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
     const {user} = useUserStore.getState();
@@ -24,7 +27,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
       isRefreshing = true;
       
       try {
-        const refreshResponse = await fetch("http://localhost:5800/api/v1/auth/refresh", { 
+        const refreshResponse = await fetch( `${API_BASE_URL}/api/v1/auth/refresh`, { 
           method: "POST", 
           credentials: "include"
         });
