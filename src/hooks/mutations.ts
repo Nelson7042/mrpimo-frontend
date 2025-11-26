@@ -33,7 +33,7 @@ interface SignUpResponse {
 const signUpUser = async (
   data: SignUpData
 ): Promise<{ message: string; user: User }> => {
-  const response = await fetch("http://localhost:5800/api/v1/auth/register", {
+  const response = await fetch( `${API_BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -57,7 +57,7 @@ export const useSignUp = () => {
 const verifyData = async (
   data: verificationData
 ): Promise<{ message: string; user: User }> => {
-  const response = await fetch("http://localhost:5800/api/v1/auth/verify", {
+  const response = await fetch( `${API_BASE_URL}/auth/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -82,7 +82,7 @@ const resendVerification = async (
   email: string
 ): Promise<{ message: string }> => {
   const response = await fetch(
-    "http://localhost:5800/api/v1/auth/resend-verification",
+    `${API_BASE_URL}/auth/resend-verification`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -113,7 +113,7 @@ const loginUser = async (
   vendor: IVendor;
   has2faEnabled: boolean;
 }> => {
-  const response = await fetch("http://localhost:5800/api/v1/auth/login", {
+  const response = await fetch( `${API_BASE_URL}/auth/login`, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
@@ -133,7 +133,7 @@ const signUpVendor = async (
   data: SignUpData
 ): Promise<{ message: string; user: User }> => {
   const response = await fetch(
-    "http://localhost:5800/api/v1/auth/register-vendor",
+     `${API_BASE_URL}/auth/register-vendor`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -164,7 +164,7 @@ export const useSignVendor = () => {
 
 const logoutUser = async (): Promise<{ message: string }> => {
   const response = await fetchWithAuth(
-    "http://localhost:5800/api/v1/auth/logout",
+     `${API_BASE_URL}/auth/logout`,
     {
       method: "POST",
     }
@@ -189,7 +189,7 @@ const verifyPasswordResetToken = async (data: {
   code: string;
 }): Promise<{ message: string }> => {
   const response = await fetch(
-    "http://localhost:5800/api/v1/auth/verify-password-reset-token",
+    `${API_BASE_URL}/auth/verify-password-reset-token`,
     {
       method: "POST",
       credentials: "include",
@@ -246,7 +246,7 @@ const subscribeToPushNotification = async (subscription: {
   deviceId?: string | null
 }): Promise<{ message: string, deviceId: any }> => {
   const response = await fetchWithAuth(
-    "http://localhost:5800/api/v1/push/subscribe",
+    `${API_BASE_URL}/push/subscribe`,
     {
       method: "POST",
       body: JSON.stringify(subscription),
@@ -319,7 +319,7 @@ export const useCreateWallet = () => {
 
 const saveDraft = async (draft: any): Promise<{ message: string }> => {
   const response = await fetchWithAuth(
-    "http://localhost:5800/api/v1/products/drafts",
+     `${API_BASE_URL}/products/drafts`,
     {
       method: "POST",
       body: JSON.stringify(draft),
@@ -474,7 +474,7 @@ export const useUpdateDraft = () => {
 // Create product mutation
 const createProduct = async (productData: any): Promise<{ product: any; message: string }> => {
   const response = await fetchWithAuth(
-    "http://localhost:5800/api/v1/products",
+    `${API_BASE_URL}/products`,
     {
       method: "POST",
       body: JSON.stringify(productData),
