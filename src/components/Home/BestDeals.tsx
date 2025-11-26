@@ -279,8 +279,8 @@ export default function BestDeals() {
     products.length > 0 && (
       <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between element-spacing gap-4">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-6">
+        <div className="flex flex-row items-center justify-between element-spacing gap-4">
+          <div className="flex flex-row items-center gap-3 sm:gap-6">
             <h1 className="text-responsive-xl font-semibold text-gray-900">
               Our Best Deals
             </h1>

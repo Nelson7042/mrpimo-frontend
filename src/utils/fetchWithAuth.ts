@@ -53,7 +53,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
           const isProtectedRoute = protectedRoutes.some(route => window.location.pathname.startsWith(route));
           
           if (isProtectedRoute && !window.location.pathname.includes('/login')) {
-            window.location.href = "/login";
+            window.location.href = "/home";
           }
           return Promise.reject("Authentication failed. Please log in again.");
         }
@@ -63,7 +63,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         const isProtectedRoute = protectedRoutes.some(route => window.location.pathname.startsWith(route));
         
         if (isProtectedRoute && !window.location.pathname.includes('/login')) {
-          window.location.href = "/login";
+          window.location.href = "/home";
         }
         return Promise.reject("Authentication error. Please log in again.");
       }
