@@ -3,6 +3,8 @@
 import React, { useState } from 'react';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 interface TwoFactorSetupProps {
   onComplete: (user: any) => void;
   onCancel: () => void;
@@ -19,7 +21,7 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel })
   const initSetup = async () => {
     try {
       setLoading(true);
-      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/setup', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/setup`, {
         method: 'POST',
         body: JSON.stringify({})
       });
@@ -43,7 +45,7 @@ const TwoFactorSetup: React.FC<TwoFactorSetupProps> = ({ onComplete, onCancel })
   const verifyAndEnable = async () => {
     try {
       setLoading(true);
-      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/enable', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/enable`, {
         method: 'POST',
         body: JSON.stringify({ token: verificationCode })
       });

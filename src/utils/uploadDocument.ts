@@ -1,5 +1,7 @@
 import { fetchWithAuth } from './fetchWithAuth';
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 export const uploadVerificationDocument = async (
   file: File,
   documentType: string
@@ -8,7 +10,7 @@ export const uploadVerificationDocument = async (
   formData.append('file', file);
   formData.append('documentType', documentType);
 
-  const response = await fetchWithAuth(`${API_BASE_URL}/verification/upload-verification-document', {
+  const response = await fetchWithAuth(`${API_BASE_URL}/verification/upload-verification-document`, {
     method: 'POST',
     body: formData,
     headers: {},

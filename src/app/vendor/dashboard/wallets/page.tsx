@@ -11,6 +11,8 @@ import TransactionHistory from '@/components/wallet/TransactionHistory';
 import PaymentMethodManager from '@/components/wallet/PaymentMethodManager';
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 type Props = {};
 
 type WalletType = "fiat" | "crypto";
@@ -42,7 +44,7 @@ const WalletPage = (props: Props) => {
 
   const fetchWalletData = async () => {
     try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/user', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/user`, {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();

@@ -13,6 +13,8 @@ import { getCountryConfig } from "@/config/countryVerificationFields";
 import IdentityVerification from "./(components)/IdentityVerification";
 import BusinessVerification from "./(components)/BusinessVerification";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+
 
 export default function CountryVerification() {
   const { country } = useParams<{ country: string }>();
@@ -257,7 +259,7 @@ export default function CountryVerification() {
     console.log('Structured payload for backend:', payload);
     
     try {
-      const response = await fetch(`${API_BASE_URL}/verification/stripe/initiate', {
+      const response = await fetch(`${API_BASE_URL}/verification/stripe/initiate`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -270,7 +272,7 @@ export default function CountryVerification() {
 
       if (result.success) {
         // Fetch updated vendor data
-        const vendorResponse = await fetch(`${API_BASE_URL}/vendor/profile', {
+        const vendorResponse = await fetch(`${API_BASE_URL}/vendor/profile`, {
           credentials: 'include',
         });
         const vendorData = await vendorResponse.json();

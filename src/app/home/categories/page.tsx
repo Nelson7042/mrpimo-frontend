@@ -23,6 +23,7 @@ import { Category } from "@/types/product.type";
 
 import { useQuery } from "@tanstack/react-query";
 
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const categories = Object.values(categoriesConfig);
 
 export default function CategoriesPage() {
@@ -54,7 +55,7 @@ export default function CategoriesPage() {
 
   // Fetch categories
   const fetchCategories = async () => {
-    const response = await fetch(`${API_BASE_URL}/categories?');
+    const response = await fetch(`${API_BASE_URL}/categories`);
     if (!response.ok) {
       throw new Error('Failed to fetch categories');
     }
