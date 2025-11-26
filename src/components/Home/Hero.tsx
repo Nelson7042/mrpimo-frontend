@@ -111,18 +111,18 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
         
         {/* Carousel Section */}
         <div className="lg:col-span-2">
-          <div className="bg-gradient-to-br flex flex-col sm:flex-row from-[#E2E8F0] to-[#e5eaf0] rounded-lg p-4 sm:p-6 lg:p-8 relative overflow-hidden min-h-[280px] sm:min-h-[320px]">
-            <div className="relative z-10 w-full sm:w-[55%] flex flex-col justify-center">
+          <div className="bg-gradient-to-br flex flex-row from-[#E2E8F0] to-[#e5eaf0] rounded-lg p-4 sm:p-6 lg:p-8 relative overflow-hidden sm:min-h-[320px]">
+            <div className="relative z-10 w-[55%] flex flex-col justify-center">
               <div className="text-blue-600 font-medium text-xs sm:text-sm mb-2 flex items-center">
                 → {carouselItems[currentSlide].title}
               </div>
-              <h2 className="text-responsive-lg font-semibold text-gray-900 element-spacing">
+              <p className=" text-sm md:text-base font-semibold text-gray-900 mb-2 md:mb-3">
                 {carouselItems[currentSlide].subtitle}
-              </h2>
+              </p>
               <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-6 leading-relaxed">
                 {carouselItems[currentSlide].description}
               </p>
-              <button className="btn-mobile bg-secondary hover:bg-blue-700 font-normal text-white rounded-md transition-colors duration-200 shadow-lg hover:shadow-xl w-fit">
+              <button className="text-sm md:text-base p-2 md:px-6 md:py-3 bg-secondary hover:bg-blue-700 font-normal text-white rounded-md transition-colors duration-200 shadow-lg hover:shadow-xl w-fit">
                 {carouselItems[currentSlide].buttonText}
               </button>
               
@@ -140,11 +140,11 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center relative w-full sm:w-[45%] mt-4 sm:mt-0">
+            <div className="flex items-center justify-center relative w-[45%] ">
               <img 
                 src={carouselItems[currentSlide].image}
                 alt="Gaming Console"
-                className="w-[120px] sm:w-[100px] md:w-[140px] lg:w-[160px] h-[100px] sm:h-[180px] md:h-[220px] lg:h-[300px] object-contain rounded-lg"
+                className="w-[120px] sm:w-[100px] md:w-[140px] lg:w-[160px] h-[90px] sm:h-[180px] md:h-[220px] lg:h-[300px] object-contain rounded-lg"
               />
               <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
                 {carouselItems[currentSlide].badge}
@@ -211,10 +211,10 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
       </div>
 
       {/* Features Section - Mobile Responsive */}
-      <div className="mt-6 sm:mt-8">
+      <div className="mt-6 sm:mt-8 hidden md:block">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {features.map((feature, index) => (
-            <div key={index} className="bg-[#E2E8F0] rounded-lg p-3 sm:p-4 shadow-sm hover:shadow-md transition-shadow duration-200">
+            <div key={index} className="bg-[#E2E8F0] rounded-lg p-3 sm:p-3 shadow-sm hover:shadow-md transition-shadow duration-200">
               <div className="flex flex-col sm:flex-row items-center sm:items-start space-y-2 sm:space-y-0 sm:space-x-3 text-center sm:text-left">
                 <img 
                   src={feature?.image} 

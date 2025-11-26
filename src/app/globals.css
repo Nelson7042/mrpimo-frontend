@@ -197,10 +197,10 @@
     text-align: center !important;
   }
   
-  /* Improve touch targets */
-  button, a, input, select, textarea {
+  Improve touch targets
+  /* button, a, input, select, textarea {
     min-height: 44px;
-  }
+  } */
   
   /* Better mobile forms */
   input, select, textarea {
@@ -384,7 +384,7 @@
   
   /* Mobile-friendly buttons */
   .btn-mobile {
-    @apply px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base min-h-[44px] touch-manipulation;
+    @apply px-4 py-2 sm:px-6 sm:py-3 text-sm sm:text-base  touch-manipulation;
   }
   
   /* Card responsive */
