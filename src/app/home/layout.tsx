@@ -19,9 +19,13 @@ const Homepage = ({ children }: HomepageProps) => {
   useCartSync();
 
   return (
-    <div className="font-roboto min-h-screen" style={{ fontFamily: 'var(--font-roboto)' }}>
-     <Header />
-     {children}
+   <div className="font-roboto min-h-screen" style={{ fontFamily: 'var(--font-roboto)' }}>
+     <div className="fixed top-0 left-0 right-0 z-50">
+       <Header />
+     </div>
+     <div className="pt-[108px] md:pt- min-h-screen">
+       {children}
+     </div>
      <Footer />
 
       <AuthenticationModal
