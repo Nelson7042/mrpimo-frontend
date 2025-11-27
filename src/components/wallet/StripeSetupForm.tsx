@@ -73,7 +73,7 @@ function SetupForm({ onSuccess, onCancel, isDefault }: SetupFormProps) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-70 p-4">
+    <div className="fixed inset-0 transition-opacity bg-[#29292938]  flex items-center justify-center z-70 p-4">
       <div className="bg-white rounded-lg p-6 w-full max-w-md lg:max-w-[640px] max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">

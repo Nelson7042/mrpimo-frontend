@@ -150,19 +150,17 @@ const ShopCategoriesComponent = () => {
                   className="flex-shrink-0 w-full border border-[#ADADAD4D]   md::w-[190px] lg:w-[230px] group cursor-pointer"
                 >
                   <div
-                    className={` p-2 md:p-4 h-64 md:h-72 flex flex-col justify-between transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
+                    className={` p-2 md:p-4 h-42 md:h-64 flex flex-col justify-between transform transition-all duration-300 hover:scale-105 hover:shadow-xl`}
                   >
-                    <div className="flex-1 flex items-center justify-center">
-                      <div className=" w-24 h-24 md:w-32 md:h-32 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
+                      <div className="flex-1 w-24 h-24 md:w-32 md:h-32 bg-white/20 rounded-xl flex items-center justify-center backdrop-blur-sm">
                         <img
                           src={card.image ?? "/images/tv.png"}
                           alt=""
-                          className=""
+                          className="w-24 h-24 md:w-32 md:h-32"
                         />
                       </div>
-                    </div>
                     <div className="text-center">
-                      <h3 className="text-sm md:text-base lg:text-lg font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
+                      <h3 className="text-xs md:text-base  font-semibold text-gray-900 group-hover:text-gray-700 transition-colors">
                         {card.name}
                       </h3>
                     </div>

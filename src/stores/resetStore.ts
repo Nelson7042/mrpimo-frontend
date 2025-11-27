@@ -10,3 +10,10 @@ export const resetAllStores = async () => {
   useVendorStore.getState().resetStore();
   // ...any other persisted stores
 };
+
+export const softResetAllStores = async () => {
+  // reset each store
+  useUserStore.getState().resetStore();
+  useVendorStore.getState().resetStore();
+  // ...any other persisted stores
+};

@@ -341,7 +341,7 @@ export default function CartPage() {
   if (!isLoading && buyItems && buyItems.length < 1) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-14 lg:py-18 font-roboto body-padding">
+        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]  md:py-14 lg:py-18 font-roboto body-padding">
           <div className="pt-4">
             {/* Breadcrumb */}
             <Breadcrumbs
@@ -352,8 +352,8 @@ export default function CartPage() {
           </div>
           <div className="flex flex-col items-center justify-center h-full mt-15">
             <div className="text-center">
-              <h1 className="text-2xl font-bold mb-2">Your cart is empty</h1>
-              <p className="text-gray-600 mb-4">
+               <h1 className=" text-lg md:text-2xl font-bold mb-2">Your cart is empty</h1>
+              <p className="text-gray-600 mb-4 text-sm md:text-base">
                 Looks like you haven't added anything to your cart yet.
               </p>
               <Button
@@ -371,8 +371,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-14 lg:py-18 font-roboto body-padding">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]  md:py-10 lg:py-15">
         <div className="pt-4">
           {/* Breadcrumb */}
           <Breadcrumbs
@@ -382,9 +381,10 @@ export default function CartPage() {
           />
 
           {/* Header */}
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <div className="flex items-center space-x-2 mb-4 sm:mb-0">
-              <h1 className="text-2xl font-bold">My Cart</h1>
+          {/* Header */}
+          <div className="flex flex-row items-center justify-between mb-4 md:mb-6">
+            <div className="flex items-center space-x-2 ">
+              <h1 className="text-base md:text-lg lg:text-2xl font-bold">My Cart</h1>
               <span className="text-gray-600">
                 {cartSummary.totalItems} Items
               </span>
@@ -422,7 +422,6 @@ export default function CartPage() {
             router.push("/home/checkout");
           }}
         />
-      </div>
     </div>
   );
 }

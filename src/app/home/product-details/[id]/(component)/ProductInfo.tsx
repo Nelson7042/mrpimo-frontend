@@ -27,6 +27,7 @@ import BuyNowSummary from "@/components/BuyNowSummary";
 import { calculateTotalQuantity } from "@/utils/productUtils";
 import OfferModal from "./OfferModal";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
 export const AuctionCountdown = ({ auction }: { auction: any }) => {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -90,7 +91,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   const { user } = useUserStore();
   const router = useRouter();
 
-  console.log("Product Data in ProductInfo:", productData);
+  // console.log("Product Data in ProductInfo:", productData);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -254,10 +255,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       return;
     }
 
-    if (!user) {
-      openModal();
-      return;
-    }
+    // if (!user) {
+    //   openModal();
+    //   return;
+    // }
 
     try {
       let selectedVariantObj;
@@ -635,7 +636,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   }
 
   return (
-    <div className=" p-3 md:p-5 lg:p-6   md:border rounded-tl-lg rounded-tr-lg border-[#ADADAD4D]">
+    <div className="md:p-5 lg:p-6   md:border rounded-tl-lg rounded-tr-lg border-[#ADADAD4D]">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
         {/* Product Images Section */}
         <div className="space-y-4 lg:col-span-2">

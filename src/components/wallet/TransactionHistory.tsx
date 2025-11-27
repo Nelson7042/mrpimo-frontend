@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ArrowUpRight, ArrowDownLeft, RefreshCw } from 'lucide-react';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
 
 interface Transaction {
   _id: string;

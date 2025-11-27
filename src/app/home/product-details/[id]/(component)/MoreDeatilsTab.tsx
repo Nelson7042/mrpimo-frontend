@@ -60,11 +60,11 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
   };
 
   const DescriptionTab = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 ">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-4 ">
       {/* Description Column */}
-      <div className="lg:col-span-1 px-3">
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Description</h3>
-        <div className="space-y-4 text-gray-600 leading-relaxed text-xs md:text-sm ">
+      <div className="lg:col-span-1 md:px-3">
+        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Description</h3>
+        <div className=" text-gray-600  text-sm md:text-base ">
           <p>
            {productData?.description}
           </p>
@@ -73,36 +73,36 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       </div>
 
       {/* Features Column */}
-      <div className="lg:col-span-1 px-3">
+      <div className="lg:col-span-1 md:px-3">
         <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Features</h3>
-        <div className="space-y-3">
-          <div className="flex items-center gap-3">
-            <Shield className="w-5 h-5 text-orange-500" />
+        <div className="space-y-1 md:space-y-3">
+          <div className="flex items-center gap-1 md:gap-3">
+            <Shield className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
             <span className="text-gray-700">Free 1 Year Warranty</span>
           </div>
-          <div className="flex items-center gap-3">
-            <Truck className="w-5 h-5 text-orange-500" />
+          <div className="flex items-center gap-1 md:gap-3">
+            <Truck className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
             <span className="text-gray-700">
               Safe Shipping & Fasted Delivery
             </span>
           </div>
-          <div className="flex items-center gap-3">
-            <Headphones className="w-5 h-5 text-orange-500" />
+          <div className="flex items-center gap-1 md:gap-3">
+            <Headphones className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
             <span className="text-gray-700">24/7 Customer support</span>
           </div>
-          <div className="flex items-center gap-3">
-            <CreditCard className="w-5 h-5 text-orange-500" />
+          <div className="flex items-center gap-1 md:gap-3">
+            <CreditCard className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
             <span className="text-gray-700">Secure payment method</span>
           </div>
         </div>
       </div>
 
       {/* Product Details Column */}
-      <div className="lg:col-span-1 px-3">
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
+      <div className="lg:col-span-1 md:px-3">
+        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
           Product Details
         </h3>
-        <div className="space-y-3 text-sm">
+        <div className="space-y-1 md:space-y-3">
           <div className="flex gap-1">
             <span className="text-gray-600">Brand:</span>
             <span className="text-gray-900 font-medium">{productData?.brand}</span>
@@ -127,9 +127,9 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
   const SpecificationsTab = () => (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Product Specifications */}
-      <div className="px-3">
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Product Specifications</h3>
-        <div className="space-y-3">
+      <div className="md:px-3">
+        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Product Specifications</h3>
+        <div className="space-y-1 md:space-y-3">
           {productData?.specifications?.map((spec) => (
             <div key={spec._id}>
               <span className="font-medium text-gray-900">{spec.key}:</span>
@@ -140,9 +140,9 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       </div>
 
       {/* Shipping Information */}
-      <div className="px-3">
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Shipping Information</h3>
-        <div className="space-y-3">
+      <div className="md:px-3">
+        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Shipping Information</h3>
+        <div className="space-y-1 md:space-y-3">
           <div>
             <span className="font-medium text-gray-900">Weight:</span>
             <span className="text-gray-600 ml-2">{productData?.shipping?.weight} {productData?.shipping?.unit}</span>
@@ -163,13 +163,13 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
   );
 
   const AdditionalInfoTab = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 px-3">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:px-3">
       {/* Product Analytics */}
       <div>
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
+        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
           Product Analytics
         </h3>
-        <div className="space-y-3">
+        <div className="space-y-1 md:space-y-3">
           {/* <div>
             <span className="font-medium text-gray-900">Views:</span>
             <span className="text-gray-600 ml-2">{productData?.analytics?.views?.toLocaleString()}</span>
@@ -191,10 +191,10 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
 
       {/* Listing Information */}
       <div>
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
+        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
           Listing Information
         </h3>
-        <div className="space-y-3">
+        <div className="space-y-1 md:space-y-3">
           <div>
             <span className="font-medium text-gray-900">Listing Type:</span>
             <span className="text-gray-600 ml-2 capitalize">{productData?.inventory?.listing?.type}</span>
@@ -221,8 +221,8 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
 
       {/* Variants Information */}
       <div>
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Available Variants</h3>
-        <div className="space-y-3">
+        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Available Variants</h3>
+        <div className="space-y-1 md:space-y-3">
           {productData?.variants?.map((variant) => (
             <div key={variant._id}>
               <h4 className="font-medium text-gray-900 mb-2">{variant.name}</h4>
@@ -285,7 +285,7 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
         </div>
 
         {/* Tab Content */}
-        <div className=" pt-2 pb-4 md:py-4">{renderTabContent()}</div>
+        <div className="pt-2 pb-4 md:py-4">{renderTabContent()}</div>
       </div>
     </div>
   );

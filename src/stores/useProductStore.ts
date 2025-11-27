@@ -1,5 +1,5 @@
 import { ProductType } from "@/types/product.type";
-import Vendor from "@/types/vendor.type";
+import {IVendor} from "@/types/vendor.type";
 
 import { create } from "zustand";
 import {
@@ -9,8 +9,8 @@ import {
 } from "zustand/middleware";
 
 interface ProductState {
-  vendor: Vendor | null;
-  setVendor: (vendor: Vendor | null) => void;
+  vendor: IVendor | null;
+  setVendor: (vendor: IVendor | null) => void;
   listedProducts: ProductType[] | [];
   setListedProducts: (listedProducts: ProductType[] | []) => void;
   clearProductStore: () => void;
@@ -34,7 +34,7 @@ export const useProductStore = create<ProductState>()(
   persist(
     (set, get) => ({
       vendor: null,
-      setVendor: (vendor: Vendor | null) => set({ vendor }),
+      setVendor: (vendor: IVendor | null) => set({ vendor }),
       listedProducts: [],
       setListedProducts: (listedProducts: ProductType[] | []) =>
         set({ listedProducts }),

@@ -17,7 +17,6 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 import { useState, useRef, useEffect } from "react";
-import FullButton from "../FullButton";
 import Link from "next/link";
 import { useCartLength } from "@/stores/cartHook";
 import AuthenticationModal from "@/app/(auth)/authenticationModal";
@@ -31,6 +30,7 @@ import { useCartSync } from "@/hooks/useCartSync";
 import { useRouter } from "next/navigation";
 import { useVendorStore } from "@/stores/useVendorStore";
 import AuthenticationModalVendor from "@/app/(auth)/authenticationModalVendor";
+import { resetAllStores } from "@/stores/resetStore";
 
 const Header = () => {
   const [isSell, setIsSell] = useState(false);
@@ -62,16 +62,17 @@ const Header = () => {
       setAuthType("vendor");
       setIsSell(!isSell);
     } else {
-      console.log("vendor", vendor);
+      // console.log("vendor", vendor);
       router.push("/vendor/dashboard");
     }
   };
 
   const handleProfileClick = () => {
+    // resetAllStores()
     if (!user) {
       openModal();
     } else {
-      console.log("user", user);
+      // console.log("userxxx", user);
       router.push("/home/user");
     }
   };
@@ -133,17 +134,19 @@ const Header = () => {
       {/* Top banner - responsive */}
       <div className="w-full bg-primary">
         <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-20 text-center py-2 text-xs sm:text-sm lg:text-base font-medium flex justify-between items-center">
-          <span className="truncate md:block hidden">Welcome to Mprimo online store...</span>
+          <span className="truncate md:block hidden">
+            Welcome to Mprimo online store...
+          </span>
           {/* Logo */}
-            <Link href="/home" className="shrink-0 block md:hidden">
-              <div className="flex items-center">
-                <img
-                  src="/images/mprimoLogo.png"
-                  alt="mprimoLogo image"
-                  className="h-[28px] w-[80px] sm:h-[36px] sm:w-[100px] md:h-[42px] md:w-[120px] lg:h-[48px] lg:w-[180px]"
-                />
-              </div>
-            </Link>
+          <Link href="/home" className="shrink-0 block md:hidden">
+            <div className="flex items-center">
+              <img
+                src="/images/mprimo-logo2.png"
+                alt="mprimoLogo image"
+                className="h-[32px] w-[80px] sm:h-[36px] sm:w-[100px] md:h-[42px] md:w-[120px] lg:h-[48px] lg:w-[180px]"
+              />
+            </div>
+          </Link>
 
           {/* Desktop navigation */}
           <div className="hidden lg:flex items-center gap-3 font-normal">
@@ -156,7 +159,7 @@ const Header = () => {
 
           <button
             onClick={handleSellClick}
-            className="text-[#121212]  px-3 sm:px-4 lg:py-3 w-20 sm:w-[100px] lg:w-[180px] rounded-md bg-white font-normal  text-xs sm:text-sm lg:text-base"
+            className="text-[#121212]  px-3 sm:px-4 py-2 lg:py-3  lg:w-[180px] rounded-md bg-white font-normal  text-xs sm:text-sm lg:text-base"
           >
             Sale
           </button>
@@ -168,7 +171,7 @@ const Header = () => {
         <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Mobile menu button */}
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+            {/* <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
               <SheetTrigger asChild>
                 <Button
                   variant="ghost"
@@ -207,7 +210,8 @@ const Header = () => {
                   </div>
                 </div>
               </SheetContent>
-            </Sheet>
+            </Sheet> */}
+            <div></div>
 
             {/* Logo */}
             <Link href="/home" className="flex-shrink-0 hidden md:block">
@@ -298,34 +302,29 @@ const Header = () => {
               >
                 <User className="w-5 h-5" />
               </button>
+                <Link
+                  href="/home/wishlist"
+                  className="text-white   hover:bg-blue-700 relative p-2 rounded"
+                >
+                  <Heart className="w-5 h-5" />
+                  {isMounted && wishlistCount > 0 && (
+                    <div className="absolute top-1 right-[2px] bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-white">
+                      {wishlistCount ?? 0}
+                    </div>
+                  )}
+                </Link>
 
-              <Link
-                href="/home/wishlist"
-                className="text-white   hover:bg-blue-700 relative p-2 rounded"
-              >
-                <Heart className="w-5 h-5" />
-                {isMounted && wishlistCount > 0 && (
-                  <div className="absolute -top-1 -right-1 bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-white">
-                    {wishlistCount ?? 0}
-                  </div>
-                )}
-              </Link>
-
-              <div className="inline-block">
                 <Link
                   href="/home/my-cart"
-                  className="text-white hover:bg-blue-700 p-2 rounded inline-flex"
+                  className="text-white   hover:bg-blue-700 relative p-2 rounded"
                 >
-                  <div className="relative">
                     <ShoppingCart className="w-5 h-5" />
                     {cartLength > 0 && (
-                      <span className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] rounded-full w-4 h-4 flex items-center justify-center leading-none font-semibold">
+                      <div className="absolute top-1 right-[2px] bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-white">
                         {cartLength}
-                      </span>
+                      </div>
                     )}
-                  </div>
                 </Link>
-              </div>
 
               {/* Desktop language selector */}
               <div className="hidden lg:block">
@@ -347,7 +346,7 @@ const Header = () => {
 
           {/* Mobile search bar */}
           {isSearchOpen && (
-            <div className="mt-4 lg:hidden relative">
+            <div className="mt-2 lg:hidden relative">
               <div className="flex items-center bg-white py-[2px] px-3 rounded-full">
                 <Search className="w-4 h-4 text-gray-500 mr-2 mt-1" />
                 <input
@@ -360,7 +359,7 @@ const Header = () => {
                 />
                 <button
                   onClick={handleSearchSubmit}
-                  className=" px-3 text-[10px] h-[9px] leading-tight bg-primary text-white rounded-md ml-2"
+                  className="py-1 md:py-2 px-3 text-[10px] leading-tight bg-primary text-white rounded-md ml-2"
                 >
                   Search
                 </button>
@@ -413,7 +412,6 @@ const Header = () => {
         </div>
       </div>
 
-      
       <AuthenticationModalVendor isOpen={isSell} close={handlecloseModal} />
     </header>
   );

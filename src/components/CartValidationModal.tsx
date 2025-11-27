@@ -31,7 +31,7 @@ export const CartValidationModal = ({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            {checkout.canProceed ? (
+            {checkout?.canProceed ? (
               <CheckCircle className="w-5 h-5 text-green-500" />
             ) : (
               <AlertTriangle className="w-5 h-5 text-yellow-500" />
@@ -41,7 +41,7 @@ export const CartValidationModal = ({
         </DialogHeader>
 
         <div className="h-[70vh] overflow-y-scroll">
-          <CartValidation unavailableItems={checkout.unavailableItems} />
+          <CartValidation unavailableItems={checkout?.unavailableItems} />
 
           <div className="space-y-4 mt-4 md:mt-6">
            
@@ -51,19 +51,19 @@ export const CartValidationModal = ({
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
                   <span>Subtotal:</span>
-                  <span>${checkout.pricing.subtotal}</span>
+                  <span>${checkout?.pricing.subtotal}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Tax:</span>
-                  <span>${checkout.pricing.tax}</span>
+                  <span>${checkout?.pricing.tax}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping:</span>
-                  <span>${checkout.pricing.shipping}</span>
+                  <span>${checkout?.pricing.shipping}</span>
                 </div>
                 <div className="flex justify-between font-medium border-t pt-1">
                   <span>Total:</span>
-                  <span>${checkout.pricing.total}</span>
+                  <span>${checkout?.pricing.total}</span>
                 </div>
               </div>
             </div>
@@ -72,7 +72,7 @@ export const CartValidationModal = ({
               <Button variant="outline" onClick={onClose} className="flex-1">
                 Cancel
               </Button>
-              {checkout.canProceed && (
+              {checkout?.canProceed && (
                 <Button onClick={onProceed} className="flex-1">
                   Proceed to Checkout
                 </Button>

@@ -238,10 +238,46 @@ export default function BestDeals() {
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-gray-600">Loading Best Deals...</p>
+        {/* Header Skeleton */}
+        <div className="flex flex-row items-center justify-between element-spacing gap-4 mb-6">
+          <div className="flex flex-row items-center gap-3 sm:gap-6">
+            <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded w-32 animate-pulse"></div>
+          </div>
+          <div className="h-6 bg-gray-200 rounded w-24 animate-pulse"></div>
+        </div>
+
+        {/* Products Grid Skeleton */}
+        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
+          {/* Main Featured Product Skeleton */}
+          <div className="lg:w-1/3">
+            <div className="bg-white rounded-lg border border-gray-200 p-4 sm:p-5 md:p-6 h-full animate-pulse">
+              <div className="h-48 sm:h-64 bg-gray-200 rounded-lg mb-4"></div>
+              <div className="space-y-3">
+                <div className="h-4 bg-gray-200 rounded w-1/2"></div>
+                <div className="h-5 bg-gray-200 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-200 rounded w-full"></div>
+                <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                <div className="h-6 bg-gray-200 rounded w-1/3"></div>
+                <div className="h-10 bg-gray-200 rounded w-full mt-4"></div>
+              </div>
+            </div>
+          </div>
+
+          {/* Other Products Grid Skeleton */}
+          <div className="lg:w-2/3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
+              {Array.from({ length: 4 }).map((_, index) => (
+                <div key={index} className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 animate-pulse">
+                  <div className="h-24 md:h-34 bg-gray-200 rounded-lg mb-3"></div>
+                  <div className="space-y-2">
+                    <div className="h-3 bg-gray-200 rounded w-1/2"></div>
+                    <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                    <div className="h-5 bg-gray-200 rounded w-1/3"></div>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </div>

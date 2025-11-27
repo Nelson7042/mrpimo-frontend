@@ -3,7 +3,10 @@ import { persist } from "zustand/middleware";
 import { CartItem, CartSummary, ProductType } from "@/types/product.type";
 import { cartService } from "@/utils/cartService";
 import { useUserStore } from "./useUserStore";
-import { toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
+import {
+  toastConfigError,
+  toastConfigSuccess,
+} from "@/app/config/toast.config";
 import { toast } from "react-toastify";
 
 interface CartState {
@@ -100,13 +103,16 @@ export const useCartStore = create<CartState>()(
               quantity,
               price: selectedVariant?.price,
               variantId: selectedVariant?.variantId,
-              optionId: selectedVariant?.optionId
+              optionId: selectedVariant?.optionId,
             });
-            toast.success("Product Added to Cart Successfully", toastConfigSuccess);
-            
+            toast.success(
+              "Product Added to Cart Successfully",
+              toastConfigSuccess
+            );
+
             // Reload cart from backend to get updated state
             await get().loadCart();
-            console.log('Cart updated for logged in user');
+            console.log("Cart updated for logged in user");
           } else {
             // Add to local store
             const variantKey = selectedVariant
@@ -120,8 +126,10 @@ export const useCartStore = create<CartState>()(
                 ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
                 : undefined;
               return (
-                generateCartItemKey(item.product?._id ?? "", existingVariantKey) ===
-                itemKey
+                generateCartItemKey(
+                  item.product?._id ?? "",
+                  existingVariantKey
+                ) === itemKey
               );
             });
 
@@ -140,12 +148,18 @@ export const useCartStore = create<CartState>()(
             }
 
             calculateSummary();
-            console.log('Cart updated for guest user', get().summary);
+            // console.log('Cart updated for guest user', get().summary);
+            toast.success(
+              "Product Added to Cart Successfully",
+              toastConfigSuccess
+            );
           }
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Failed to add to cart' });
-              toast.error('Failed to add to cart', toastConfigError);
-
+          set({
+            error:
+              error instanceof Error ? error.message : "Failed to add to cart",
+          });
+          toast.error("Failed to add to cart", toastConfigError);
         } finally {
           set({ isLoading: false });
         }
@@ -157,7 +171,10 @@ export const useCartStore = create<CartState>()(
 
         try {
           if (isLoggedIn) {
-            await cartService.updateCartItem(productId, { productId, quantity: 0 });
+            await cartService.updateCartItem(productId, {
+              productId,
+              quantity: 0,
+            });
             await get().loadCart();
           } else {
             const { items, calculateSummary, generateCartItemKey } = get();
@@ -168,8 +185,10 @@ export const useCartStore = create<CartState>()(
                 ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
                 : undefined;
               return (
-                generateCartItemKey(item.product._id ?? "", existingVariantKey) !==
-                itemKey
+                generateCartItemKey(
+                  item.product._id ?? "",
+                  existingVariantKey
+                ) !== itemKey
               );
             });
 
@@ -177,7 +196,12 @@ export const useCartStore = create<CartState>()(
             calculateSummary();
           }
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Failed to remove from cart' });
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to remove from cart",
+          });
         } finally {
           set({ isLoading: false });
         }
@@ -194,7 +218,10 @@ export const useCartStore = create<CartState>()(
 
         try {
           if (isLoggedIn) {
-            await cartService.updateCartItem(productId, { productId, quantity });
+            await cartService.updateCartItem(productId, {
+              productId,
+              quantity,
+            });
             await get().loadCart();
           } else {
             const { items, calculateSummary, generateCartItemKey } = get();
@@ -206,8 +233,10 @@ export const useCartStore = create<CartState>()(
                 : undefined;
 
               if (
-                generateCartItemKey(item.product._id ?? "", existingVariantKey) ===
-                itemKey
+                generateCartItemKey(
+                  item.product._id ?? "",
+                  existingVariantKey
+                ) === itemKey
               ) {
                 return { ...item, quantity };
               }
@@ -218,7 +247,12 @@ export const useCartStore = create<CartState>()(
             calculateSummary();
           }
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Failed to update quantity' });
+          set({
+            error:
+              error instanceof Error
+                ? error.message
+                : "Failed to update quantity",
+          });
         } finally {
           set({ isLoading: false });
         }
@@ -253,7 +287,10 @@ export const useCartStore = create<CartState>()(
             summary: { subtotal: 0, total: 0, totalItems: 0, totalQuantity: 0 },
           });
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Failed to clear cart' });
+          set({
+            error:
+              error instanceof Error ? error.message : "Failed to clear cart",
+          });
         } finally {
           set({ isLoading: false });
         }
@@ -271,31 +308,36 @@ export const useCartStore = create<CartState>()(
         try {
           const response = await cartService.getCart();
           const cartItems = response.cart || [];
-          
+
           const items: CartItem[] = cartItems.map((item: any) => ({
             product: {
               _id: item.productId,
               name: item.name,
               images: item.images || [],
-              price: item.price
+              price: item.price,
             },
             quantity: item.quantity,
-            selectedVariant: item.variantId ? {
-              variantId: item.variantId,
-              optionId: item.optionId,
-              variantName: '',
-              optionValue: '',
-              price: item.price
-            } : undefined,
+            selectedVariant: item.variantId
+              ? {
+                  variantId: item.variantId,
+                  optionId: item.optionId,
+                  variantName: "",
+                  optionValue: "",
+                  price: item.price,
+                }
+              : undefined,
             addedAt: item.addedAt || new Date().toISOString(),
-            priceInfo: item.priceInfo
+            priceInfo: item.priceInfo,
           }));
 
           const summary = calculateCartSummary(items);
           set({ items, summary });
         } catch (error) {
-          console.error('Failed to load cart:', error);
-          set({ error: error instanceof Error ? error.message : 'Failed to load cart' });
+          console.error("Failed to load cart:", error);
+          set({
+            error:
+              error instanceof Error ? error.message : "Failed to load cart",
+          });
         } finally {
           set({ isLoading: false });
         }
@@ -303,7 +345,7 @@ export const useCartStore = create<CartState>()(
 
       syncCartOnLogin: async () => {
         const { items } = get();
-        
+
         set({ isLoading: true, error: null });
 
         try {
@@ -316,7 +358,10 @@ export const useCartStore = create<CartState>()(
           // Load cart from backend (this will get the merged cart)
           await get().loadCart();
         } catch (error) {
-          set({ error: error instanceof Error ? error.message : 'Failed to sync cart' });
+          set({
+            error:
+              error instanceof Error ? error.message : "Failed to sync cart",
+          });
         } finally {
           set({ isLoading: false });
         }
@@ -366,7 +411,7 @@ export const useCartStore = create<CartState>()(
         });
       },
     }),
-     {
+    {
       name: "mprimo-cart",
       partialize: (state) => ({
         items: state.items,
@@ -374,7 +419,7 @@ export const useCartStore = create<CartState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          console.log('Cart rehydrated:', state.summary);
+          console.log("Cart rehydrated:", state.summary);
         }
       },
     }

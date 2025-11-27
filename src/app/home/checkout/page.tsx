@@ -255,7 +255,7 @@ export default function CheckoutPage() {
 
   const paymentCategories = [
     { id: 'fiat', name: 'Fiat Currency', icon: '💳' },
-    { id: 'crypto', name: 'Cryptocurrency', icon: '₿' },
+    // { id: 'crypto', name: 'Cryptocurrency', icon: '₿' },
   ];
 
   const getProviderByCurrency = (currency: string): string => {
@@ -276,7 +276,7 @@ export default function CheckoutPage() {
   return (
     <>
       <div className="min-h-screen font-roboto bg-gray-50 body-padding">
-        <div className="max-w-7xl px-6 md:px-8  mx-auto pt-4">
+        <div className=" pt-4">
           {/* Breadcrumb */}
           <Breadcrumbs
             items={manualBreadcrumbs}
@@ -284,16 +284,16 @@ export default function CheckoutPage() {
             className="mb-4"
           />
 
-          <div className="grid lg:grid-cols-3 gap-8">
+          <div className="grid lg:grid-cols-3 gap-4 md:gap-8">
             {/* Billing Information */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-lg p-6">
-                <h2 className="text-2xl font-bold mb-2">Billing Information</h2>
-                <p className="text-gray-600 mb-6">
+              <div className="bg-white rounded-lg p-3 md:p-6">
+                <h2 className="text-lg md:text-2xl font-bold mb-2">Billing Information</h2>
+                <p className="text-gray-600 mb-3 md:mb-6 text-sm md:text-base ">
                   Provide your billing information to proceed
                 </p>
 
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                   {/* Name Fields */}
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
@@ -715,8 +715,8 @@ export default function CheckoutPage() {
           {/* Shipping Address Modal */}
           <Dialog open={showShippingModal} onOpenChange={setShowShippingModal}>
             <DialogContent className="sm:max-w-md">
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-4">Add Shipping Address</h3>
+              <div className="">
+                <h3 className="text-lg font-semibold mb-4">Add Shipping Address</h3>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="shipStreet">Street Address</Label>

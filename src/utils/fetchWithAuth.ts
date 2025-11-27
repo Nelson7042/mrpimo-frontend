@@ -1,5 +1,6 @@
 import { useUserStore } from "@/stores/useUserStore";
 import { API_BASE_URL } from "./config";
+import { softResetAllStores } from "@/stores/resetStore";
 
 
 let isRefreshing = false;
@@ -54,6 +55,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
           
           if (isProtectedRoute && !window.location.pathname.includes('/login')) {
             window.location.href = "/home";
+            softResetAllStores()
           }
           return Promise.reject("Authentication failed. Please log in again.");
         }
@@ -64,6 +66,8 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         
         if (isProtectedRoute && !window.location.pathname.includes('/login')) {
           window.location.href = "/home";
+          softResetAllStores()
+
         }
         return Promise.reject("Authentication error. Please log in again.");
       }

@@ -17,7 +17,7 @@ export default function TopUpSuccess({
   onBackToWallet 
 }: TopUpSuccessProps) {
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-5 flex items-center justify-center z-70">
+    <div className="fixed inset-0 transition-opacity bg-[#29292938]  flex items-center justify-center z-70">
       <div className="bg-white rounded-lg p-8 w-full max-w-md text-center">
         <div className="mb-6">
           <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
