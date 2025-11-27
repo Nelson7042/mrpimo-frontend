@@ -56,13 +56,12 @@ export const ProductCard = ({
         },
       }}
       as={`/home/product-details/${product?._id}`}
+      className="min-h-[266px]"
     >
       <div
-        className={`group bg-gradient-to-br from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
-          isLarge ? "p-2 md:p-5 h-full" : "p-3 sm:p-4"
-        } border border-[#ADADAD4D] relative touch-manipulation ${
-          isLarge ? "flex flex-col" : ""
-        }`}
+        className={`group bg-gradient-to-br h-full flex flex-col  from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
+          isLarge ? "p-2 md:p-5 h-full" : "p-2 sm:p-4"
+        } border border-[#ADADAD4D] relative touch-manipulation`}
       >
         {/* Product Image */}
         <div className="relative mb-3 sm:mb-4">
@@ -89,8 +88,8 @@ export const ProductCard = ({
 
         {/* Product Info */}
         <div
-          className={`space-y-2 ${
-            isLarge ? "flex-1 flex flex-col justify-between" : ""
+          className={`space-y-2 h-full ${
+            isLarge ? "flex-1 flex flex-col justify-between" : "flex flex-col justify-between"
           }`}
         >
           {!isLarge && (
