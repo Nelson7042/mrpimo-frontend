@@ -1,10 +1,16 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
-import { Heart, Star, ChevronRight, ArrowRight, Loader2 } from "lucide-react";
+import React, { useState, useEffect, useRef } from "react";
+import { Heart, Star, ChevronRight, ArrowRight, Loader2, ChevronLeft } from "lucide-react";
 import { useBestDeals } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
 import Link from "next/link";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Button } from "@/components/ui/button";
 
 
 const CountdownTimer = () => {
@@ -107,8 +113,8 @@ const ProductCard = ({
       as={`/home/product-details/${product?._id}`}
     >
       <div
-        className={`group bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
-          isLarge ? "p-4 sm:p-5 md:p-6 h-full" : "p-3 sm:p-4"
+        className={`group bg-gradient-to-br from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
+          isLarge ? "p-2  md:p-5 h-full" : "p-3 sm:p-4"
         } border border-[#ADADAD4D] relative touch-manipulation ${
           isLarge ? "flex flex-col" : ""
         }`}
@@ -117,7 +123,7 @@ const ProductCard = ({
         <div className="relative mb-3 sm:mb-4">
           <div
             className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg ${
-              isLarge ? "h-48 sm:h-64" : "h-24 md:h-34"
+              isLarge ? "h-28 sm:h-64" : "h-24 md:h-34"
             } flex items-center justify-center overflow-hidden`}
           >
             <img
@@ -133,7 +139,7 @@ const ProductCard = ({
               e.preventDefault();
               setIsLiked(!isLiked);
             }}
-            className="absolute top-2 right-2 sm:top-3 sm:right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+            className="absolute top-1 right-1 sm:top-3 sm:right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
           >
             <Heart
               className={`w-4 h-4 sm:w-5 sm:h-5 ${
@@ -234,6 +240,65 @@ const ProductCard = ({
 export default function BestDeals() {
   const { data: products = [], isLoading, isError, error } = useBestDeals();
   const otherProducts = products.slice(1);
+  const otherProductsSwiperRef = useRef<any>(null);
+
+  // Reusable swiper component for other products
+  const MobileSwiper = ({
+    items,
+    renderItem,
+    swiperRef,
+    prevClass,
+    nextClass,
+  }: {
+    items: any[];
+    renderItem: (item: any) => React.ReactNode;
+    swiperRef: React.MutableRefObject<any>;
+    prevClass: string;
+    nextClass: string;
+  }) => {
+    if (!items || items.length === 0) return null;
+
+    return (
+      <div className="w-full">
+        <Swiper
+          ref={swiperRef}
+          modules={[Navigation, Pagination]}
+          spaceBetween={16}
+          slidesPerView={2.3}
+          navigation={{
+            prevEl: `.${prevClass}`,
+            nextEl: `.${nextClass}`,
+          }}
+          pagination={{
+            clickable: true,
+            dynamicBullets: true,
+          }}
+          breakpoints={{
+            480: { slidesPerView: 2 },
+            640: { slidesPerView: 2 },
+            768: { slidesPerView: 2.5 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 4 },
+          }}
+        >
+          {items.map((item: any) => (
+            <SwiperSlide key={item._id || Math.random()}>
+              {renderItem(item)}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        <div className="flex justify-center items-center gap-4 mt-4">
+          <Button variant="outline" size="sm" className={prevClass}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" className={nextClass}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
+        </div>
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -331,7 +396,7 @@ export default function BestDeals() {
           </button>
         </div>
 
-        {/* Products Grid */}
+        {/* Products Layout */}
         <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
           {/* Main Featured Product */}
           <div className="lg:w-1/3">
@@ -340,13 +405,15 @@ export default function BestDeals() {
             </div>
           </div>
 
-          {/* Other Products Grid */}
+          {/* Other Products Swiper */}
           <div className="lg:w-2/3">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
-              {otherProducts.map((product: any) => (
-                <ProductCard key={product._id} product={product} />
-              ))}
-            </div>
+            <MobileSwiper
+              items={otherProducts}
+              renderItem={(product: any) => <ProductCard product={product} />}
+              swiperRef={otherProductsSwiperRef}
+              prevClass="other-products-prev"
+              nextClass="other-products-next"
+            />
           </div>
         </div>
       </div>

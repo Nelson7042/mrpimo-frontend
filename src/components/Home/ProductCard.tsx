@@ -58,8 +58,8 @@ export const ProductCard = ({
       as={`/home/product-details/${product?._id}`}
     >
       <div
-        className={`group bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
-          isLarge ? "p-4 sm:p-5 md:p-6 h-full" : "p-3 sm:p-4"
+        className={`group bg-gradient-to-br from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
+          isLarge ? "p-2 md:p-5 h-full" : "p-3 sm:p-4"
         } border border-[#ADADAD4D] relative touch-manipulation ${
           isLarge ? "flex flex-col" : ""
         }`}
@@ -67,19 +67,19 @@ export const ProductCard = ({
         {/* Product Image */}
         <div className="relative mb-3 sm:mb-4">
           <div
-            className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg ${
+            className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-md ${
               isLarge ? "h-48 sm:h-64" : "h-24 md:h-34"
             } flex items-center justify-center overflow-hidden`}
           >
             <img
               src={product?.images?.[0] || "/images/tv.png"}
               alt={product?.name}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
             />
           </div>
 
           {/* Wishlist */}
-          <div className="absolute top-2 right-2 sm:top-3 sm:right-3  rounded-full shadow-md hover:shadow-lg transition-all duration-200] flex items-center justify-center">
+          <div className="absolute top-1 right-1 sm:top-3 sm:right-3  rounded-full shadow-md hover:shadow-lg transition-all duration-200] flex items-center justify-center">
             <Wishlist
               productData={product}
               price={product.priceInfo?.displayPrice || 0}

@@ -4,16 +4,9 @@ import { useState } from "react";
 import Link from "next/link";
 import {
   Search,
-  ShoppingCart,
-  Heart,
-  User,
-  ChevronDown,
-  Globe,
-  Home,
+ 
 } from "lucide-react";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+
 
 import { categoriesConfig } from "@/lib/categories-config";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
@@ -91,7 +84,7 @@ export default function CategoriesPage() {
         </nav>
 
         {/* Page Header */}
-        <div className="mb-8 grid grid-cols-3">
+        <div className="mb-4 md:mb-8">
           <h1 className="text-xl md:text-3xl font-bold mb-4 col-span-1 ">
             Shop by Categories
           </h1>
