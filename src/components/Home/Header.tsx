@@ -217,7 +217,7 @@ const Header = () => {
             <Link href="/home" className="flex-shrink-0 hidden md:block">
               <div className="flex items-center">
                 <img
-                  src="/images/mprimoLogo.png"
+                src="/images/mprimo-logo2.png"
                   alt="mprimoLogo image"
                   className="h-[28px] w-[80px] sm:h-[36px] sm:w-[100px] md:h-[42px] md:w-[120px] lg:h-[48px] lg:w-[180px]"
                 />
