@@ -2,7 +2,6 @@
 import { Icon } from "@iconify/react";
 import { Store } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState, useMemo } from "react";
 
 const navItems = [
   {
@@ -73,17 +72,15 @@ const NavigationItem = ({
   return (
     <button
       onClick={onClick}
-      className={`relative py-[8px] w-full pl-[12px] flex items-center text-[14px] leading-[20px] md:leading-[24px] ${
+      className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
         isActive
-          ? "text-[#211F1F] font-medium rounded-[10px] bg-[#D3E1FE] border-b border-[#F6B76F]"
-          : "text-[#667185] font-normal hover:bg-gray-100 rounded-[10px]"
+          ? "bg-blue-50 text-blue-700 font-medium"
+          : "text-gray-600 hover:bg-gray-100 font-normal"
       }`}
     >
       <Icon
         icon={isActive ? item.iconfilled : item.icon}
-        width="20"
-        height="20"
-        className="mr-[12px]"
+        className="w-5 h-5 mr-3"
       />
       {item.name}
     </button>
@@ -106,91 +103,69 @@ export default function Sidebar({
   };
 
   return (
-    <div
-      className={`lg:block lg:relative ${
-        isOpen
-          ? "block z-[999999999] fixed inset-0 transition-opacity"
-          : "hidden"
-      }`}
-    >
-      <div
-        onClick={onClose}
-        className="fixed inset-0 bg-[#29292980] transition-opacity lg:relative"
-      ></div>
-
-      {/* Close button */}
-      <div className="absolute top-0 right-0 -ml-8 flex pt-4 pr-2 sm:-ml-10 sm:pr-4 lg:hidden">
-        <button
+    <>
+      {/* Mobile overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 bg-[#29292938] z-40 lg:hidden"
           onClick={onClose}
-          type="button"
-          className="rounded-md text-gray-700 hover:text-white focus:outline-none focus:ring-2 focus:ring-white"
-        >
-          <span className="sr-only">Close panel</span>
-          <svg
-            className="h-6 w-6"
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth="1.5"
-            stroke="currentColor"
-            aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <div
+        className={`fixed top-0 left-0 z-50 h-full w-56 bg-white border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+          isOpen ? "translate-x-0" : "-translate-x-full"
+        }`}
+      >
+        {/* Logo section */}
+        <div className="flex items-center justify-between h-16 px-3 border-b">
+          <h1 className="text-xl font-semibold text-[#211F1F]">Mprimo</h1>
+          <button
+            onClick={onClose}
+            className="lg:hidden p-2 rounded-md hover:bg-gray-100"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 18L18 6M6 6l12 12"
-            />
-          </svg>
-        </button>
-      </div>
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
 
-      {/* Sidebar content */}
-      <div className="max-w-[260px] h-full bg-[#F1F4F9] w-[220px] md:w-[230px] p-[16px] md:p-[18px]">
-        <div className="relative">
-          <div className="relative h-[90vh] overflow-y-auto flex flex-col justify-between">
-            <div>
-                           {/* Main Navigation */}
-              <div className="overflow-y-auto no-scrollbar flex-1">
-                {navItems.map((item) => (
-                  <NavigationItem
-                    key={item.name}
-                    item={item}
-                    isActive={pathname === item.href}
-                    onClick={() => handleClick(item.href)}
-                  />
-                ))}
-              </div>
-            </div>
+        {/* Navigation */}
+        <div className="flex flex-col h-[80vh]">
+          <nav className="flex-1 px-4 py-6 space-y-1">
+            {navItems.map((item) => (
+              <NavigationItem
+                key={item.name}
+                item={item}
+                isActive={pathname === item.href}
+                onClick={() => handleClick(item.href)}
+              />
+            ))}
+          </nav>
 
-            {/* Logout Button */}
-            <div className="border-t pt-3 mb-8">
-              <button
-                onClick={() => router.push("/home")}
-                className="relative py-[8px] w-full pl-[12px] flex items-center text-[14px] text-[#667185] font-normal hover:bg-gray-100 rounded-[10px]"
-              >
-                <Store
-                  width="20"
-                  height="20"
-                  className="mr-[12px]"
-                />
-                Buy Product
-              </button>
-              <button
-                onClick={openLogoutModal}
-                className="relative py-[8px] w-full pl-[12px] flex items-center text-[14px] text-[#667185] font-normal hover:bg-gray-100 rounded-[10px]"
-              >
-                <Icon
-                  icon="solar:logout-2-linear"
-                  width="20"
-                  height="20"
-                  className="mr-[12px]"
-                />
-                Log Out
-              </button>
-            </div>
+          {/* Bottom actions */}
+          <div className="px-4 py-4 border-t space-y-1">
+            <button
+              onClick={() => router.push("/home")}
+              className="w-full flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <Store className="w-5 h-5 mr-3" />
+              Buy Product
+            </button>
+            <button
+              onClick={openLogoutModal}
+              className="w-full flex items-center px-3 py-2 text-sm text-gray-600 rounded-lg hover:bg-gray-100 transition-colors"
+            >
+              <Icon
+                icon="solar:logout-2-linear"
+                className="w-5 h-5 mr-3"
+              />
+              Log Out
+            </button>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

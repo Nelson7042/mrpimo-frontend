@@ -71,7 +71,7 @@ export default function TransactionHistory({ onRefresh }: TransactionHistoryProp
   };
 
   return (
-    <div className="bg-white rounded-lg border p-6">
+    <div className="bg-white rounded-lg border p-4 md:p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg font-semibold">Transaction History</h2>
         <button
@@ -83,9 +83,9 @@ export default function TransactionHistory({ onRefresh }: TransactionHistoryProp
       </div>
       
       {loading ? (
-        <div className="text-center py-8">Loading transactions...</div>
+        <div className="text-center py-5 md:py-8">Loading transactions...</div>
       ) : transactions && transactions.length === 0 ? (
-        <div className="text-center py-8 text-gray-500">No transactions yet</div>
+        <div className="text-center py-5 md:py-8 text-gray-500">No transactions yet</div>
       ) : (
         <div className="h-96 overflow-y-auto space-y-3 pr-2">
           {transactions && transactions.map((transaction) => (

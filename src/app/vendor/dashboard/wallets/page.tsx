@@ -10,8 +10,8 @@ import WalletSettings from '@/components/wallet/WalletSettings';
 import TransactionHistory from '@/components/wallet/TransactionHistory';
 import PaymentMethodManager from '@/components/wallet/PaymentMethodManager';
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 type Props = {};
 
@@ -121,7 +121,7 @@ const WalletPage = (props: Props) => {
         {activeWallet === "fiat" ? (
           <div>
             {/* Balance Card */}
-            <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-6 mb-6">
+            <div className="bg-blue-500  text-white rounded-lg p-4 md:p-6 mb-6">
               <div className="flex justify-between items-start">
                 <div>
                   <p className="text-blue-100 text-sm">Available Balance</p>

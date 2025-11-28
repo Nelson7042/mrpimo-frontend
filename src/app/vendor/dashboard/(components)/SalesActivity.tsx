@@ -90,7 +90,7 @@ const SalesActivity = () => {
   return (
     <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm">
       <div className="flex justify-between items-center ">
-        <h1 className="font-bold text-xl md:text-2xl text-gray-600">
+        <h1 className="font-bold text-lg md:text-xl text-gray-600">
           Sales Activity
         </h1>
         {activityFeed && activityFeed.length > 0 && (
@@ -101,7 +101,7 @@ const SalesActivity = () => {
         )}
       </div>
       {activityFeed && activityFeed.length > 0 ? (
-        <div className="space-y-4 mt-6">
+        <div className="space-y-4 md:space-y-4 mt-6">
           {activityFeed.map((activity) => (
             <div
               key={activity._id}

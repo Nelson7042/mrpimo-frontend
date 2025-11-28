@@ -52,11 +52,11 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
   const stock = getStock();
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 p-4 font-light">
       <div className="bg-white/95 backdrop-blur-md rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl border border-white/20">
         <div className="sticky top-0 bg-white/90 backdrop-blur-md border-b border-gray-200/50 p-6 rounded-t-2xl">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-bold text-gray-900">Product Details</h3>
+            <h3 className="text-xl font-normal text-gray-900">Product Details</h3>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100/80 rounded-full transition-all duration-200 hover:scale-105"
@@ -66,7 +66,7 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
           </div>
         </div>
         
-        <div className="p-6 space-y-6 max-h-[90vh] overflow-y-auto">
+        <div className="p-4 md:p-6 space-y-4 md:space-y-6 max-h-[90vh] overflow-y-auto">
           {/* Product Images */}
           <div className="relative">
             <img
@@ -75,13 +75,13 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
               className="w-full h-64 object-cover rounded-xl shadow-lg"
             />
             {product.images?.length > 1 && (
-              <div className="flex gap-2 mt-3 overflow-x-auto">
+              <div className="flex gap-2 mt-1 md:mt-3 overflow-x-auto">
                 {product.images.slice(1, 4).map((img: string, idx: number) => (
                   <img
                     key={idx}
                     src={img}
                     alt={`${product.name} ${idx + 2}`}
-                    className="w-16 h-16 object-cover rounded-lg border-2 border-white shadow-md flex-shrink-0"
+                    className="w-10 h-10 md:w-16 md:h-16 object-cover rounded-lg border-1 border-white shadow-md flex-shrink-0"
                   />
                 ))}
               </div>
@@ -89,32 +89,32 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
           </div>
 
           {/* Product Info */}
-          <div className="space-y-4">
+          <div className="space-y-2 md:space-y-4">
             <div>
-              <h4 className="text-2xl font-bold text-gray-900 mb-2">{product.name}</h4>
-              <p className="text-gray-600 leading-relaxed">{selectedProduct?.description}</p>
+              <h4 className="text-base md:text-lg font-normal text-gray-900 mb-1 md:mb-2">{product.name}</h4>
+              <p className="text-gray-600 text-sm md:text-base leading-relaxed">{selectedProduct?.description}</p>
             </div>
 
             {/* Pricing */}
-            <div className="bg-gradient-to-r from-green-50 to-blue-50 p-4 rounded-xl border border-green-200/50">
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 p-2 md:p-4 rounded-xl border border-green-200/50">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600">Price</p>
+                  <p className="text-xs md:text-sm text-gray-600">Price</p>
                   <div className="flex items-center gap-2">
                     {pricing.salePrice < pricing.price ? (
                       <>
-                        <span className="text-2xl font-bold text-green-600">
+                        <span className="text-sm md:text-base font-normal text-green-600">
                           {pricing.currency} {pricing.salePrice}
                         </span>
-                        <span className="text-lg text-gray-400 line-through">
+                        <span className="text-sm md:text-base text-gray-400 line-through">
                           {pricing.currency} {pricing.price}
                         </span>
-                        <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs font-medium">
+                        <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs ">
                           {Math.round(((pricing.price - pricing.salePrice) / pricing.price) * 100)}% OFF
                         </span>
                       </>
                     ) : (
-                      <span className="text-2xl font-bold text-green-600">
+                      <span className="text-sm md:text-base font-normal text-green-600">
                         {pricing.currency} {pricing.price}
                       </span>
                     )}
@@ -122,7 +122,7 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
                 </div>
                 <div className="text-right">
                   <p className="text-sm text-gray-600">Stock</p>
-                  <p className={`text-lg font-semibold ${
+                  <p className={`text-base md:text-lg font-normal ${
                     stock < 5 ? 'text-red-600' : stock < 20 ? 'text-yellow-600' : 'text-green-600'
                   }`}>
                     {stock} units
@@ -133,16 +133,16 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
 
             {/* Product Details Grid */}
             <div className="grid grid-cols-2 gap-4">
-              <div className="bg-gray-50/80 p-4 rounded-xl">
+              <div className="bg-gray-50/80 p-2 md:p-4 rounded-xl">
                 <span className="text-sm font-medium text-gray-700">Brand</span>
-                <p className="text-gray-900 font-semibold">{selectedProduct?.brand || 'N/A'}</p>
+                <p className="text-gray-900 text-xs md:text-sm font-semibold">{selectedProduct?.brand || 'N/A'}</p>
               </div>
-              <div className="bg-gray-50/80 p-4 rounded-xl">
+              <div className="bg-gray-50/80  p-2 md:p-4 rounded-xl">
                 <span className="text-sm font-medium text-gray-700">Condition</span>
-                <p className="text-gray-900 font-semibold capitalize">{selectedProduct?.condition || 'N/A'}</p>
+                <p className="text-gray-900 text-xs md:text-sm font-semibold capitalize">{selectedProduct?.condition || 'N/A'}</p>
               </div>
-              <div className="bg-gray-50/80 p-4 rounded-xl">
-                <span className="text-sm font-medium text-gray-700">Rating</span>
+              <div className="bg-gray-50/80 p-2 md:p-4 rounded-xl">
+                <span className="text-sm text-xs md:text-sm font-medium text-gray-700">Rating</span>
                 <div className="flex items-center gap-1">
                   <span className="text-gray-900 font-semibold">{selectedProduct?.rating || 0}</span>
                   <div className="flex">
@@ -154,22 +154,23 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
                   </div>
                 </div>
               </div>
-              <div className="bg-gray-50/80 p-4 rounded-xl">
-                <span className="text-sm font-medium text-gray-700">Status</span>
-                <p className={`font-semibold capitalize ${
+              <div className="bg-gray-50/80 p-2 md:p-4 rounded-xl">
+                <span className="text-sm  font-medium text-gray-700">Status</span>
+                <p className={`font-semibold capitalize text-xs md:text-sm ${
                   selectedProduct?.status === 'active' ? 'text-green-600' : 'text-red-600'
-                }`}>{selectedProduct?.status || 'N/A'}</p>
+                }`}>{selectedProduct?.status || 'N/A'}
+                </p>
               </div>
             </div>
 
             {/* Analytics */}
             {selectedProduct?.analytics && (
-              <div className="bg-blue-50/80 p-4 rounded-xl">
-                <h5 className="font-semibold text-gray-900 mb-3">Product Analytics</h5>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="bg-blue-50/80 p-2 md:p-4 rounded-xl">
+                <h5 className="font-medium text-sm md:text-base  text-gray-900 mb-3">Product Analytics</h5>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="text-center">
-                    <p className="text-lg font-bold text-blue-600">{selectedProduct?.analytics.views}</p>
-                    <p className="text-xs text-gray-600">Views</p>
+                    <p className="text-sm md:text-base font-bold text-blue-600">{selectedProduct?.analytics.views}</p>
+                    <p className="text-xs md:text-sm text-gray-600">Views</p>
                   </div>
                 </div>
               </div>

@@ -26,13 +26,13 @@ const SalesOverview = (props: Props) => {
   );
 
   return (
-    <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm">
+    <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm font-light">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="font-bold text-xl md:text-2xl text-gray-600">
+        <h1 className="font-semibold text:base md:text-xl  text-gray-600">
           Sales Overview
         </h1>
         <select
-          className="border rounded-full px-3 py-1 text-sm bg-gray-100 text-gray-600 outline-none w-full sm:w-auto cursor-pointer disabled:opacity-50"
+          className="border rounded-md px-2 md:px-3 py-1 text-sm font-light bg-gray-100 text-gray-600 outline-none w-full sm:w-auto cursor-pointer disabled:opacity-50"
           value={timeRange}
           onChange={(e) => setTimeRange(e.target.value)}
           disabled={isLoading}
@@ -43,7 +43,7 @@ const SalesOverview = (props: Props) => {
         </select>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 border-b border-b-gray-100 pb-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-4 md:mb-6 border-b border-b-gray-100 pb-4">
         {isLoading && (
           <div className="col-span-full text-center py-4">
             <div className="inline-block animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
@@ -52,7 +52,7 @@ const SalesOverview = (props: Props) => {
         <div className="bg-blue-50 p-4 rounded-lg">
           <p className="text-sm text-gray-500">Total Sales</p>
           {data?.analytics && (
-            <p className="text-xl md:text-2xl font-bold">
+            <p className="text-xl md:text-2xl font-semibold">
               {getCurrencySymbol(data?.analytics?.currency)}
               {data?.analytics?.totalSales?.toFixed(2) || "0.00"}
             </p>
@@ -60,20 +60,20 @@ const SalesOverview = (props: Props) => {
         </div>
         <div className="bg-green-50 p-4 rounded-lg">
           <p className="text-sm text-gray-500">Orders</p>
-          <p className="text-xl md:text-2xl font-bold">
+          <p className="text-xl md:text-2xl font-semibold">
             {data?.analytics?.totalOrders || 0}
           </p>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Avg. Order Value</p>
-          <p className="text-xl md:text-2xl font-bold">
+          <p className="text-sm text-gray-500 ">Avg. Order Value</p>
+          <p className="text-xl md:text-2xl font-semibold">
             {data?.analytics?.averageOrdersPerDay}
           </p>
         </div>
       </div>
 
       {data?.salesOverview ? (
-        <div className="h-64 sm:h-80 w-full overflow-x-auto">
+        <div className="h-56 sm:h-80 w-full overflow-x-auto">
           <div className="min-w-[500px] h-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
@@ -99,10 +99,10 @@ const SalesOverview = (props: Props) => {
           </div>
         </div>
       ) : (
-        <div className="text-center py-10 px-4 animate-fade-in">
+        <div className="text-center py-6 md:py-10 px-4 animate-fade-in">
           {!isLoading && (
             <>
-              <p className="text-lg font-semibold text-gray-700 mb-1">
+              <p className="text-base md:text-lg font-semibold text-gray-700 mb-1">
                 No sales made yet
               </p>
               <p className="text-sm text-gray-500">

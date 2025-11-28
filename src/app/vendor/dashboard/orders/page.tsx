@@ -16,7 +16,7 @@ const page = (props: Props) => {
     return (
       <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)]">
         <div className="px-2 lg:px-5">
-          <h1 className="text-lg font-semibold">My Orders</h1>
+          <h1 className="text:base md:text-lg font-semibold">My Orders</h1>
           <p className="text-xs text-gray-800 font-[family-name:var(--font-poppins)]">
             Please login to view your orders.
           </p>
@@ -25,12 +25,13 @@ const page = (props: Props) => {
     );
   }
 
-  const { data: analyticsData, isLoading: analyticsLoading } = useVendorAnalytics(vendor?._id!);
+  const { data: analyticsData, isLoading: analyticsLoading } =
+    useVendorAnalytics(vendor?._id!);
 
   return (
-    <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)]">
+    <div className="bg-[#f6f6f6] rounded-lg font-light shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)]">
       <div className="px-2 lg:px-5">
-        <h1 className="text-lg font-semibold">My Orders</h1>
+        <h1 className="text-base **:md:text-lg font-semibold">My Orders</h1>
         <p className="text-xs text-gray-800 font-[family-name:var(--font-poppins)]">
           Latest orders in real time
         </p>
@@ -49,7 +50,9 @@ const page = (props: Props) => {
                 <AnalyticsCard
                   title="Total Orders"
                   value={analyticsData?.analytics?.totalOrders?.value || 0}
-                  percentageIncrease={analyticsData?.analytics?.totalOrders?.percentageIncrease}
+                  percentageIncrease={
+                    analyticsData?.analytics?.totalOrders?.percentageIncrease
+                  }
                   period={analyticsData?.analytics?.totalOrders?.period}
                 />
               </div>
@@ -57,7 +60,10 @@ const page = (props: Props) => {
                 <AnalyticsCard
                   title="Completed Orders"
                   value={analyticsData?.analytics?.completedOrders?.value || 0}
-                  percentageIncrease={analyticsData?.analytics?.completedOrders?.percentageIncrease}
+                  percentageIncrease={
+                    analyticsData?.analytics?.completedOrders
+                      ?.percentageIncrease
+                  }
                   period={analyticsData?.analytics?.completedOrders?.period}
                 />
               </div>
@@ -65,7 +71,9 @@ const page = (props: Props) => {
                 <AnalyticsCard
                   title="Pending Orders"
                   value={analyticsData?.analytics?.pendingOrders?.value || 0}
-                  percentageIncrease={analyticsData?.analytics?.pendingOrders?.percentageIncrease}
+                  percentageIncrease={
+                    analyticsData?.analytics?.pendingOrders?.percentageIncrease
+                  }
                   period={analyticsData?.analytics?.pendingOrders?.period}
                 />
               </div>
@@ -73,7 +81,10 @@ const page = (props: Props) => {
                 <AnalyticsCard
                   title="Cancelled Orders"
                   value={analyticsData?.analytics?.cancelledOrders?.value || 0}
-                  percentageIncrease={analyticsData?.analytics?.cancelledOrders?.percentageIncrease}
+                  percentageIncrease={
+                    analyticsData?.analytics?.cancelledOrders
+                      ?.percentageIncrease
+                  }
                   period={analyticsData?.analytics?.cancelledOrders?.period}
                 />
               </div>

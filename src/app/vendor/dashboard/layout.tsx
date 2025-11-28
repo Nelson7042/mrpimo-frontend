@@ -97,18 +97,32 @@ export default function DashboardLayout({
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <div className="h-screen flex overflow-hidden">
       <NotificationProvider>
-        <Header onOpenSidebar={() => setSidebarOpen(true)} />
-        <div className="flex flex-1 overflow-hidden">
+        {/* Desktop Sidebar */}
+        <div className="hidden lg:block">
+          <Sidebar
+            isOpen={true}
+            onClose={() => {}}
+            openLogoutModal={() => openLogoutModal()}
+          />
+        </div>
+
+        {/* Main content */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <Header onOpenSidebar={() => setSidebarOpen(true)} />
+          <main className="flex-1 overflow-auto bg-gray-50">
+            <div className="">{children}</div>
+          </main>
+        </div>
+
+        {/* Mobile Sidebar - overlays everything */}
+        <div className="lg:hidden">
           <Sidebar
             isOpen={sidebarOpen}
             onClose={() => setSidebarOpen(false)}
             openLogoutModal={() => openLogoutModal()}
           />
-          <main className="flex-1 overflow-auto">
-            <div className="max-w-7xl mx-auto">{children}</div>
-          </main>
         </div>
 
         <LogoutModal

@@ -127,7 +127,7 @@ const Page = () => {
   };
 
   return (
-    <div className="bg-[#f6f6f6] rounded-lg py-4 xl:p-6 min-h-screen">
+    <div className="bg-[#f6f6f6] rounded-lg py-4 xl:p-6 min-h-screen font-light">
       <div className="px-2 md:px-3 lg:px-6 xl:px-5">
         <div className="hidden md:block md:mb-5 ">
           <div className="flex justify-between items-center">
@@ -136,7 +136,7 @@ const Page = () => {
               <p className="text-sm opacity-70">Everything is here!</p>
             </div>
             <div className="flex gap-x-2 items-center border rounded-sm border-gray-400 p-2">
-              <Search size={18} strokeWidth={4} className="text-gray-600" />
+              <Search size={16}  className="text-gray-600" />
               <input
                 className="xl:w-md"
                 type="search"
@@ -149,13 +149,13 @@ const Page = () => {
           <div
             className={`${
               isChatOpen ? "hidden lg:block" : "block"
-            } mx-2 md:mx-0 lg:m-0 w-full lg:w-[45%] xl:w-[40%] border rounded-2xl lg:rounded-none border-blue-300 lg:p-2 bg-white`}
+            } mx-2 md:mx-0 lg:m-0 w-full lg:w-[45%] xl:w-[40%] border rounded-2xl lg:rounded-none  lg:p-2 bg-white`}
           >
-            <h1 className="hidden lg:block text-center font-semibold mb-2">
+            <h1 className="hidden lg:block text-center text-sm md:text-base font-semibold mb-2">
               Chats
             </h1>
             <div className="flex gap-x-2 items-center border rounded-sm border-gray-400 p-2 m-4 lg:m-2 md:hidden">
-              <Search size={18} strokeWidth={4} className="text-gray-600" />
+              <Search size={16}  className="text-gray-600" />
               <input
                 className="w-full"
                 type="search"
@@ -227,7 +227,7 @@ const Page = () => {
               </>)}
             </div>
           </div>
-          <div className="hidden lg:block lg:w-[55%] xl:w-[60%] border border-blue-300 bg-white">
+          <div className="hidden lg:block lg:w-[55%] xl:w-[60%] border bg-white">
             {selectedChat ? (
               <div className="w-full h-full flex flex-col">
                 <ChatContainerHeader

@@ -41,7 +41,8 @@ const RecentOrders = ({ currency }: { currency: string}) => {
   return (
     <div className="bg-white px-6 py-4 rounded-lg shadow-sm">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="font-bold text-2xl text-gray-600">Recent Orders</h1>
+        <h1 className="font-bold text-lg md:text-xl text-gray-600">
+          Recent Orders</h1>
         {data && data.orders && data.orders?.length > 0 && (
           <button
             className="flex cursor-pointer text-blue-600 text-sm items-center disabled:cursor-not-allowed"
@@ -211,8 +212,8 @@ const RecentOrders = ({ currency }: { currency: string}) => {
         </>
       )}
       {data && data.orders && data.orders?.length === 0 && (!products || products.length === 0) && (
-        <div className="flex flex-col justify-center items-center gap-y-5 h-40">
-          <p className="font-semibold text-2xl">No data available</p>
+        <div className="flex flex-col justify-center items-center gap-y-4 h-40">
+          <p className="font-semibold text:base md:text-xl ">No data available</p>
           <p className="text-sm text-gray-500">Add a product to get started</p>
           <div className="">
             <button

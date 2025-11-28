@@ -57,20 +57,20 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
         const isGroupExpanded = expandedGroups.has(group._id);
         
         return (
-          <div key={group._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm">
+          <div key={group._id} className="bg-white rounded-lg border border-gray-200 overflow-hidden shadow-sm font-light">
             {/* Group Header */}
             <div 
               className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer transition-colors"
               onClick={() => toggleGroup(group._id)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
+                <div className="h-6 w-6 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center">
+                  <span className="text-white font-medium text-xs md:text-sm">
                     {group.participantName.charAt(0).toUpperCase()}
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900">{group.participantName}</h3>
+                  <h3 className="font-normal text-sm md:text-base text-gray-900">{group.participantName}</h3>
                   <p className="text-xs text-gray-500">{group.productChats.length} product{group.productChats.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>
@@ -105,11 +105,11 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
                         onClick={() => toggleProduct(productChat.chatId)}
                       >
                         <div className="flex items-center gap-3 flex-1 min-w-0">
-                          <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
+                          <div className="w-6 h-6 md:w-8 md:h-8 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                             <Package size={14} className="text-blue-600" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm text-gray-900 truncate">
+                            <p className="font-normal text-xs md:text-sm text-gray-900 truncate">
                               {productChat.product.name}
                             </p>
                             <div className="flex items-center gap-2 mt-1">
@@ -142,7 +142,7 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
                             <div className="flex items-start gap-2">
                               <MessageCircle size={14} className="text-gray-400 mt-0.5 flex-shrink-0" />
                               <div className="flex-1 min-w-0">
-                                <p className="text-sm text-gray-600 line-clamp-2">
+                                <p className="text-xs md:text-sm text-gray-600 line-clamp-2">
                                   {productChat.lastMessage}
                                 </p>
                                 <div className="flex items-center justify-between mt-2">
@@ -150,7 +150,7 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
                                     Latest message
                                   </span>
                                   {unreadCount > 0 && (
-                                    <span className="text-xs text-blue-600 font-medium">
+                                    <span className="text-xs text-blue-600 ">
                                       {unreadCount} unread
                                     </span>
                                   )}
@@ -173,7 +173,7 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
                               setExpandedProducts(new Set());
                               setExpandedGroups(new Set());
                             }}
-                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors font-medium text-sm"
+                            className="w-full bg-blue-600 hover:bg-blue-700 text-white py-2 px-4 rounded-lg transition-colors  text-xs md:text-sm"
                           >
                             Open Conversation
                           </button>

@@ -108,7 +108,7 @@ const page = (props: Props) => {
         ) : (
           <div className="grid md:grid-cols-8 lg:grid-cols-12 gap-5 mt-5">
             <div className="col-span-4">
-              <div className="bg-white p-8 md:p-6 rounded-lg shadow-sm w-full">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full">
                 <div className="flex justify-between mb-4">
                   <p className="font-[family-name:var(--font-poppins)] text-gray-500">
                     Review Ratings
@@ -164,7 +164,7 @@ const page = (props: Props) => {
               </div>
             </div>
             <div className="col-span-4">
-              <div className="bg-white p-8 md:p-6 rounded-lg shadow-sm w-full">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full">
                 <div className="flex justify-between mb-4">
                   <p className="font-[family-name:var(--font-poppins)] text-gray-500">
                     All feedbacks
@@ -220,7 +220,7 @@ const page = (props: Props) => {
             </div>
             {/* Satisfaction Distribution */}
             <div className="col-span-4">
-              <div className="bg-white p-8 md:p-6 rounded-lg shadow-sm w-full">
+              <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full">
                 <div className="flex justify-between mb-4">
                   <p className="font-[family-name:var(--font-poppins)] text-gray-500">
                     Average Satisfaction

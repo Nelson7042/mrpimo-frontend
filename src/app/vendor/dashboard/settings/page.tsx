@@ -14,7 +14,7 @@ const page = (props: Props) => {
   const { user, setUser } = useUserStore();
 
   return (
-    <div className="flex justify-center items-center flex-col ">
+    <div className="flex justify-center items-center flex-col p-4 md:p-6">
     <div className="flex justify-center items-center flex-col text-xs mt-10 mb-4">
       <h3 className="text-lg font-bold mb-2">Two-Factor Authentication</h3>
       <p className="mb-4">

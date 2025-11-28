@@ -10,7 +10,7 @@ const ProductDropdown = ({ currentProduct, currentGroup, onProductSwitch }: {
   const [isOpen, setIsOpen] = useState(false);
   
   if (!currentGroup?.productChats || currentGroup.productChats.length <= 1) {
-    return <h3 className="font-semibold">{currentProduct?.name}</h3>;
+    return <h3 className="font-medium text-xs md:text-sm">{currentProduct?.name}</h3>;
   }
 
   return (
@@ -36,13 +36,13 @@ const ProductDropdown = ({ currentProduct, currentGroup, onProductSwitch }: {
                   setIsOpen(false);
                 }}
                 className={`w-full text-left p-2 rounded hover:bg-gray-50 transition-colors ${
-                  productChat.product._id === currentProduct?._id ? 'bg-blue-50 border-l-2 border-blue-500' : ''
+                  productChat.product._id === currentProduct?._id ? 'bg-blue-50 border-l-1 border-blue-500' : ''
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <Package size={14} className="text-blue-600" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-sm truncate">{productChat.product.name}</p>
+                    <p className="font-medium text-xs md:text-sm truncate">{productChat.product.name}</p>
                     <p className="text-xs text-gray-500 truncate">{productChat.lastMessage}</p>
                   </div>
                 </div>
@@ -69,7 +69,7 @@ const ChatContainerHeader = (props: Props) => {
   return (
     <div>
       {/* Chat container header */}
-      <div className="py-4 bg-[#eff3fd] rounded-t-2xl px-2 lg:rounded-none lg:px-0">
+      <div className="py-2 md:py-3 bg-[#eff3fd] rounded-t-2xl px-2 lg:rounded-none lg:px-0">
         <div className="flex justify-between items-center lg:px-2 mb-2">
           <div className="flex gap-x-2 items-center">
             <ArrowLeft
@@ -77,13 +77,13 @@ const ChatContainerHeader = (props: Props) => {
               onClick={props.closeChat}
               className="opacity-80 lg:hidden"
             />
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
+            <div className="w-7 h-7 md:w-10 md:h-10 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-semibold text-xs md:text-sm">
                     {props.participantName.charAt(0).toUpperCase()}
                   </span>
                 </div>
             <div className="flex flex-col gap-y-1 items-start">
-              <h1 className="font-semibold text-sm opacity-80">
+              <h1 className="font-medium text-xs md:text-sm opacity-80">
                 {props.chat?.senderName}
               </h1>
               <div className="text-xs">
@@ -108,8 +108,7 @@ const ChatContainerHeader = (props: Props) => {
           <div className="flex gap-x-2">
             <div className="flex items-center bg-[#8baff9] rounded-full p-2 justify-center">
               <Phone
-                size={20}
-                strokeWidth={2}
+                size={16}
                 className="text-white fill-white"
               />
             </div>

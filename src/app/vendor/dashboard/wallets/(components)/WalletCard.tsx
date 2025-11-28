@@ -91,12 +91,12 @@ const WalletCard = ({
     : "bg-gradient-to-r from-blue-600 to-blue-900";
 
   return (
-    <div className={`w-full h-full ${bgClass} rounded-xl p-6 text-white shadow-lg`}>
+    <div className={`w-full h-full bg-primary rounded-xl p-4 md:p-4 text-white shadow-lg`}>
       <div className="flex flex-col gap-y-5 h-full">
         <div>
           <p className="mb-1">Total Balance</p>
           <div className="flex items-center gap-2">
-            <h2 className={`text-white text-2xl md:text-3xl font-semibold ${isUpdating ? 'animate-pulse text-green-300' : ''}`}>
+            <h2 className={`text-white text-xl md:text-3xl font-semibold ${isUpdating ? 'animate-pulse text-green-300' : ''}`}>
               ${updatedTotalBalance.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
             </h2>
             <p className="text-green-300 text-xs bg-green-900/30 px-2 py-1 rounded-full">
