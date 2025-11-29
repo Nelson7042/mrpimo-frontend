@@ -1,22 +1,32 @@
 import FullButton from "@/components/FullButton";
 import { X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
+import { useVerifyEmail, useResendVerification } from "@/hooks/mutations";
+import { toast } from "react-toastify";
+import { toastConfigSuccess, toastConfigError } from "@/app/config/toast.config";
+import { useUserStore } from "@/stores/useUserStore";
+import { useRouter } from "next/navigation";
 
 interface OTPModalProps {
-  onSubmit?: (otp: string) => void;
+  email?: string;
   close?: () => void;
-  onResend?: () => void;
+  setAuthState?: (state: "login" | "recover" | "otp") => void;
 }
 
 const OTPModal: React.FC<OTPModalProps> = ({
-  onSubmit,
+  email,
   close,
-  onResend,
+  setAuthState
 }) => {
   const [isOpen, setIsOpen] = useState<boolean>(true);
-  const [otp, setOtp] = useState<string[]>(["", "", "", ""]);
+  const [otp, setOtp] = useState<string[]>(["", "", "", "", "", ""]);
   const [timeLeft, setTimeLeft] = useState<number>(120); // 2 minutes in seconds
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  
+  const { setUser } = useUserStore();
+  const router = useRouter();
+  const { mutate: verifyEmail, isPending: isVerifying } = useVerifyEmail();
+  const { mutate: resendVerification, isPending: isResending } = useResendVerification();
 
   // Timer effect
   useEffect(() => {
@@ -45,7 +55,7 @@ const OTPModal: React.FC<OTPModalProps> = ({
     setOtp(newOtp);
 
     // Auto-focus next input
-    if (value && index < 3) {
+    if (value && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -63,7 +73,7 @@ const OTPModal: React.FC<OTPModalProps> = ({
       inputRefs.current[index - 1]?.focus();
     }
 
-    if (e.key === "ArrowRight" && index < 3) {
+    if (e.key === "ArrowRight" && index < 5) {
       inputRefs.current[index + 1]?.focus();
     }
   };
@@ -72,17 +82,17 @@ const OTPModal: React.FC<OTPModalProps> = ({
   const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>): void => {
     e.preventDefault();
     const pasteData = e.clipboardData.getData("text");
-    const digits = pasteData.replace(/\D/g, "").slice(0, 4);
+    const digits = pasteData.replace(/\D/g, "").slice(0, 6);
 
     if (digits.length > 0) {
       const newOtp = [...otp];
-      for (let i = 0; i < digits.length && i < 4; i++) {
+      for (let i = 0; i < digits.length && i < 6; i++) {
         newOtp[i] = digits[i];
       }
       setOtp(newOtp);
 
       // Focus the next empty input or the last input
-      const nextIndex = Math.min(digits.length, 3);
+      const nextIndex = Math.min(digits.length, 5);
       inputRefs.current[nextIndex]?.focus();
     }
   };
@@ -90,28 +100,48 @@ const OTPModal: React.FC<OTPModalProps> = ({
   // Handle submit
   const handleNext = (): void => {
     const otpValue = otp.join("");
-    if (otpValue.length === 4) {
-      if (onSubmit) {
-        onSubmit(otpValue);
-      } else {
-        alert(`OTP submitted: ${otpValue}`);
-      }
+    if (otpValue.length === 6) {
+      verifyEmail(
+        { code: otpValue },
+        {
+          onSuccess: (data) => {
+            setUser(data.user);
+            setAuthState?.("login");
+            toast.success("Email verified successfully!", toastConfigSuccess);
+            if (close) close();
+            router.push("/home");
+          },
+          onError: (error) => {
+            toast.error(error.message, toastConfigError);
+          },
+        }
+      );
     } else {
-      alert("Please enter all 4 digits");
+      toast.error("Please enter all 6 digits", toastConfigError);
     }
   };
 
   // Handle resend
   const handleResend = (): void => {
-    setTimeLeft(120); // Reset timer
-    setOtp(["", "", "", ""]); // Clear OTP
-    inputRefs.current[0]?.focus(); // Focus first input
-
-    if (onResend) {
-      onResend();
-    } else {
-      alert("New OTP sent to your email!");
+    if (!email) {
+      toast.error("Email is required to resend verification", toastConfigError);
+      return;
     }
+    
+    resendVerification(
+      email,
+      {
+        onSuccess: () => {
+          setTimeLeft(120); // Reset timer
+          setOtp(["", "", "", "", "", ""]); // Clear OTP
+          inputRefs.current[0]?.focus(); // Focus first input
+          toast.success("New OTP sent to your email!", toastConfigSuccess);
+        },
+        onError: (error) => {
+          toast.error(error.message, toastConfigError);
+        },
+      }
+    );
   };
 
   // Handle close
@@ -176,10 +206,10 @@ const OTPModal: React.FC<OTPModalProps> = ({
           <span className="text-gray-600">Didn't receive code?</span>
           <button
             onClick={handleResend}
-            className="text-blue-500 hover:text-blue-600 font-medium transition-colors"
-            disabled={timeLeft === 0}
+            className="text-blue-500 hover:text-blue-600 font-medium transition-colors disabled:opacity-50"
+            disabled={timeLeft > 0 || isResending}
           >
-            Resend
+            {isResending ? "Sending..." : "Resend"}
           </button>
         </div>
         <div className="text-gray-800 font-medium">{formatTime(timeLeft)}</div>
@@ -191,8 +221,9 @@ const OTPModal: React.FC<OTPModalProps> = ({
         <FullButton
           action={() => handleNext()}
           color="blue"
-          name="Next"
-          disabled={otp.join("").length !== 4}
+          name={isVerifying ? "Verifying..." : "Verify"}
+          disabled={otp.join("").length !== 6 || isVerifying}
+          isLoading={isVerifying}
         />
         <FullButton action={() => handleCancel()} color="" name="Cancel" />
       </div>

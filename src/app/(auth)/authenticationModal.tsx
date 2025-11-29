@@ -91,7 +91,7 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
       <div className="inline-block overflow-hidden mt-12  bg-white text-left relative align-bottom transition-all transform  rounded-lg shadow-xl sm:my-8 sm:align-middle w-full sm:max-w-[550px] sm:w-full p-4 md:p-6">
           {authState === "login" && <Login />}
           {authState === "recover" && <Recover />}
-          {authState === "otp" && <OTPModal close={close} />}
+          {authState === "otp" && <OTPModal setAuthState={setAuthState} close={close} />}
 
           {(authState === "login" || authState === "recover") && (
             <>

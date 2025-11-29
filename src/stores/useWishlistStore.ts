@@ -25,7 +25,7 @@ export const useWishlistStore = create<WishlistState>()(
       items: [],
       isLoading: false,
 
-      setItems: (items) => set({ items }),
+      setItems: (newItems) => set({ items: newItems }),
 
       addItem: (item) => {
         const { items } = get();

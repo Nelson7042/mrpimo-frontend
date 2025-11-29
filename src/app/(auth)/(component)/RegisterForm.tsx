@@ -116,7 +116,7 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
             //   }
             // }
 
-            setUser(data.user);
+            // setUser(data.user);
             toast.success(
               data.message || "Login successful",
               toastConfigSuccess

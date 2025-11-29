@@ -82,12 +82,18 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
             setUser(data.user);
             setVendor(data.vendor);
             toast.success("Login successful", toastConfigSuccess);
-            if (authType === "vendor") {
+            
+            // Check for stored redirect URL
+            const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+            if (redirectUrl) {
+              sessionStorage.removeItem('redirectAfterLogin');
+              router.push(redirectUrl);
+            } else if (authType === "vendor") {
               router.push("/vendor/dashboard");
             }
             
             setIsLoading(false);
-             if (close) close();
+            if (close) close();
           },
           onError: (error) => {
             // console.error("Login failed:", error);

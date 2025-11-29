@@ -68,11 +68,12 @@ const Header = () => {
   };
 
   const handleProfileClick = () => {
-    // resetAllStores()
+    resetAllStores()
     if (!user) {
+      // Store the intended redirect URL before opening modal
+      sessionStorage.setItem('redirectAfterLogin', '/home/user');
       openModal();
     } else {
-      // console.log("userxxx", user);
       router.push("/home/user");
     }
   };
