@@ -169,7 +169,7 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
        
 
         {/* Product Cards */}
-        <div className="lg:col-span-1 space-y-4 flex flex-col justify-between">
+        <div className="lg:col-span-1 space-y-4 flex flex-col justify-between hidden md:bloc">
           <div className="card-responsive bg-gray-900 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <div className="flex-1">

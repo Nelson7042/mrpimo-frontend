@@ -64,7 +64,7 @@ export const ProductCard = ({
         } border border-[#ADADAD4D] relative touch-manipulation`}
       >
         {/* Product Image */}
-        <div className="relative mb-3 sm:mb-4">
+        <div className="relative mb-2 sm:mb-4">
           <div
             className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-md ${
               isLarge ? "h-48 sm:h-64" : "h-24 md:h-34"

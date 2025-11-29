@@ -1,6 +1,5 @@
 "use client"
 
-import { useState } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import {Badge, ShoppingCart } from "lucide-react"
@@ -158,8 +157,8 @@ import { Heart } from "iconsax-react"
   
             {/* Items */}
             <div className="divide-y">
-              {wishlist.map((item) => (
-                <div key={item._id} className="p-4">
+              {wishlist.map((item, index) => (
+                <div key={index} className=" p-2 md:p-4">
                   {/* Mobile Layout */}
                   <div className="md:hidden space-y-3">
                     <div className="flex space-x-3">

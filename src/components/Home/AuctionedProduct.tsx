@@ -1,8 +1,14 @@
 import { useProductsOnAuction } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
-import { Heart, Star, Loader2 } from "lucide-react";
+import { Heart, Star, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
+import { Swiper, SwiperSlide } from "swiper/react";
+import { Navigation, Pagination } from "swiper/modules";
+import "swiper/css";
+import "swiper/css/navigation";
+import "swiper/css/pagination";
+import { Button } from "@/components/ui/button";
 
 const AuctionTimer = ({ product }: { product: ProductType }) => {
   const [timeLeft, setTimeLeft] = useState({
@@ -101,7 +107,7 @@ const ProductCard = ({ product }: { product: ProductType }) => {
   };
 
   return (
-    <div className="group bg-gradient-to-br from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-3 border border-[#ADADAD4D] relative">
+    <div className="group bg-gradient-to-br flex flex-col  min-h-[266px] from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 p-2 md:p-3 border border-[#ADADAD4D] relative">
       <div className="relative mb-3">
         <div
           className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg h-24 md:h-32 lg:h-48 flex items-center justify-center overflow-hidden`}
@@ -135,6 +141,7 @@ const ProductCard = ({ product }: { product: ProductType }) => {
           },
         }}
         as={`/home/product-details/${product._id}`}
+        className="flex flex-col justify-between h-full flex-1"
       >
         <h3 className="font-semibold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition-colors text-sm mb-2">
           {product.name}
@@ -184,19 +191,78 @@ const AuctionedProduct = () => {
     limit: 12,
     status,
   });
+  const auctionSwiperRef = useRef<any>(null);
 
-  if (isLoading) {
+  // Reusable swiper component
+  const AuctionSwiper = ({
+    items,
+    renderItem,
+    swiperRef,
+    prevClass,
+    nextClass,
+  }: {
+    items: any[];
+    renderItem: (item: any) => React.ReactNode;
+    swiperRef: React.MutableRefObject<any>;
+    prevClass: string;
+    nextClass: string;
+  }) => {
+    if (!items || items.length === 0) return null;
+
     return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
-            <p className="text-gray-600">Loading auction products...</p>
-          </div>
+      <div className="w-full">
+        <Swiper
+          ref={swiperRef}
+          modules={[Navigation, Pagination]}
+          spaceBetween={16}
+          slidesPerView={2.2}
+          navigation={{
+            prevEl: `.${prevClass}`,
+            nextEl: `.${nextClass}`,
+          }}
+          pagination={{
+            clickable: true,
+            dynamicBullets: true,
+          }}
+          breakpoints={{
+            480: { slidesPerView: 1.5 },
+            640: { slidesPerView: 2 },
+            768: { slidesPerView: 2.5 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 4 },
+          }}
+        >
+          {items.map((item: any) => (
+            <SwiperSlide key={item._id || Math.random()}>
+              {renderItem(item)}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        <div className="flex justify-center items-center gap-4 mt-4">
+          <Button variant="outline" size="sm" className={prevClass}>
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+          <Button variant="outline" size="sm" className={nextClass}>
+            <ChevronRight className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     );
-  }
+  };
+
+  // if (isLoading) {
+  //   return (
+  //     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
+  //       <div className="flex items-center justify-center min-h-[400px]">
+  //         <div className="flex flex-col items-center gap-4">
+  //           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+  //           <p className="text-gray-600">Loading auction products...</p>
+  //         </div>
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
@@ -232,11 +298,13 @@ const AuctionedProduct = () => {
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {auctionProducts.map((product: ProductType) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
-        </div>
+        <AuctionSwiper
+          items={auctionProducts}
+          renderItem={(product: ProductType) => <ProductCard product={product} />}
+          swiperRef={auctionSwiperRef}
+          prevClass="auction-products-prev"
+          nextClass="auction-products-next"
+        />
       )}
     </div>
   );
