@@ -114,7 +114,7 @@ const ProductCard = ({
     >
       <div
         className={`group bg-gradient-to-br from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
-          isLarge ? "p-2  md:p-5 h-full" : "p-3 sm:p-4"
+          isLarge ? "p-2  md:p-5 h-full" : "p-2 sm:p-4"
         } border border-[#ADADAD4D] relative touch-manipulation ${
           isLarge ? "flex flex-col" : ""
         }`}

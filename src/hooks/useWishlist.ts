@@ -76,6 +76,7 @@ export const useWishlist = () => {
   const { data: wishlistData, isLoading } = useQuery({
     queryKey: ["wishlist"],
     queryFn: wishlistApi.getWishlist,
+    refetchOnWindowFocus: false,
   });
 
   useEffect(() => {
