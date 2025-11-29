@@ -15,8 +15,8 @@ import { useCategories } from "@/hooks/queries";
 import { Category } from "@/types/product.type";
 
 import { useQuery } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/utils/config";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 const categories = Object.values(categoriesConfig);
 
 export default function CategoriesPage() {
@@ -73,7 +73,7 @@ export default function CategoriesPage() {
     [];
 
   return (
-    <div className="min-h-screen body-padding bg-gray-50">
+    <div className="min-h-screen body-padding py-8 md:py-10 bg-gray-50">
       <main className="">
         <nav className="pt-3">
           <Breadcrumbs
