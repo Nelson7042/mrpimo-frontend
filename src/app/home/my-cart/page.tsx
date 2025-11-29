@@ -371,7 +371,7 @@ export default function CartPage() {
   }
 
   return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]  md:py-10 lg:py-15">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]  md:py-10 lg:py-10">
         <div className="pt-4">
           {/* Breadcrumb */}
           <Breadcrumbs

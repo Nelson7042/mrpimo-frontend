@@ -175,7 +175,9 @@ const RegisterFormVendor = ({ setAuthState, close }: LoginProps) => {
             // setAuthState("")
             toast.success("Vendor registration successful", toastConfigSuccess);
             setIsLoading(false);
-            if (close) close();
+            if (             setAuthState
+)              setAuthState("otp")
+;
           },
           onError: (error: any) => {
             // console.error("Registration failed:", error);

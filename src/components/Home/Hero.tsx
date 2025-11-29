@@ -106,7 +106,7 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
+    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* Carousel Section */}
@@ -169,7 +169,7 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
        
 
         {/* Product Cards */}
-        <div className="lg:col-span-1 space-y-4 flex flex-col justify-between hidden md:bloc">
+        <div className="lg:col-span-1 space-y-4 flex flex-col justify-between hidden md:block">
           <div className="card-responsive bg-gray-900 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
             <div className="flex items-center space-x-3 sm:space-x-4">
               <div className="flex-1">

@@ -117,7 +117,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
           <input
             type={"email"}
             placeholder="Enter your email"
-            className="w-full h-[48px] px-[16px] py-[12px]  text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px]  border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f] "
+            className="w-full h-[48px] px-[16px] py-[12px]  text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px]  border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary "
             required
             autoComplete="on"
             name="email"
@@ -153,7 +153,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
           <input
             type={open === false ? "password" : "text"}
             placeholder="Enter your password"
-            className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px]  border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f] "
+            className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px]  border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary "
             required
             autoComplete="on"
             name="password"

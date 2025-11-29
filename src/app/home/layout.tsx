@@ -23,7 +23,7 @@ const Homepage = ({ children }: HomepageProps) => {
      <div className="fixed top-0 left-0 right-0 z-50">
        <Header />
      </div>
-     <div className="pt-[108px] md:pt- min-h-screen">
+     <div className="pt-[108px] md:pt-[140px] min-h-screen">
        {children}
      </div>
      <Footer />

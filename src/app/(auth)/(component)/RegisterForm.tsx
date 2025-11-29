@@ -14,7 +14,7 @@ import { toast } from "react-toastify";
 
 interface LoginProps {
   setAuthState?: (authState: "login" | "recover" | "otp") => void;
-  close? : () => void;
+  close?: () => void;
 }
 
 const RegisterForm = ({ setAuthState, close }: LoginProps) => {
@@ -29,7 +29,10 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
-  const [selectedCountry, setSelectedCountry] = useState(Country.getAllCountries().find(c => c.isoCode === 'US') || Country.getAllCountries()[0]);
+  const [selectedCountry, setSelectedCountry] = useState(
+    Country.getAllCountries().find((c) => c.isoCode === "US") ||
+      Country.getAllCountries()[0]
+  );
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({
@@ -97,7 +100,14 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
     if (validateForm()) {
       // Submit the form
       signUpUser(
-        { firstName, lastName, email, phoneNumber: `+${selectedCountry.phonecode}${phoneNumber}`, password, role: "customer" },
+        {
+          firstName,
+          lastName,
+          email,
+          phoneNumber: `+${selectedCountry.phonecode}${phoneNumber}`,
+          password,
+          role: "customer",
+        },
         {
           onSuccess: (data) => {
             // if (onLoginSuccess) {
@@ -107,15 +117,17 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
             // }
 
             setUser(data.user);
-            toast.success("Login successful", toastConfigSuccess);
+            toast.success(
+              data.message || "Login successful",
+              toastConfigSuccess
+            );
             setIsLoading(false);
-             if (close) close();
+            if (setAuthState) setAuthState("otp");
           },
           onError: (error) => {
-            console.error("Login failed:", error);
+            // console.error("Login failed:", error);
             toast.error(error.message, toastConfigError);
             setIsLoading(false);
-
           },
         }
       );
@@ -137,13 +149,15 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
         <input
           type="text"
           placeholder="Enter your first name"
-          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f]"
+          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary"
           required
           name="firstName"
           value={firstName}
           onChange={(e) => setFirstName(e.target.value)}
         />
-        {errors.firstName && <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>}
+        {errors.firstName && (
+          <p className="text-red-500 text-xs mt-1">{errors.firstName}</p>
+        )}
       </div>
 
       <div className="mb-[10px]">
@@ -153,7 +167,7 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
         <input
           type="text"
           placeholder="Enter your middle name"
-          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f]"
+          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary"
           name="middleName"
           value={middleName}
           onChange={(e) => setMiddleName(e.target.value)}
@@ -167,13 +181,15 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
         <input
           type="text"
           placeholder="Enter your last name"
-          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f]"
+          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary"
           required
           name="lastName"
           value={lastName}
           onChange={(e) => setLastName(e.target.value)}
         />
-        {errors.lastName && <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>}
+        {errors.lastName && (
+          <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+        )}
       </div>
 
       <div className="mb-[10px]">
@@ -183,13 +199,15 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
         <input
           type="email"
           placeholder="Enter your email address"
-          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f]"
+          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary"
           required
           name="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
-        {errors.email && <p className="text-red-500 text-xs mt-1">{errors.email}</p>}
+        {errors.email && (
+          <p className="text-red-500 text-xs mt-1">{errors.email}</p>
+        )}
       </div>
 
       <div className="mb-[10px]">
@@ -202,7 +220,9 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
               className="h-[48px] w-[90px] md:w-[110px]  px-[8px] py-[12px] text-[14px] text-[#344054] bg-[#F7F9FC] border-[#D0D5DD] border-[0.2px] rounded-l-[8px] focus:outline-none  appearance-none pr-2 md:pr-4"
               value={selectedCountry.isoCode}
               onChange={(e) => {
-                const country = Country.getAllCountries().find(c => c.isoCode === e.target.value);
+                const country = Country.getAllCountries().find(
+                  (c) => c.isoCode === e.target.value
+                );
                 if (country) setSelectedCountry(country);
               }}
             >
@@ -224,7 +244,9 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
             onChange={(e) => setPhoneNumber(e.target.value)}
           />
         </div>
-        {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
+        {errors.phoneNumber && (
+          <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>
+        )}
       </div>
 
       <div className="mb-[10px]">
@@ -235,7 +257,7 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
           <input
             type={open === false ? "password" : "text"}
             placeholder="Input your new password"
-            className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f]"
+            className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary"
             required
             name="password"
             value={password}
@@ -249,8 +271,12 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
             )}
           </div>
         </div>
-        <p className="text-xs text-gray-500 mt-1">Password must be 8 characters, a special character and Numeric figure</p>
-        {errors.password && <p className="text-red-500 text-xs mt-1">{errors.password}</p>}
+        <p className="text-xs text-gray-500 mt-1">
+          Password must be 8 characters, a special character and Numeric figure
+        </p>
+        {errors.password && (
+          <p className="text-red-500 text-xs mt-1">{errors.password}</p>
+        )}
       </div>
 
       <div className="mb-[10px]">
@@ -261,7 +287,7 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
           <input
             type={open === false ? "password" : "text"}
             placeholder="Input your password"
-            className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-[#26ae5f]"
+            className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary"
             required
             name="confirmPassword"
             value={confirmPassword}
@@ -275,11 +301,18 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
             )}
           </div>
         </div>
-        {errors.confirmPassword && <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>}
+        {errors.confirmPassword && (
+          <p className="text-red-500 text-xs mt-1">{errors.confirmPassword}</p>
+        )}
       </div>
 
       <div className="mb-4 md:mb-6 mt-4 md:mt-6">
-        <FullButton action={() => {}} isLoading={isLoading} color="blue" name="Try Again" />
+        <FullButton
+          action={() => {}}
+          isLoading={isLoading}
+          color="blue"
+          name="Sign Up"
+        />
       </div>
     </form>
   );

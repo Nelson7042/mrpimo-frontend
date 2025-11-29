@@ -18,7 +18,7 @@ const Header = (props: Props) => {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-white">
-      <div className="flex h-16 items-center px-4">
+      <div className="flex h-16 items-center justify-between px-4">
         {/* Mobile menu button */}
         <button
           className="lg:hidden mr-3 p-2 rounded-md hover:bg-gray-100"
@@ -27,10 +27,7 @@ const Header = (props: Props) => {
           <FaBars size={18} />
         </button>
 
-        {/* Logo - visible on desktop */}
-        {/* <div className="hidden lg:block mr-6">
-          <h1 className="text-xl font-semibold text-[#211F1F]">Mprimo</h1>
-        </div> */}
+       
 
         {/* Search bar */}
         <div className="flex-1 max-w-md mx-4">
