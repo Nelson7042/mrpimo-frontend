@@ -51,9 +51,9 @@ const Footer: React.FC = () => {
           <div className="lg:col-span-2">
             <div className="flex items-center gap-2 mb-6 ">
                <img
-              src="/images/mprimoLogo.png"
+                src="/images/mprimo-logo2.png"
               alt="mprimoLogo image"
-              className=" h-[32px] md:h-[42px] lg:h-[48px] w-[90px] bg-blue-500 rounded-md md:w-[110px] lg:w-[180px]"
+              className=" h-[32px] md:h-[42px] lg:h-[48px] w-[90px] bg-blue-500 rounded-md py-1 md:py-2 md:w-[110px] lg:w-[180px]"
             />
             </div>
             

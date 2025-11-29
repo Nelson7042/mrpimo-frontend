@@ -55,7 +55,7 @@ const ProductPage: React.FC = () => {
 
 
   return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-4 md:py-10 lg:py-15">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-4 md:py-10 lg:py-10">
       <ProductInfo productData={productData?.product}/>
       <ProductDetailsTabs productData={productData?.product}/>
       <ReviewsPage product={productData?.product}/>

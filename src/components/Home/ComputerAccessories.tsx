@@ -23,7 +23,7 @@ export default function ComputerAccessories() {
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/api/v1/categories`);
+      const response = await fetch(`${API_BASE_URL}/categories`);
       if (!response.ok) throw new Error("Failed to fetch categories");
       return response.json();
     },
@@ -67,7 +67,7 @@ export default function ComputerAccessories() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
         <div className="flex flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <div className="h-8 bg-gray-200 rounded w-64 animate-pulse"></div>
           <div className="h-6 bg-gray-200 rounded w-40 animate-pulse"></div>
@@ -104,7 +104,7 @@ export default function ComputerAccessories() {
   // }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-15">
+    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
       <div className="flex flex-row sm:items-center justify-between mb-6 sm:mb-8 gap-4">
           <h1 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
             Computer Accessories

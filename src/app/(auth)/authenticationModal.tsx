@@ -60,7 +60,7 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
             {signState === "login" ? (
               <LoginForm setAuthState={setAuthState} close={close} />
             ) : (
-              <RegisterForm />
+              <RegisterForm setAuthState={setAuthState} close={close} />
             )}
           </div>
         }
