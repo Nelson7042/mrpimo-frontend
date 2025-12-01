@@ -139,7 +139,7 @@ export default function WalletPage() {
         </div>
 
         {/* Balance Card */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-lg p-4 sm:p-6 mb-6">
+        <div className="bg-primary text-white rounded-lg p-4 sm:p-6 mb-6">
           <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
             <div className="flex-1">
               <p className="text-blue-100 text-sm">Available Balance</p>

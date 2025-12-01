@@ -106,23 +106,23 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
+    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-8 pb-3 md:py-10 lg:py-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         {/* Carousel Section */}
         <div className="lg:col-span-2">
-          <div className="bg-gradient-to-br flex flex-row from-[#E2E8F0] to-[#e5eaf0] rounded-lg p-4 sm:p-6 lg:p-8 relative overflow-hidden sm:min-h-[320px]">
+          <div className="bg-blue-100 flex flex-row from-[#E2E8F0] to-[#e5eaf0] rounded-md p-4 sm:p-6 lg:p-8 relative overflow-hidden sm:min-h-[320px]">
             <div className="relative z-10 w-[55%] flex flex-col justify-center">
-              <div className="text-blue-600 font-medium text-xs sm:text-sm mb-2 flex items-center">
+              <div className="text-blue-600 font-medium text-xs sm:text-sm mb-1 md:mb-2 flex items-center">
                 → {carouselItems[currentSlide].title}
               </div>
-              <p className=" text-sm md:text-base font-semibold text-gray-900 mb-2 md:mb-3">
+              <p className=" text-sm md:text-base font-semibold text-gray-800 mb-1 md:mb-3">
                 {carouselItems[currentSlide].subtitle}
               </p>
-              <p className="text-gray-600 text-sm sm:text-base mb-3 sm:mb-6 leading-relaxed">
+              <p className="text-gray-600 text-sm sm:text-base mb-1.5 sm:mb-6 leading-relaxed">
                 {carouselItems[currentSlide].description}
               </p>
-              <button className="text-sm md:text-base p-2 md:px-6 md:py-3 bg-secondary hover:bg-blue-700 font-normal text-white rounded-md transition-colors duration-200 shadow-lg hover:shadow-xl w-fit">
+              <button className="text-sm md:text-base p-2 md:px-6 md:py-3 bg-primary hover:bg-blue-700 font-normal text-white rounded-md transition-colors duration-200 shadow-lg hover:shadow-xl w-fit">
                 {carouselItems[currentSlide].buttonText}
               </button>
               
@@ -146,23 +146,11 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
                 alt="Gaming Console"
                 className="w-[120px] sm:w-[100px] md:w-[140px] lg:w-[160px] h-[90px] sm:h-[180px] md:h-[220px] lg:h-[300px] object-contain rounded-lg"
               />
-              <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-green-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
+              <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-blue-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
                 {carouselItems[currentSlide].badge}
               </div>
             </div>
-            
-            {/* <button
-              onClick={prevSlide}
-              className="absolute left-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200"
-            >
-              <ChevronLeft className="w-5 h-5 text-gray-600" />
-            </button>
-            <button
-              onClick={nextSlide}
-              className="absolute right-2 top-1/2 transform -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-2 shadow-lg transition-all duration-200"
-            >
-              <ChevronRight className="w-5 h-5 text-gray-600" />
-            </button> */}
+           
           </div>
         </div>
 
