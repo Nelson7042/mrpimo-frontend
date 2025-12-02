@@ -1,7 +1,6 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation } from '@tanstack/react-query';
 
 import { API_BASE_URL } from '@/utils/config';
-import { useAuthModalStore } from '@/stores/useAuthModalStore';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
 interface ProductFilters {
@@ -159,4 +158,23 @@ const getBids = async (productId: string) => {
   return response.json();
 };
 
-export { updateProduct, placeBid, getBids };
+const addReview = async (productId: string, reviewData: { rating: number; comment?: string; vendorRating?: number }) => {
+  const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}/reviews`, {
+    method: 'POST',
+    body: JSON.stringify(reviewData),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || 'Failed to add review');
+  }
+  return response.json();
+};
+
+export const useAddReview = () => {
+  return useMutation({
+    mutationFn: ({ productId, reviewData }: { productId: string; reviewData: { rating: number; comment?: string; vendorRating?: number } }) =>
+      addReview(productId, reviewData),
+  });
+};
+
+export { updateProduct, placeBid, getBids, addReview };

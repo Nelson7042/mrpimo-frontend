@@ -1,6 +1,7 @@
-import React, { JSX, useState } from 'react';
+import React, { JSX, useState, useMemo } from 'react';
 import { Star, ChevronDown } from 'lucide-react';
 import { ProductType } from '@/types/product.type';
+import { format } from 'date-fns';
 
 type ReviewsProps = {
   product: ProductType;
@@ -12,34 +13,42 @@ export default function ReviewsPage({product}: ReviewsProps) {
 
   const timeFilters = ['All time', 'Last 30 days', 'Last 3 months', 'Last 6 months', 'Last year'];
 
-  const reviewData = {
-    averageRating: 4.2,
-    totalReviews: 125,
-    ratingBreakdown: [
-      { stars: 5, percentage: 69 },
-      { stars: 4, percentage: 16 },
-      { stars: 3, percentage: 7 },
-      { stars: 2, percentage: 5 },
-      { stars: 1, percentage: 3 }
-    ]
-  };
+  // Calculate review statistics from actual product data
+  const reviewData = useMemo(() => {
+    const reviews = product?.reviews || [];
+    const totalReviews = reviews.length;
+    const averageRating = product?.rating || 0;
 
-  const reviews = [
-    {
-      id: 1,
-      rating: 5,
-      author: "u****e",
-      date: "31 November 2017",
-      comment: "I'm happy with my item but the item arrived too late. So I'm not sure whether to do business with this seller"
-    },
-    {
-      id: 2,
-      rating: 5,
-      author: "u****e",
-      date: "31 November 2017",
-      comment: "I'm happy with my item but the item arrived too late. So I'm not sure whether to do business with this seller"
-    }
-  ];
+    // Calculate rating breakdown
+    const ratingCounts = { 5: 0, 4: 0, 3: 0, 2: 0, 1: 0 };
+    reviews.forEach((review: any) => {
+      const rating = Math.floor(review.rating);
+      if (rating >= 1 && rating <= 5) {
+        ratingCounts[rating as keyof typeof ratingCounts]++;
+      }
+    });
+
+    const ratingBreakdown = [5, 4, 3, 2, 1].map(stars => ({
+      stars,
+      percentage: totalReviews > 0 ? Math.round((ratingCounts[stars as keyof typeof ratingCounts] / totalReviews) * 100) : 0
+    }));
+
+    return {
+      averageRating,
+      totalReviews,
+      ratingBreakdown
+    };
+  }, [product]);
+
+  const reviews = useMemo(() => {
+    return (product?.reviews || []).map((review: any) => ({
+      id: review._id || review.id,
+      rating: review.rating,
+      author: review.userId?.profile?.firstName || review.userId?.email?.substring(0, 1) + '****' + review.userId?.email?.slice(-1) || 'Anonymous',
+      date: review.createdAt ? format(new Date(review.createdAt), 'dd MMMM yyyy') : 'N/A',
+      comment: review.comment || 'No comment provided'
+    }));
+  }, [product]);
 
 interface RenderStarsProps {
     rating: number;
@@ -86,44 +95,51 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
     );
 };
 
-  if (product?.inventory?.listing.type !== "auction") {
-    return null;
+  if (!product || !product.reviews || product.reviews.length === 0) {
+    return (
+      <div className="md:px-[42px] lg:px-[80px] px-4 mt-5 md:mt-7 lg:mt-8">
+        <div className="text-center py-8">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Reviews</h2>
+          <p className="text-gray-600">No reviews yet. Be the first to review this product!</p>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="md:px-[42px] lg:px-[80px] px-4  mt-5 md:mt-7 lg:mt-8  ">
+    <div className="  mt-4 md:mt-7 lg:mt-8  ">
       <div className="">
         {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Reviews</h1>
+        <div className="mb-2 md:mb-4">
+          <h1 className="text-lg md:text-3xl font-bold text-gray-900">Reviews</h1>
         </div>
 
         {/* Customer Reviews Summary */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-2 sm:mb-0">Customer reviews</h2>
+        <div className="mb-2 md:mb-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between md:mb-4">
+            <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 sm:mb-0">Customer reviews</h2>
             <div className="flex items-center space-x-2">
               {renderOverallStars(reviewData.averageRating)}
-              <span className="text-lg font-medium text-gray-900">
+              <span className="text-sm md:text-lg font-medium text-gray-900">
                 {reviewData.averageRating} out of 5
               </span>
             </div>
           </div>
           <div className="text-right">
-            <span className="text-sm text-gray-600">{reviewData.totalReviews} product feedback</span>
+            <span className="text-xs md:text-sm text-gray-600">{reviewData.totalReviews} product feedback</span>
           </div>
         </div>
 
         {/* Feedback History */}
-        <div className="mb-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 sm:mb-0">Feedback history</h3>
+        <div className="mb-2 md:mb-4">
+          <div className="flex flex-row items-center justify-between mb-6">
+            <h3 className="text-sm md:text-lg font-semibold text-gray-900 ">Feedback history</h3>
             
             {/* Time Filter Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center justify-between w-full sm:w-40 px-4 py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="flex items-center justify-between w-full sm:w-40 px-4 py-1 md:py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <span>{selectedTimeFilter}</span>
                 <ChevronDown className="w-4 h-4 ml-2" />
@@ -151,15 +167,15 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
           {/* Rating Breakdown */}
           <div className="space-y-3">
             {reviewData.ratingBreakdown.map((item) => (
-              <div key={item.stars} className="flex items-center space-x-4">
-                <div className="flex items-center space-x-1 w-12">
+              <div key={item.stars} className="flex items-center space-x-2 md:space-x-4">
+                <div className="flex items-center space-x-1 w-6 md:w-12">
                   <span className="text-sm text-gray-700">{item.stars}</span>
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 </div>
                 
-                <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-md">
+                <div className="flex-1 bg-gray-200 rounded-full h-1.5 md:h-2 max-w-md">
                   <div
-                    className="bg-yellow-400 h-2 rounded-full transition-all duration-300"
+                    className="bg-yellow-400 h-1.5 md:h-2 rounded-full transition-all duration-300"
                     style={{ width: `${item.percentage}%` }}
                   ></div>
                 </div>
@@ -171,8 +187,8 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
         </div>
 
         {/* Individual Reviews */}
-        <div className="space-y-6">
-          {reviews.map((review) => (
+        <div className="space-y-3 md:space-y-6">
+          {reviews.map((review: any) => (
             <div key={review.id} className="border-b border-gray-200 pb-6 last:border-b-0">
               <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between mb-3">
                 <div className="mb-2 sm:mb-0">
@@ -186,17 +202,10 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
               </div>
               
               <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
-                "{review.comment}"
+                {review.comment}
               </p>
             </div>
           ))}
-        </div>
-
-        {/* Load More Button */}
-        <div className="mt-8 text-center">
-          <button className="px-6 py-2 text-sm font-medium text-blue-600 border border-blue-600 rounded-md hover:bg-blue-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors">
-            Load more reviews
-          </button>
         </div>
       </div>
     </div>

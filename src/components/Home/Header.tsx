@@ -163,7 +163,10 @@ const Header = () => {
             Sale
           </button> */}
           <div className="flex items-center gap-1">
-            <button>
+            <button
+                            onClick={() => handleProfileClick()}
+
+            >
               <ProfileCircle color="white" className="w-6 h-6" />
             </button>
             <Link

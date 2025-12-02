@@ -10,7 +10,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs"
 import { useOrderById, useCancelOrder, useRequestRefund } from "@/hooks/useOrders"
-import { Loader2, Package, Truck, CheckCircle, XCircle, MapPin, Calendar, CreditCard } from "lucide-react"
+import { useAddReview } from "@/hooks/useProducts"
+import { Loader2, Package, Truck, CheckCircle, XCircle, MapPin, Calendar, CreditCard, Star } from "lucide-react"
 import { format } from "date-fns"
 
 const getStatusColor = (status: string) => {
@@ -58,9 +59,15 @@ export default function OrderDetailsPage() {
   const { data: orderData, isLoading, error } = useOrderById(orderId)
   const cancelOrderMutation = useCancelOrder()
   const requestRefundMutation = useRequestRefund()
+  const addReviewMutation = useAddReview()
   
   const [showRefundForm, setShowRefundForm] = useState(false)
   const [refundReason, setRefundReason] = useState("")
+  const [showReviewModal, setShowReviewModal] = useState(false)
+  const [selectedProduct, setSelectedProduct] = useState<any>(null)
+  const [rating, setRating] = useState(0)
+  const [comment, setComment] = useState("")
+  const [vendorRating, setVendorRating] = useState(0)
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
     { label: "Home", href: "/home" },
@@ -96,6 +103,40 @@ export default function OrderDetailsPage() {
     })
     setShowRefundForm(false)
     setRefundReason("")
+  }
+
+  const handleOpenReviewModal = (product: any) => {
+    setSelectedProduct(product)
+    setShowReviewModal(true)
+    setRating(0)
+    setComment("")
+    setVendorRating(0)
+  }
+
+  const handleSubmitReview = async () => {
+    if (rating === 0) {
+      alert('Please select a rating')
+      return
+    }
+
+    try {
+      await addReviewMutation.mutateAsync({
+        productId: selectedProduct._id,
+        reviewData: {
+          rating,
+          comment: comment.trim() || undefined,
+          vendorRating: vendorRating || undefined
+        }
+      })
+      setShowReviewModal(false)
+      setSelectedProduct(null)
+      setRating(0)
+      setComment("")
+      setVendorRating(0)
+      alert('Review submitted successfully!')
+    } catch (error: any) {
+      alert(error.message || 'Failed to submit review')
+    }
   }
 
   if (isLoading) {
@@ -174,8 +215,19 @@ export default function OrderDetailsPage() {
                         <p className="text-gray-600">Quantity: {item.quantity}</p>
                         <p className="text-blue-600 font-medium">${item.price?.toFixed(2) || '0.00'}</p>
                       </div>
-                      <div className="text-right">
+                      <div className="text-right space-y-2">
                         <p className="font-medium">${(item.price * item.quantity)?.toFixed(2) || '0.00'}</p>
+                        {order.status === 'delivered' && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            onClick={() => handleOpenReviewModal(item.productId)}
+                            className="flex items-center gap-1"
+                          >
+                            <Star className="w-3 h-3" />
+                            Review
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -353,6 +405,108 @@ export default function OrderDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Review Modal */}
+      {showReviewModal && selectedProduct && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <CardTitle>Review Product</CardTitle>
+              <p className="text-sm text-gray-600">{selectedProduct.name}</p>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              {/* Product Rating */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Product Rating *</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-8 h-8 ${
+                          star <= rating
+                            ? 'fill-yellow-400 text-yellow-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Vendor Rating */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Vendor Rating (Optional)</label>
+                <div className="flex gap-2">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setVendorRating(star)}
+                      className="focus:outline-none"
+                    >
+                      <Star
+                        className={`w-6 h-6 ${
+                          star <= vendorRating
+                            ? 'fill-blue-400 text-blue-400'
+                            : 'text-gray-300'
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Comment */}
+              <div>
+                <label className="block text-sm font-medium mb-2">Comment (Optional)</label>
+                <textarea
+                  className="w-full p-3 border rounded-lg resize-none"
+                  rows={4}
+                  placeholder="Share your experience with this product..."
+                  value={comment}
+                  onChange={(e) => setComment(e.target.value)}
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1"
+                  onClick={handleSubmitReview}
+                  disabled={addReviewMutation.isPending || rating === 0}
+                >
+                  {addReviewMutation.isPending ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    'Submit Review'
+                  )}
+                </Button>
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setShowReviewModal(false)
+                    setSelectedProduct(null)
+                    setRating(0)
+                    setComment("")
+                    setVendorRating(0)
+                  }}
+                  disabled={addReviewMutation.isPending}
+                >
+                  Cancel
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
     </div>
   )
 }
