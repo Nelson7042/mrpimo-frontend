@@ -302,7 +302,7 @@ export default function BestDeals() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-5 md:py-10 lg:py-10">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-5 pb-3 md:py-10 lg:py-10">
         {/* Header Skeleton */}
         <div className="flex flex-row items-center justify-between element-spacing gap-4 mb-6">
           <div className="flex flex-row items-center gap-3 sm:gap-6">

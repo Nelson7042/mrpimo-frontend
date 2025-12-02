@@ -31,6 +31,7 @@ import { useRouter } from "next/navigation";
 import { useVendorStore } from "@/stores/useVendorStore";
 import AuthenticationModalVendor from "@/app/(auth)/authenticationModalVendor";
 import { resetAllStores } from "@/stores/resetStore";
+import { ProfileCircle } from "iconsax-react";
 
 const Header = () => {
   const [isSell, setIsSell] = useState(false);
@@ -68,11 +69,12 @@ const Header = () => {
   };
 
   const handleProfileClick = () => {
-    // resetAllStores()
+    resetAllStores();
     if (!user) {
+      // Store the intended redirect URL before opening modal
+      sessionStorage.setItem("redirectAfterLogin", "/home/user");
       openModal();
     } else {
-      // console.log("userxxx", user);
       router.push("/home/user");
     }
   };
@@ -130,20 +132,17 @@ const Header = () => {
     },
   ];
   return (
-    <header className="text-white">
+    <header className="text-white ">
       {/* Top banner - responsive */}
-      <div className="w-full bg-primary">
-        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-20 text-center py-2 text-xs sm:text-sm lg:text-base font-medium flex justify-between items-center">
-          <span className="truncate md:block hidden">
-            Welcome to Mprimo online store...
-          </span>
+      <div className="w-full bg-primary h-[56px] sm:h-[60px] md:h-auto">
+        <div className="max-w-7xl mx-auto px-[12px] md:px-[42px] lg:px-20 text-center py-2 text-xs sm:text-sm lg:text-base font-medium flex justify-between items-center">
           {/* Logo */}
-          <Link href="/home" className="shrink-0 block md:hidden">
+          <Link href="/home" className="shrink-0 ">
             <div className="flex items-center">
               <img
                 src="/images/mprimo-logo2.png"
                 alt="mprimoLogo image"
-                className="h-[32px] w-[80px] sm:h-[36px] sm:w-[100px] md:h-[42px] md:w-[120px] lg:h-[48px] lg:w-[180px]"
+                className="h-[36px] w-auto sm:h-[36px] sm:w-auto md:h-[42px] md:w-auto lg:h-[48px] lg:w-[140px]"
               />
             </div>
           </Link>
@@ -157,18 +156,34 @@ const Header = () => {
             ))}
           </div>
 
-          <button
+          {/* <button
             onClick={handleSellClick}
             className="text-[#121212]  px-3 sm:px-4 py-2 lg:py-3  lg:w-[180px] rounded-md bg-white font-normal  text-xs sm:text-sm lg:text-base"
           >
             Sale
-          </button>
+          </button> */}
+          <div className="flex items-center gap-1">
+            <button>
+              <ProfileCircle color="white" className="w-6 h-6" />
+            </button>
+            <Link
+              href="/home/my-cart"
+              className="text-white   hover:bg-blue-700 relative p-2 rounded"
+            >
+              <ShoppingCart className="w-6 h-6" />
+              {cartLength > 0 && (
+                <div className="absolute top-1 right-[2px] bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-white">
+                  {cartLength}
+                </div>
+              )}
+            </Link>
+          </div>
         </div>
       </div>
 
       {/* Main header */}
       <div className="w-full bg-primary">
-        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-3 sm:py-4">
+        <div className="max-w-7xl mx-auto px-[12px] md:px-[42px] lg:px-[80px] py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Mobile menu button */}
             {/* <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -216,30 +231,28 @@ const Header = () => {
             {/* Logo */}
             <Link href="/home" className="flex-shrink-0 hidden md:block">
               <div className="flex items-center">
-                <img
-                src="/images/mprimo-logo2.png"
-                  alt="mprimoLogo image"
-                  className="h-[28px] w-[80px] sm:h-[36px] sm:w-[100px] md:h-[42px] md:w-[120px] lg:h-[48px] lg:w-[180px]"
-                />
+                <span className="truncate md:block hidden">
+                  Welcome to Mprimo online store...
+                </span>
               </div>
             </Link>
 
             {/* Desktop Search bar */}
-            <div className="flex-1 font-normal hidden lg:block mx-4 relative">
-              <div className="flex mx-auto max-w-2xl bg-white py-[5px] rounded-full">
-                <button className="border-r px-3">
-                  <Search className="w-4 h-4" color="black" />
+            <div className="flex-1 font-normal block md:mx-4 relative">
+              <div className="flex mx-auto max-w-2xl bg-white py-[3px] md:py-[5px] rounded-[8px]">
+                <button className="border-r px-2 md:px-3">
+                  <Search className="w-6 h-6" color="black" />
                 </button>
                 <input
                   placeholder="Search for anything..."
-                  className="flex-1 border-0 px-3 outline-0 text-[#121212] text-sm"
+                  className="flex-1 border-0 px-2 md:px-3 outline-0 text-[#121212] text-sm"
                   value={searchQuery}
                   onChange={(e) => handleSearchChange(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && handleSearchSubmit()}
                 />
                 <button
                   onClick={handleSearchSubmit}
-                  className="py-2 px-4 text-xs bg-primary text-white rounded-full mr-1 hover:bg-blue-700"
+                  className="py-[10px] md:py-[10px] px-4 text-xs bg-primary text-white rounded-[8px] mr-1 hover:bg-blue-700"
                 >
                   Search
                 </button>
@@ -289,42 +302,30 @@ const Header = () => {
             {/* Right menu */}
             <div className="flex items-center gap-2 sm:gap-3">
               {/* Mobile search button */}
-              <button
+              {/* <button
                 onClick={toggleSearch}
                 className="text-white hover:bg-blue-700 lg:hidden p-2 rounded"
               >
                 <Search className="w-5 h-5" />
-              </button>
+              </button> */}
 
-              <button
+              {/* <button
                 onClick={() => handleProfileClick()}
                 className="text-white hover:bg-blue-700 p-2 rounded cursor-pointer"
               >
                 <User className="w-5 h-5" />
-              </button>
-                <Link
-                  href="/home/wishlist"
-                  className="text-white   hover:bg-blue-700 relative p-2 rounded"
-                >
-                  <Heart className="w-5 h-5" />
-                  {isMounted && wishlistCount > 0 && (
-                    <div className="absolute top-1 right-[2px] bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-white">
-                      {wishlistCount ?? 0}
-                    </div>
-                  )}
-                </Link>
-
-                <Link
-                  href="/home/my-cart"
-                  className="text-white   hover:bg-blue-700 relative p-2 rounded"
-                >
-                    <ShoppingCart className="w-5 h-5" />
-                    {cartLength > 0 && (
-                      <div className="absolute top-1 right-[2px] bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-white">
-                        {cartLength}
-                      </div>
-                    )}
-                </Link>
+              </button> */}
+              <Link
+                href="/home/wishlist"
+                className="text-white   hover:bg-blue-700 relative p-2 rounded"
+              >
+                <Heart className="w-6 h-6" />
+                {isMounted && wishlistCount > 0 && (
+                  <div className="absolute top-1 right-[2px] bg-red-500 text-xs rounded-full w-4 h-4 flex items-center justify-center text-white">
+                    {wishlistCount ?? 0}
+                  </div>
+                )}
+              </Link>
 
               {/* Desktop language selector */}
               <div className="hidden lg:block">
