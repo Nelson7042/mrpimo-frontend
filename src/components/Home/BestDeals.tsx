@@ -6,10 +6,8 @@ import { useBestDeals } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
-import "swiper/css/pagination";
 import { Button } from "@/components/ui/button";
 
 
@@ -262,17 +260,8 @@ export default function BestDeals() {
       <div className="w-full">
         <Swiper
           ref={swiperRef}
-          modules={[Navigation, Pagination]}
           spaceBetween={16}
           slidesPerView={2.3}
-          navigation={{
-            prevEl: `.${prevClass}`,
-            nextEl: `.${nextClass}`,
-          }}
-          pagination={{
-            clickable: true,
-            dynamicBullets: true,
-          }}
           breakpoints={{
             480: { slidesPerView: 2 },
             640: { slidesPerView: 2 },
@@ -287,15 +276,6 @@ export default function BestDeals() {
             </SwiperSlide>
           ))}
         </Swiper>
-
-        <div className="flex justify-center items-center gap-4 mt-4">
-          <Button variant="outline" size="sm" className={prevClass}>
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" className={nextClass}>
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
       </div>
     );
   };

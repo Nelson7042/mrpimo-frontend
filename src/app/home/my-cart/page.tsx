@@ -37,6 +37,7 @@ export default function CartPage() {
   const isLoggedIn = !!user;
   const { openModal } = useAuthModalStore();
 
+  console.log("cartSummary", cartSummary)
 
   useCartSync();
 
@@ -93,7 +94,7 @@ export default function CartPage() {
   };
 
   const BuyNow = () => {
-    const subtotal = cartSummary.subtotal;
+    const subtotal = cartSummary?.subtotal;
     const shipping = 50000;
     const discount = 5000;
     const tax = 5000;

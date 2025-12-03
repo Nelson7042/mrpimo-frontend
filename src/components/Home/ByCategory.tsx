@@ -6,10 +6,7 @@ import Link from "next/link";
 import { useCategories } from "@/hooks/queries";
 import { Category } from "@/types/product.type";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
-import "swiper/css/navigation";
-import "swiper/css/pagination";
 import { Button } from "@/components/ui/button";
 
 const ShopCategoriesComponent = () => {
@@ -38,17 +35,8 @@ const ShopCategoriesComponent = () => {
       <div className="w-full">
         <Swiper
           ref={categoriesSwiperRef}
-          modules={[ Pagination]}
           spaceBetween={16}
           slidesPerView={2.3}
-          // navigation={{
-          //   prevEl: '.categories-prev',
-          //   nextEl: '.categories-next',
-          // }}
-          pagination={{
-            clickable: true,
-            dynamicBullets: true,
-          }}
           breakpoints={{
             480: { slidesPerView: 2.5 },
             640: { slidesPerView: 3 },
@@ -78,15 +66,6 @@ const ShopCategoriesComponent = () => {
             </SwiperSlide>
           ))}
         </Swiper>
-
-        <div className="flex justify-center items-center gap-4 mt-6">
-          <Button variant="outline" size="sm" className="categories-prev">
-            <ChevronLeft className="w-4 h-4" />
-          </Button>
-          <Button variant="outline" size="sm" className="categories-next">
-            <ChevronRight className="w-4 h-4" />
-          </Button>
-        </div>
       </div>
     </div>
   );

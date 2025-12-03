@@ -54,13 +54,13 @@ interface CartState {
 
 const calculateCartSummary = (items: CartItem[]): CartSummary => {
   const subtotal = items.reduce((total, item) => {
-    const price = item.selectedVariant?.price || 0;
+    const price = Number(item.selectedVariant?.price || item.priceInfo?.displayPrice || item.product?.price || 0);
     return total + price * item.quantity;
   }, 0);
 
   return {
     subtotal,
-    total: subtotal, // yoo we will add taxes, shipping, discounts here
+    total: subtotal,
     totalItems: items.length,
     totalQuantity: items.reduce((total, item) => total + item.quantity, 0),
   };
@@ -323,9 +323,15 @@ export const useCartStore = create<CartState>()(
                   optionId: item.optionId,
                   variantName: "",
                   optionValue: "",
-                  price: item.price,
+                  price: item.priceInfo?.displayPrice || item.price,
                 }
-              : undefined,
+              : {
+                  variantId: "",
+                  optionId: "",
+                  variantName: "",
+                  optionValue: "",
+                  price: item.priceInfo?.displayPrice || item.price,
+                },
             addedAt: item.addedAt || new Date().toISOString(),
             priceInfo: item.priceInfo,
           }));

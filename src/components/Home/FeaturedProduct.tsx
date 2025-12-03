@@ -135,16 +135,17 @@ export default function FeaturedProducts() {
         </div>
       </div>
     ) : (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
-        <div className="flex items-center justify-center min-h-[400px]">
-          <div className="text-center">
-            <p className="text-gray-600 mb-4">No featured products found</p>
-            <p className="text-gray-500 text-sm">
-              There are currently no featured products available.
-            </p>
-          </div>
-        </div>
-      </div>
+      <></>
+      // <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
+      //   <div className="flex items-center justify-center min-h-[400px]">
+      //     <div className="text-center">
+      //       <p className="text-gray-600 mb-4">No featured products found</p>
+      //       <p className="text-gray-500 text-sm">
+      //         There are currently no featured products available.
+      //       </p>
+      //     </div>
+      //   </div>
+      // </div>
     
     )
   );

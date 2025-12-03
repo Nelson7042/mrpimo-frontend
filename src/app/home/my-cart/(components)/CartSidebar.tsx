@@ -20,18 +20,17 @@ const CartSidebar = (props: Props) => {
     data,
     error,
   } = useValidateCart();
-  const { summary } = useCartStore();
+  const { summary, items } = useCartStore();
   const hasValidatedRef = React.useRef(false);
   const prevItemsCountRef = React.useRef(summary.totalItems);
 
   useEffect(() => {
-    // Reset validation flag when items count changes
     if (prevItemsCountRef.current !== summary.totalItems) {
       hasValidatedRef.current = false;
       prevItemsCountRef.current = summary.totalItems;
     }
 
-    if (summary.totalItems === 0 || hasValidatedRef.current) return;
+    if (!props.user || summary.totalItems === 0 || hasValidatedRef.current) return;
 
     const runValidation = async () => {
       try {
@@ -43,12 +42,19 @@ const CartSidebar = (props: Props) => {
     };
 
     runValidation();
-  }, [summary.totalItems]);
+  }, [summary.totalItems, props.user]);
 
-    if (isValidating) {
-      return (<CartTotalSkeleton />)
-    }
+  if (isValidating && props.user) {
+    return (<CartTotalSkeleton />)
+  }
 
+  const pricing = props.user && data?.checkout?.pricing ? data.checkout.pricing : {
+    currency: items[0]?.priceInfo?.currencySymbol || "₦",
+    subtotal: summary.subtotal,
+    shipping: 0,
+    tax: 0,
+    total: summary.total
+  };
 
   return (
     <div className="lg:col-span-1">
@@ -59,32 +65,30 @@ const CartSidebar = (props: Props) => {
             <div className="flex justify-between">
               <span>Sub Total:</span>
               <span>
-                {data?.checkout?.pricing?.currency}{" "}
-                {data?.checkout?.pricing?.subtotal.toLocaleString()}
+                {pricing.currency}{" "}
+                {pricing.subtotal.toLocaleString()}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping:</span>
-              {data?.checkout?.pricing?.currency}{" "}
-              {data?.checkout?.pricing?.shipping.toLocaleString()}
+              <span>
+                {pricing.currency}{" "}
+                {pricing.shipping.toLocaleString()}
+              </span>
             </div>
-            {/* <div className="flex justify-between">
-                    <span>Discount:</span>
-                    <span>₦ {discount.toLocaleString()}</span>
-                  </div> */}
             <div className="flex justify-between">
               <span>Tax:</span>
               <span>
-                {data?.checkout?.pricing?.currency}{" "}
-                {data?.checkout?.pricing?.tax.toLocaleString()}
+                {pricing.currency}{" "}
+                {pricing.tax.toLocaleString()}
               </span>
             </div>
             <hr />
             <div className="flex justify-between font-bold text-lg">
               <span>TOTAL:</span>
               <span>
-                {data?.checkout?.pricing?.currency}{" "}
-                {data?.checkout?.pricing?.total.toLocaleString()}
+                {pricing.currency}{" "}
+                {pricing.total.toLocaleString()}
               </span>
             </div>
           </div>
