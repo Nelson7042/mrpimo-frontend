@@ -51,7 +51,7 @@ export const cartService = {
 
   async updateCartItem(productId: string, data: UpdateCartRequest): Promise<CartResponse> {
     const response = await fetchWithAuth(`${BASE_URL}/products/cart/${productId}`, {
-      method: 'DELETE',
+      method: 'PUT',
       body: JSON.stringify(data)
     });
     return response.json();

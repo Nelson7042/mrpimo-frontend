@@ -329,7 +329,6 @@ export default function CartPage() {
           {/* Cart Total Sidebar */}
           <CartSidebar
             user={user} 
-
             setShowValidationModal={setShowValidationModal}
             openModal={openModal}
             setValidationData={setValidationData}

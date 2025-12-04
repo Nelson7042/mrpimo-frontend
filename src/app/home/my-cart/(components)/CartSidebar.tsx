@@ -23,37 +23,43 @@ const CartSidebar = (props: Props) => {
   const { summary, items } = useCartStore();
   const hasValidatedRef = React.useRef(false);
   const prevItemsCountRef = React.useRef(summary.totalItems);
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
 
+  // Force re-render when cart summary changes
   useEffect(() => {
-    if (prevItemsCountRef.current !== summary.totalItems) {
-      hasValidatedRef.current = false;
-      prevItemsCountRef.current = summary.totalItems;
-    }
+    forceUpdate();
+  }, [summary.subtotal, summary.total, summary.totalItems]);
 
-    if (!props.user || summary.totalItems === 0 || hasValidatedRef.current) return;
+  // useEffect(() => {
+  //   if (prevItemsCountRef.current !== summary.totalItems) {
+  //     hasValidatedRef.current = false;
+  //     prevItemsCountRef.current = summary.totalItems;
+  //   }
 
-    const runValidation = async () => {
-      try {
-        const result = await validateCart();
-        hasValidatedRef.current = true;
-      } catch (err) {
-        console.error("Validation failed:", err);
-      }
-    };
+  //   if (!props.user || summary.totalItems === 0 || hasValidatedRef.current) return;
 
-    runValidation();
-  }, [summary.totalItems, props.user]);
+  //   const runValidation = async () => {
+  //     try {
+  //       const result = await validateCart();
+  //       hasValidatedRef.current = true;
+  //     } catch (err) {
+  //       console.error("Validation failed:", err);
+  //     }
+  //   };
 
-  if (isValidating && props.user) {
-    return (<CartTotalSkeleton />)
-  }
+  //   runValidation();
+  // }, [summary.totalItems, props.user]);
+
+  // if (isValidating && props.user) {
+  //   return (<CartTotalSkeleton />)
+  // }
 
   const pricing = props.user && data?.checkout?.pricing ? data.checkout.pricing : {
-    currency: items[0]?.priceInfo?.currencySymbol || "₦",
-    subtotal: summary.subtotal,
+    currency: items[0]?.priceInfo?.currencySymbol || items[0]?.priceInfo?.displayCurrency || "₦",
+    subtotal: summary.subtotal || 0,
     shipping: 0,
     tax: 0,
-    total: summary.total
+    total: summary.total || 0
   };
 
   return (

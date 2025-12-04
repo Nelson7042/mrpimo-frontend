@@ -8,7 +8,7 @@ interface CartValidationProps {
 }
 
 export const CartValidation: React.FC<CartValidationProps> = ({ unavailableItems }) => {
-  if (unavailableItems.length === 0) {
+  if (!unavailableItems || unavailableItems.length === 0) {
     return <div className="text-green-600">All items are available!</div>;
   }
 

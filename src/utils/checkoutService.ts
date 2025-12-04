@@ -68,6 +68,7 @@ export const checkoutService = {
   async validateCart() {
     const response = await fetchWithAuth(`${API_BASE_URL}/checkout/validate`, {
       method: 'POST',
+      body: JSON.stringify({}),
     });
     const data = await response.json()
     return data;
