@@ -91,6 +91,8 @@ export const useCartStore = create<CartState>()(
 
       addToCart: async (product, quantity = 1, selectedVariant) => {
         const { items, calculateSummary, generateCartItemKey } = get();
+
+        console.log("Adding to cart:", product.name, quantity, selectedVariant)
         const isLoggedIn = !!useUserStore.getState().user;
 
         set({ isLoading: true, error: null });
@@ -351,23 +353,27 @@ export const useCartStore = create<CartState>()(
 
       syncCartOnLogin: async () => {
         const { items } = get();
-
         set({ isLoading: true, error: null });
 
         try {
           if (items.length > 0) {
-            // Merge local cart items with backend cart
+            console.log(`Syncing ${items.length} local cart items...`);
             await cartService.mergeCart(items);
-            // Clear local items after successful merge
-            set({ items: [] });
+            console.log("Cart merge successful");
           }
-          // Load cart from backend (this will get the merged cart)
+          
           await get().loadCart();
+          
+          if (items.length > 0) {
+            localStorage.removeItem("mprimo-cart");
+          }
         } catch (error) {
+          console.error("Cart sync failed:", error);
           set({
             error:
               error instanceof Error ? error.message : "Failed to sync cart",
           });
+          toast.error("Failed to sync cart", toastConfigError);
         } finally {
           set({ isLoading: false });
         }

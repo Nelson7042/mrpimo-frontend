@@ -55,11 +55,11 @@ const CartSidebar = (props: Props) => {
   // }
 
   const pricing = props.user && data?.checkout?.pricing ? data.checkout.pricing : {
-    currency: items[0]?.priceInfo?.currencySymbol || items[0]?.priceInfo?.displayCurrency || "₦",
+    currency: items[0]?.priceInfo?.currencySymbol || "₦",
     subtotal: summary.subtotal || 0,
     shipping: 0,
     tax: 0,
-    total: summary.total || 0
+    total: summary.subtotal || 0
   };
 
   return (
@@ -71,30 +71,30 @@ const CartSidebar = (props: Props) => {
             <div className="flex justify-between">
               <span>Sub Total:</span>
               <span>
-                {pricing.currency}{" "}
-                {pricing.subtotal.toLocaleString()}
+                {pricing.currency}
+                {pricing.subtotal?.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping:</span>
               <span>
-                {pricing.currency}{" "}
-                {pricing.shipping.toLocaleString()}
+                {pricing.currency}
+                {pricing.shipping?.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Tax:</span>
               <span>
-                {pricing.currency}{" "}
-                {pricing.tax.toLocaleString()}
+                {pricing.currency}
+                {pricing.tax?.toFixed(2)}
               </span>
             </div>
             <hr />
             <div className="flex justify-between font-bold text-lg">
               <span>TOTAL:</span>
               <span>
-                {pricing.currency}{" "}
-                {pricing.total.toLocaleString()}
+                {pricing.currency}
+                {pricing.total?.toFixed(2)}
               </span>
             </div>
           </div>

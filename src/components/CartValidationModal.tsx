@@ -78,19 +78,19 @@ export const CartValidationModal = ({
                 <div className="space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
-                    <span>{checkout?.pricing.currency} {checkout?.pricing.subtotal}</span>
+                    <span>{checkout?.pricing.currency} {checkout?.pricing.subtotal?.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Tax:</span>
-                    <span>{checkout?.pricing.currency} {checkout?.pricing.tax}</span>
+                    <span>{checkout?.pricing.currency} {checkout?.pricing.tax?.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Shipping:</span>
-                    <span>{checkout?.pricing.currency} {checkout?.pricing.shipping}</span>
+                    <span>{checkout?.pricing.currency} {checkout?.pricing.shipping?.toFixed(2)}</span>
                   </div>
                   <div className="flex justify-between font-medium border-t pt-1">
                     <span>Total:</span>
-                    <span>{checkout?.pricing.currency} {checkout?.pricing.total}</span>
+                    <span>{checkout?.pricing.currency} {checkout?.pricing.total?.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

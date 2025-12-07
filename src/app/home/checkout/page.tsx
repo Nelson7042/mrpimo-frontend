@@ -77,7 +77,28 @@ export default function CheckoutPage() {
     if (cartItems.length > 0) {
       validateCart();
     }
-  }, []);
+  }, [cartItems.length]);
+
+  useEffect(() => {
+    if (user) {
+      const billingAddr = user.addresses?.find(addr => addr.type === "billing");
+      setFormData({
+        firstName: user.profile?.firstName || "",
+        middleName: "",
+        lastName: user.profile?.lastName || "",
+        email: user.email || "",
+        address: {
+          type: "billing" as const,
+          street: billingAddr?.street || "",
+          city: billingAddr?.city || "",
+          state: billingAddr?.state || "",
+          country: billingAddr?.country || "",
+          postalCode: billingAddr?.postalCode || "",
+          isDefault: true,
+        },
+      });
+    }
+  }, [user]);
 
   const checkout = validationData?.checkout;
   const subtotal = checkout?.pricing?.subtotal || 0;
@@ -125,7 +146,6 @@ export default function CheckoutPage() {
     try {
       // Only add addresses if user has no addresses yet
       if (!user?.addresses?.length) {
-        console.log('Step 1: Saving billing address...');
         await addAddressMutation.mutateAsync({
           address: formData.address,
           duplicateForShipping: sameAsShipping
@@ -147,6 +167,7 @@ export default function CheckoutPage() {
         quantity: item.quantity,
         variantId: item.variantId,
         price: item.price,
+        optionId:item.optionId
       })) || [];
 
       let paymentData: any = {
@@ -170,6 +191,7 @@ export default function CheckoutPage() {
             provider: fiatProvider,
             items,
             pricing: { subtotal, shipping, tax, total, currency },
+            deliveryMethod: 'standard',
           });
           setShowPaymentUI(true);
         }
@@ -189,6 +211,7 @@ export default function CheckoutPage() {
             type: 'crypto',
             items,
             pricing: { subtotal, shipping, tax, total, currency },
+            deliveryMethod: 'standard',
           });
         }
       }
@@ -212,6 +235,7 @@ export default function CheckoutPage() {
           provider: paymentData.provider,
         },
         address: formData.address,
+        deliveryMethod: paymentData.deliveryMethod || "standard",
       };
 
       console.log('Creating order after payment...', orderData);
@@ -230,7 +254,8 @@ export default function CheckoutPage() {
       }
     } catch (error: any) {
       console.error("Order creation failed:", error);
-      toast.error(error.message || "Failed to create order");
+      const errorMsg = error?.response?.data?.message || error?.message || "Failed to create order";
+      toast.error(errorMsg);
     } finally {
       setIsProcessing(false);
     }
@@ -276,7 +301,7 @@ export default function CheckoutPage() {
   return (
     <>
       <div className="min-h-screen font-roboto bg-gray-50 body-padding">
-        <div className=" pt-4">
+        <div className=" py-4 ">
           {/* Breadcrumb */}
           <Breadcrumbs
             items={manualBreadcrumbs}
@@ -288,7 +313,7 @@ export default function CheckoutPage() {
             {/* Billing Information */}
             <div className="lg:col-span-2">
               <div className="bg-white rounded-lg p-3 md:p-6">
-                <h2 className="text-lg md:text-2xl font-bold mb-2">Billing Information</h2>
+                <h2 className="text-base md:text-lg font-bold mb-1 md:mb-2">Billing Information</h2>
                 <p className="text-gray-600 mb-3 md:mb-6 text-sm md:text-base ">
                   Provide your billing information to proceed
                 </p>
@@ -305,7 +330,7 @@ export default function CheckoutPage() {
                         onChange={(e) =>
                           handleInputChange("firstName", e.target.value)
                         }
-                        className="mt-1"
+                        className="mt-1 font-normal"
                       />
                     </div>
                     <div>
@@ -474,7 +499,7 @@ export default function CheckoutPage() {
 
                 {/* Payment Method */}
                 <div className="mt-8">
-                  <h3 className="text-xl font-bold mb-2">Payment Method</h3>
+                  <h3 className="text-base md:text-lg font-bold mb-2">Payment Method</h3>
                   <p className="text-gray-600 mb-6">
                     Choose your preferred payment method
                   </p>
@@ -592,9 +617,9 @@ export default function CheckoutPage() {
 
             {/* Order Summary */}
             <div className="lg:col-span-1">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-bold text-lg mb-4">Order Summary</h3>
+              <Card className=" border-0 shadow-none">
+                <CardContent className="p-4 border-0 shadow-none">
+                  <h3 className="font-bold text-base md:text-lg mb-4">Order Summary</h3>
 
                   {isValidating ? (
                     <div className="flex justify-center py-8">
@@ -682,20 +707,20 @@ export default function CheckoutPage() {
           {/* Success Modal */}
           <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
             <DialogContent className="sm:max-w-md">
-              <div className="flex flex-col items-center text-center p-6">
+              <div className="flex flex-col items-center text-center">
                 <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
                   <Check className="w-8 h-8 text-green-600" />
                 </div>
-                <h3 className="text-xl font-bold mb-2">
+                <h3 className="text-base md:text-lg font-bold mb-2">
                   Order Placed Successfully
                 </h3>
-                <p className="text-gray-600 mb-6">
+                <p className="text-gray-600 mb-6 text-sm ">
                   Your Order has been placed successfully. Click Track Order to
                   check progress
                 </p>
                 <div className="space-y-3 w-full">
                   <Button 
-                    className="w-full bg-blue-600 hover:bg-blue-700"
+                    className="w-full bg-primary hover:bg-blue-700"
                     onClick={() => router.push('/home/user/orders')}
                   >
                     View Orders
@@ -799,8 +824,16 @@ export default function CheckoutPage() {
           {/* Stripe Payment Modal */}
           <Dialog open={showPaymentUI} onOpenChange={setShowPaymentUI}>
             <DialogContent className="sm:max-w-md">
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-6">Complete Payment</h3>
+              <div className="relative">
+                {isProcessing && (
+                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50 rounded-lg">
+                    <div className="text-center">
+                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                      <p className="text-sm text-gray-600">Creating your order...</p>
+                    </div>
+                  </div>
+                )}
+                <h3 className="textsm md:text-lg font-bold mb-4">Complete Payment</h3>
                 {paymentIntentData?.clientSecret && (
                   <Elements stripe={stripePromise}>
                     <StripePaymentForm
@@ -810,7 +843,7 @@ export default function CheckoutPage() {
                       onSuccess={(paymentIntentId) => {
                         handleCreateOrder({
                           ...paymentIntentData,
-                          type: 'fiat',
+                          type: 'stripe',
                           paymentIntentId,
                         });
                       }}

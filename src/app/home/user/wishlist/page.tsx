@@ -25,8 +25,8 @@ export default function WishlistPage() {
     const product = {
       _id: item.productId,
       name: item.name,
-      images: item.images,
-      price: item.price
+      images: item.images || [],
+      price: item.priceInfo?.displayPrice || item.price
     }
     await addToCart(product, 1)
   }
@@ -85,7 +85,7 @@ export default function WishlistPage() {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
           <div className="flex items-center space-x-2 mb-4 sm:mb-0">
-            <h1 className="text-2xl font-bold">My Wishlist</h1>
+            <h1 className="text-lg md:text-xl lg:text-2xl font-bold">My Wishlist</h1>
             <span className="text-gray-600">{wishlistCount} Items</span>
           </div>
           <Button
@@ -144,10 +144,20 @@ export default function WishlistPage() {
               <div key={item.productId} className="p-4">
                 {/* Mobile Layout */}
                 <div className="md:hidden space-y-3">
-                  <div className="flex space-x-3">
+                  <Link
+                    href={{
+                      pathname: "/home/product-details/[id]",
+                      query: {
+                        id: item.productId,
+                        productData: JSON.stringify({ _id: item.productId, name: item.name, images: item.images, price: item.priceInfo?.displayPrice || item.price }),
+                      },
+                    }}
+                    as={`/home/product-details/${item.productId}`}
+                    className="flex space-x-3"
+                  >
                     <div className="relative">
                       <Image
-                        src={item.images?.[0] || "/placeholder.svg"}
+                        src={item.images[0] || "/placeholder.svg"}
                         alt={item.name}
                         width={60}
                         height={60}
@@ -158,7 +168,7 @@ export default function WishlistPage() {
                       <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
                       <p className="text-sm text-gray-500 mt-1">Added {new Date(item.addedAt).toLocaleDateString()}</p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center space-x-2">
                       <span className="font-bold">{`${item.priceInfo.currencySymbol}${item.priceInfo.displayPrice.toLocaleString()}`}</span>
@@ -187,10 +197,20 @@ export default function WishlistPage() {
 
                 {/* Desktop Layout */}
                 <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
-                  <div className="col-span-5 flex items-center space-x-3">
+                  <Link
+                    href={{
+                      pathname: "/home/product-details/[id]",
+                      query: {
+                        id: item.productId,
+                        productData: JSON.stringify({ _id: item.productId, name: item.name, images: item.images, price: item.priceInfo?.displayPrice || item.price }),
+                      },
+                    }}
+                    as={`/home/product-details/${item.productId}`}
+                    className="col-span-5 flex items-center space-x-3"
+                  >
                     <div className="relative">
                       <Image
-                        src={item.images?.[0] || "/placeholder.svg"}
+                        src={item.images[0] || "/placeholder.svg"}
                         alt={item.name}
                         width={80}
                         height={80}
@@ -201,7 +221,7 @@ export default function WishlistPage() {
                       <h3 className="font-medium">{item.name}</h3>
                       <p className="text-xs text-gray-500">Added {new Date(item.addedAt).toLocaleDateString()}</p>
                     </div>
-                  </div>
+                  </Link>
                   <div className="col-span-2">
                     <div className="flex items-center space-x-2">
                       <span className="font-bold">{`${item.priceInfo.currencySymbol}${item.priceInfo.displayPrice.toLocaleString()}`}</span>

@@ -103,8 +103,8 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
 
               <div className=" mt-5 md:mt-8 flex flex-col gap-4">
                 <button
-                  // onClick={action}
-                  className={`w-full py-2 md:py-3 text-sm text-center px-4 flex items-center justify-center  bg-[#F6B76F]  text-[#121212] rounded-md`}
+                  onClick={() => window.location.href = 'http://localhost:5800/api/v1/auth/google'}
+                  className={`w-full py-2 md:py-3 text-sm text-center px-4 flex items-center justify-center  bg-[#F6B76F]  text-[#121212] rounded-md hover:bg-[#F5A94E] transition-colors`}
                 >
                   <svg
                     width="25"

@@ -37,7 +37,6 @@ export default function CartPage() {
   const isLoggedIn = !!user;
   const { openModal } = useAuthModalStore();
 
-  console.log("cartSummary", cartSummary)
 
   useCartSync();
 
@@ -163,14 +162,9 @@ export default function CartPage() {
                               </p>
                               <div className="flex items-center space-x-2 mt-2">
                                 <span className="font-bold text-sm">
-                                  {item?.priceInfo?.displayCurrency}{" "}
-                                  {item?.priceInfo?.displayPrice.toLocaleString()}
+                                  {item?.priceInfo?.currencySymbol}
+                                  {item?.priceInfo?.displayPrice?.toFixed(2)}
                                 </span>
-                                {/* {item.badge && (
-                                <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 text-xs">
-                                  {item.badge}
-                                </Badge>
-                              )} */}
                               </div>
                             </div>
                           </div>
@@ -210,16 +204,10 @@ export default function CartPage() {
                             <Plus className="w-3 h-3" />
                           </Button>
                         </div>
-                        {item?.priceInfo?.exchangeRate && (
-                          <div className="font-bold text-sm">
-                            {item?.priceInfo?.displayCurrency}{" "}
-                            {(
-                              (item.selectedVariant?.price ?? 0) *
-                              item.priceInfo.exchangeRate *
-                              item.quantity
-                            ).toFixed(2)}
-                          </div>
-                        )}
+                        <div className="font-bold text-sm">
+                          {item?.priceInfo?.currencySymbol}
+                          {(item?.priceInfo?.displayPrice || 0 * item.quantity).toFixed(2)}
+                        </div>
                       </div>
                     </div>
 
@@ -270,15 +258,8 @@ export default function CartPage() {
                       <div className="col-span-2">
                         <div className="flex items-center space-x-2">
                           <span className="font-bold">
-                            {item?.priceInfo?.exchangeRate && (
-                              <div className="font-bold text-sm">
-                                {item?.priceInfo?.currencySymbol}
-                                {(
-                                  (item.selectedVariant?.price ?? 0) *
-                                  item.priceInfo.exchangeRate
-                                ).toFixed(2)}
-                              </div>
-                            )}
+                            {item?.priceInfo?.currencySymbol}
+                            {item?.priceInfo?.displayPrice?.toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -309,16 +290,10 @@ export default function CartPage() {
                           </Button>
                         </div>
                       </div>
-                      {item?.priceInfo?.exchangeRate && (
-                        <div className="font-bold text-sm">
-                          {item?.priceInfo?.currencySymbol}
-                          {(
-                            (item.selectedVariant?.price ?? 0) *
-                            item.priceInfo.exchangeRate *
-                            item.quantity
-                          ).toFixed(2)}
-                        </div>
-                      )}
+                      <div className="col-span-2 font-bold">
+                        {item?.priceInfo?.currencySymbol}
+                        {(item?.priceInfo?.displayPrice || 0 * item.quantity).toFixed(2)}
+                      </div>
                     </div>
                   </div>
                 ))}

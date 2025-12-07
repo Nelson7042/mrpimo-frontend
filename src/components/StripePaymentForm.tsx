@@ -65,7 +65,7 @@ export default function StripePaymentForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       <div>
-        <h3 className="text-lg font-semibold mb-2">Payment Details</h3>
+        <h3 className="text-sm md:text-sm font-semibold mb-2">Payment Details</h3>
         <p className="text-sm text-gray-600 mb-4">
           Amount: {currency} {amount.toLocaleString()}
         </p>

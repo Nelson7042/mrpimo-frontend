@@ -14,7 +14,6 @@ import { Heart } from "iconsax-react"
 
   export default function WishlistPage() {
     const router = useRouter()
-    const { addToCart } = useCartStore()
     
     useWishlistSync()
     
@@ -26,21 +25,8 @@ import { Heart } from "iconsax-react"
       isRemovingFromWishlist 
     } = useWishlist()
   
-  
-    
     const handleRemoveItem = (productId: string) => {
       removeFromWishlist(productId)
-    }
-  
-    const handleAddToCart = (item: any) => {
-      const cartItem = {
-        productId: item.productId._id,
-        name: item.name,
-        price: item.price,
-        image: item.productId.images[0] || '/placeholder.svg',
-        quantity: 1
-      }
-      addToCart(cartItem)
     }
   
     const handleRemoveAll = () => {
@@ -97,7 +83,7 @@ import { Heart } from "iconsax-react"
      <>
   
   
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-4 md:py-10 lg:py-10">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-6 md:py-10 lg:py-10">
           <div className=" ">
             {/* Breadcrumb */}
             <Breadcrumbs
@@ -126,9 +112,8 @@ import { Heart } from "iconsax-react"
           <div className="bg-white rounded-lg border overflow-hidden">
             {/* Desktop Header */}
             <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-gray-700">
-              <div className="col-span-5">Products</div>
-              <div className="col-span-2">Amount</div>
-              <div className="col-span-2">Status</div>
+              <div className="col-span-6">Products</div>
+              <div className="col-span-3">Amount</div>
               <div className="col-span-3">Actions</div>
             </div>
   
@@ -161,7 +146,17 @@ import { Heart } from "iconsax-react"
                 <div key={index} className=" p-2 md:p-4">
                   {/* Mobile Layout */}
                   <div className="md:hidden space-y-3">
-                    <div className="flex space-x-3">
+                    <Link
+                      href={{
+                        pathname: "/home/product-details/[id]",
+                        query: {
+                          id: item.productId,
+                          productData: JSON.stringify({ _id: item.productId, name: item.name, images: item.images, price: item.price }),
+                        },
+                      }}
+                      as={`/home/product-details/${item.productId}`}
+                      className="flex space-x-3"
+                    >
                       <div className="relative">
                         <Image
                           src={item.images?.[0] || "/placeholder.svg"}
@@ -180,46 +175,43 @@ import { Heart } from "iconsax-react"
                         <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
                         <p className="text-xs text-gray-500 mt-1">Added {new Date(item.addedAt).toLocaleDateString()}</p>
                       </div>
-                    </div>
+                    </Link>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <div className="flex items-center space-x-2">
-                          {getSalePrice(item) ? (
-                            <>
-                              <span className="font-bold text-red-600">₦ {getSalePrice(item).toLocaleString()}</span>
-                              <span className="text-sm text-gray-500 line-through">₦ {getProductPrice(item).toLocaleString()}</span>
-                            </>
-                          ) : (
-                            <span className="font-bold">₦ {getProductPrice(item).toLocaleString()}</span>
-                          )}
-                        </div>
+                        {getSalePrice(item) ? (
+                          <>
+                            <span className="font-bold text-red-600">₦ {getSalePrice(item).toLocaleString()}</span>
+                            <span className="text-sm text-gray-500 line-through">₦ {getProductPrice(item).toLocaleString()}</span>
+                          </>
+                        ) : (
+                          <span className="font-bold">₦ {getProductPrice(item).toLocaleString()}</span>
+                        )}
                       </div>
-                      <span className="text-sm text-green-600">Available</span>
                     </div>
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        className="flex-1 bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handleAddToCart(item)}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-1" />
-                        Add To Cart
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200"
-                        onClick={() => handleRemoveItem(item.productId)}
-                        disabled={isRemovingFromWishlist}
-                      >
-                        Remove
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200"
+                      onClick={() => handleRemoveItem(item.productId)}
+                      disabled={isRemovingFromWishlist}
+                    >
+                      Remove
+                    </Button>
                   </div>
   
                   {/* Desktop Layout */}
                   <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
-                    <div className="col-span-5 flex items-center space-x-3">
+                    <Link
+                      href={{
+                        pathname: "/home/product-details/[id]",
+                        query: {
+                          id: item.productId,
+                          productData: JSON.stringify({ _id: item.productId, name: item.name, images: item.images, price: item.price }),
+                        },
+                      }}
+                      as={`/home/product-details/${item.productId}`}
+                      className="col-span-6 flex items-center space-x-3"
+                    >
                       <div className="relative">
                         <Image
                           src={item.images?.[0] || "/placeholder.svg"}
@@ -238,13 +230,12 @@ import { Heart } from "iconsax-react"
                         <h3 className="font-medium">{item.name}</h3>
                         <p className="text-sm text-gray-500">Added {new Date(item.addedAt).toLocaleDateString()}</p>
                       </div>
-                    </div>
-                    <div className="col-span-2">
+                    </Link>
+                    <div className="col-span-3">
                       <div className="flex items-center space-x-2 whitespace-nowrap">
                         {getSalePrice(item) ? (
                           <>
                             <span className="font-bold text-red-600">₦ {getSalePrice(item).toLocaleString()}</span>
-                            {/* <span className="text-sm text-gray-500 line-through">₦ {getProductPrice(item).toLocaleString()}</span> */}
                           </>
                         ) : (
                           <span className="font-bold">₦ {getProductPrice(item).toLocaleString()}</span>
@@ -254,18 +245,7 @@ import { Heart } from "iconsax-react"
                         )}
                       </div>
                     </div>
-                    <div className="col-span-2">
-                      <span className="text-green-600">Available</span>
-                    </div>
-                    <div className="col-span-3 flex space-x-2">
-                      <Button
-                        size="sm"
-                        className="bg-blue-600 hover:bg-blue-700"
-                        onClick={() => handleAddToCart(item)}
-                      >
-                        <ShoppingCart className="w-4 h-4 mr-1" />
-                        Add To Cart
-                      </Button>
+                    <div className="col-span-3">
                       <Button
                         size="sm"
                         className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200"
