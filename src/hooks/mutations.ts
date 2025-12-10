@@ -755,3 +755,24 @@ export const useCreateBuyNowOrder = () => {
     mutationFn: createBuyNowOrder,
   });
 };
+
+// Fetch active banners (public API - no auth required)
+const fetchActiveBanners = async (): Promise<{ success: boolean; data: any[] }> => {
+  const response = await fetch(`${API_BASE_URL}/banners/active`, {
+    method: 'GET',
+    headers: { 'Content-Type': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || 'Failed to fetch banners');
+  }
+
+  return response.json();
+};
+
+export const useFetchActiveBanners = () => {
+  return useMutation({
+    mutationFn: fetchActiveBanners,
+  });
+};

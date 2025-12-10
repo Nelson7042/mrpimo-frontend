@@ -20,7 +20,7 @@ const Modal2: React.FC<ModalProps> = ({ isOpen, onClose, children }) => {
       <div className="flex items-center justify-end min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
         <div
           onClick={onClose}
-          className="fixed inset-0 transition-opacity bg-[#29292938] "
+          className="fixed inset-0 transition-opacity backdrop-blur-xs "
           aria-hidden="true"
         ></div>
         {/* <!-- This element is to trick the browser into centering the modal contents. --> */}

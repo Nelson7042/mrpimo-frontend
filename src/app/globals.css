@@ -50,7 +50,15 @@
 .border-secondary {
   border-color: var(--secondary-color);
 }
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none; /* Internet Explorer 10+ */
+  scrollbar-width: none; /* Firefox */
+}
 
+.scrollbar-hide::-webkit-scrollbar {
+  display: none; /* Safari and Chrome */
+}
 
 @layer utilities {
   @keyframes loading-bar {

@@ -284,7 +284,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
           optionId: option.id || option._id,
           variantName: variant.name,
           optionValue: option.value,
-          price: option.price,
+          price: option.salePrice || option.price,
         };
       }
 

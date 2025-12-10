@@ -70,14 +70,14 @@ function StripePaymentForm({ amount, currency, onSuccess, onClose }: {
           type="button"
           onClick={onClose}
           disabled={isProcessing}
-          className="flex-1 px-4 py-3 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          className="flex-1 px-4 py-2 md:py-3 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
         >
           Cancel
         </button>
         <button
           type="submit"
           disabled={!stripe || !elements || isProcessing}
-          className="flex-1 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+          className="flex-1 px-4 py-2 md:py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
         >
           {isProcessing ? (
             <>
@@ -104,12 +104,11 @@ export default function BuyNowStripeModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-70">
-      <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-70">
+      <div className="bg-white rounded-lg scrollbar-hide p-4 md:p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-6">
           <div className="flex items-center gap-2">
-            <CreditCard className="w-5 h-5 text-blue-600" />
-            <h3 className="text-xl font-bold">Complete Purchase</h3>
+            <h3 className="text-lg md:text-xl font-bold">Complete Purchase</h3>
           </div>
           <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
             <X className="w-5 h-5" />
@@ -119,7 +118,7 @@ export default function BuyNowStripeModal({
         <div className="mb-6 p-4 bg-blue-50 rounded-lg">
           <div className="flex justify-between items-center">
             <span className="text-blue-900 font-medium">Total Amount:</span>
-            <span className="text-2xl font-bold text-blue-900">{currency}{amount.toFixed(2)}</span>
+            <span className="text-lg md:text-xl font-bold text-blue-900">{currency}{amount.toFixed(2)}</span>
           </div>
         </div>
 

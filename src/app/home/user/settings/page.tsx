@@ -127,7 +127,6 @@ export default function SettingsPage() {
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
     { label: "My Account", href: "/home/user/settings" },
-    { label: "Dashboard", href: "/home" },
     { label: "Settings", href: null },
   ];
   const handleBreadcrumbClick = (

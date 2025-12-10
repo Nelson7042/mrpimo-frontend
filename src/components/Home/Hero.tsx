@@ -1,69 +1,102 @@
 import React, { useEffect, useState } from 'react';
 import { Package, Shield, ShoppingCart, MapPin, Users } from 'lucide-react';
 import Link from 'next/link';
-import {ProductProps} from "../../types/product.type"
+import { useFetchActiveBanners } from '@/hooks/mutations';
 
-interface MarketplaceSectionProps {
-  product?: ProductProps;
+interface Product {
+  _id: string;
+  name: string;
+  images: string[];
+  slug: string;
+  variants?: any[];
+  inventory?: any;
 }
 
-const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
+interface Banner {
+  _id: string;
+  title: string;
+  content?: string;
+  imageUrl?: string;
+  backgroundColor?: string;
+  location: 'big-banner' | 'small-banner-1' | 'small-banner-2';
+  products: Product[];
+}
+
+const MarketplaceSection = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
-    const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(true);
+  const [banners, setBanners] = useState<{
+    bigBanner?: Banner;
+    smallBanner1?: Banner;
+    smallBanner2?: Banner;
+  }>({});
 
-  
-  const carouselItems = [
-    {
-      title: "The Best Place to Buy",
-      subtitle: "PS5",
-      description: "Bid now on this PS5 in immaculate condition - unleash your gaming potential",
-      buttonText: "Buy Now",
-      image: "/images/ps5.png",
-      badge: "Starting ₦200K"
-    },
-    {
-      title: "Premium Gaming Setup",
-      subtitle: "Xbox Series X",
-      description: "Experience next-gen gaming with this pristine Xbox Series X console",
-      buttonText: "Buy Now",
-          image: "/images/ps5.png",
-
-      badge: "Starting ₦180K"
-    },
-    {
-      title: "Gaming Essentials",
-      subtitle: "Nintendo Switch",
-      description: "Portable gaming at its finest - perfect condition Nintendo Switch",
-      buttonText: "Buy Now",
-      image: "/images/ps5.png",
-      badge: "Starting ₦120K"
-    }
-  ];
+  const fetchBannersMutation = useFetchActiveBanners();
 
   useEffect(() => {
-    if (!isAutoPlaying) return;
+    fetchBannersMutation.mutate(undefined, {
+      onSuccess: (response) => {
+        if (response.success) {
+          const bannersData = response.data;
+          const organized = {
+            bigBanner: bannersData.find((b: Banner) => b.location === 'big-banner'),
+            smallBanner1: bannersData.find((b: Banner) => b.location === 'small-banner-1'),
+            smallBanner2: bannersData.find((b: Banner) => b.location === 'small-banner-2'),
+          };
+          setBanners(organized);
+        }
+      },
+      onError: (error) => {
+        console.error('Error fetching banners:', error);
+      }
+    });
+  }, []);
+
+  const carouselItems = banners.bigBanner?.products?.slice(0, 3).map((product) => ({
+    title: banners.bigBanner?.title || 'Featured Product',
+    subtitle: product.name,
+    description: banners.bigBanner?.content || 'Check out this amazing product',
+    buttonText: 'Buy Now',
+    image: product.images?.[0] || '/images/ps5.png',
+    productId: product._id,
+    badge: getProductPrice(product),
+  })) || [];
+
+  function getProductPrice(product: Product) {
+    if (product.inventory?.listing?.type === 'auction') {
+      return `Starting ₦${product.inventory.listing.auction?.reservePrice || 0}`;
+    }
+    const firstVariant = product.variants?.[0];
+    const firstOption = firstVariant?.options?.[0];
+    return firstOption?.salePrice 
+      ? `₦${firstOption.salePrice}` 
+      : `₦${firstOption?.price || 0}`;
+  }
+
+  useEffect(() => {
+    if (!isAutoPlaying || carouselItems.length === 0) return;
     
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
-    }, 4000); 
+    }, 4000);
 
     return () => clearInterval(interval);
   }, [isAutoPlaying, carouselItems.length]);
 
   const nextSlide = () => {
-    setIsAutoPlaying(false); 
+    setIsAutoPlaying(false);
     setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
     setTimeout(() => setIsAutoPlaying(true), 10000);
   };
 
   const prevSlide = () => {
-    setIsAutoPlaying(false); 
+    setIsAutoPlaying(false);
     setCurrentSlide((prev) => (prev - 1 + carouselItems.length) % carouselItems.length);
     setTimeout(() => setIsAutoPlaying(true), 10000);
   };
 
-  const goToSlide = (index:number) => {
-    setIsAutoPlaying(false); 
+  const goToSlide = (index: number) => {
+    setIsAutoPlaying(false);
     setCurrentSlide(index);
     setTimeout(() => setIsAutoPlaying(true), 10000);
   };
@@ -80,30 +113,30 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
       title: "Secure Payment",
       description: "Easy international payment",
       image: "/images/payment.png"
-
     },
     {
       icon: <ShoppingCart className="w-8 h-8 text-yellow-500" />,
       title: "Buy New or Used Items",
       description: "Eco-friendly experience",
       image: "/images/buy.png"
-
     },
     {
       icon: <MapPin className="w-8 h-8 text-purple-500" />,
       title: "Real Time Tracking",
       description: "Keep track of your item",
       image: "/images/track.png"
-
     },
     {
       icon: <Users className="w-8 h-8 text-blue-500" />,
       title: "Open to Everyone",
       description: "Great experience for all",
       image: "/images/everyone.png"
-
     }
   ];
+
+  if (carouselItems.length === 0) {
+    return null;
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-8 pb-3 md:py-10 lg:py-10">
@@ -111,20 +144,25 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
         
         {/* Carousel Section */}
         <div className="lg:col-span-2">
-          <div className="bg-blue-100 flex flex-row from-[#E2E8F0] to-[#e5eaf0] rounded-md p-4 sm:p-6 lg:p-8 relative overflow-hidden sm:min-h-[320px]">
+          <div 
+            className="flex flex-row rounded-md p-4 sm:p-6 lg:p-8 relative overflow-hidden sm:min-h-[320px]"
+            style={{ backgroundColor: banners.bigBanner?.backgroundColor || '#E2E8F0' }}
+          >
             <div className="relative z-10 w-[55%] flex flex-col justify-center">
               <div className="text-blue-600 font-medium text-xs sm:text-sm mb-1 md:mb-2 flex items-center">
-                → {carouselItems[currentSlide].title}
+                → {carouselItems[currentSlide]?.title}
               </div>
-              <p className=" text-sm md:text-base font-semibold text-gray-800 mb-1 md:mb-3">
-                {carouselItems[currentSlide].subtitle}
+              <p className="text-sm md:text-base font-semibold text-gray-800 mb-1 md:mb-3">
+                {carouselItems[currentSlide]?.subtitle}
               </p>
               <p className="text-gray-600 text-sm sm:text-base mb-1.5 sm:mb-6 leading-relaxed">
-                {carouselItems[currentSlide].description}
+                {carouselItems[currentSlide]?.description}
               </p>
-              <button className="text-sm md:text-base p-2 md:px-6 md:py-3 bg-primary hover:bg-blue-700 font-normal text-white rounded-md transition-colors duration-200 shadow-lg hover:shadow-xl w-fit">
-                {carouselItems[currentSlide].buttonText}
-              </button>
+              <Link href={`/home/product-details/${carouselItems[currentSlide]?.productId}`}>
+                <button className="text-sm md:text-base p-2 md:px-6 md:py-3 bg-primary hover:bg-blue-700 font-normal text-white rounded-md transition-colors duration-200 shadow-lg hover:shadow-xl w-fit">
+                  {carouselItems[currentSlide]?.buttonText}
+                </button>
+              </Link>
               
               {/* Pagination Dots */}
               <div className="flex space-x-2 mt-3 md:mt-6">
@@ -132,7 +170,7 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
                   <div
                     key={index}
                     onClick={() => goToSlide(index)}
-                    className={`w-3 h-3 rounded-full transition-colors duration-200 touch-manipulation ${
+                    className={`w-3 h-3 rounded-full transition-colors duration-200 cursor-pointer ${
                       currentSlide === index ? 'bg-blue-600' : 'bg-gray-300 hover:bg-gray-400'
                     }`}
                   />
@@ -140,65 +178,96 @@ const MarketplaceSection = ({ product }: MarketplaceSectionProps) => {
               </div>
             </div>
 
-            <div className="flex items-center justify-center relative w-[45%] ">
+            <div className="flex items-center justify-center relative w-[45%]">
               <img 
-                src={carouselItems[currentSlide].image}
-                alt="Gaming Console"
+                src={carouselItems[currentSlide]?.image}
+                alt="Product"
                 className="w-[120px] sm:w-[100px] md:w-[140px] lg:w-[160px] h-[90px] sm:h-[180px] md:h-[220px] lg:h-[300px] object-contain rounded-lg"
               />
               <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-blue-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                {carouselItems[currentSlide].badge}
+                {carouselItems[currentSlide]?.badge}
               </div>
             </div>
-           
           </div>
         </div>
-
-       
 
         {/* Product Cards */}
         <div className="lg:col-span-1 space-y-4 flex flex-col justify-between hidden md:block">
-          <div className="card-responsive bg-gray-900 border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <div className="flex-1">
-                <h3 className="font-medium text-yellow-500 mb-2 sm:mb-3 text-sm sm:text-base">AUCTION FRIDAY</h3>
-                <div className="text-sm sm:text-base font-medium text-white mb-3 sm:mb-4 leading-tight">
-                  Fairly Used Apple iPad 28GB 5G Tablet
+          {banners.smallBanner1 && (
+            <div 
+              className="card-responsive border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+              style={{ backgroundColor: banners.smallBanner1.backgroundColor || '#1F2937' }}
+            >
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                <div className="flex-1">
+                  <h3 className="font-medium text-yellow-500 mb-2 sm:mb-3 text-sm sm:text-base">
+                    {banners.smallBanner1.title}
+                  </h3>
+                  <div className="text-sm sm:text-base font-medium text-white mb-3 sm:mb-4 leading-tight">
+                    {banners.smallBanner1.content || banners.smallBanner1.products[0]?.name}
+                  </div>
+                  <Link href={`/home/product-details/${banners.smallBanner1.products[0]?._id}`}>
+                    <button className="btn-mobile bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors duration-200">
+                      View Details
+                    </button>
+                  </Link>
                 </div>
-                <button className="btn-mobile bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors duration-200">
-                  View Details
-                </button>
+                {banners.smallBanner1.imageUrl ? (
+                  <img 
+                    src={banners.smallBanner1.imageUrl}
+                    alt={banners.smallBanner1.title}
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
+                  />
+                ) : (
+                  <img 
+                    src={banners.smallBanner1.products[0]?.images[0] || '/images/image.png'}
+                    alt={banners.smallBanner1.products[0]?.name}
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
+                  />
+                )}
               </div>
-              <img 
-                src="/images/image.png" 
-                alt="iPad"
-                className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
-              />
             </div>
-          </div>
+          )}
 
-          <div className="card-responsive bg-[#E2E8F0] border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200">
-            <div className="flex items-center space-x-3 sm:space-x-4">
-              <img 
-                src="/images/image.png" 
-                alt="AirPods Max"
-                className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
-              />
-              <div className="flex-1">
-                <h3 className="text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base font-medium">Apple Airpods Max - Silver</h3>
-                <div className="text-sm sm:text-base font-medium text-gray-900 mb-3 sm:mb-4">₦770,000</div>
-                <Link href="/product-details">
-                  <button className="btn-mobile bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors duration-200">
-                    View Details
-                  </button>
-                </Link>
+          {banners.smallBanner2 && (
+            <div 
+              className="card-responsive border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+              style={{ backgroundColor: banners.smallBanner2.backgroundColor || '#E2E8F0' }}
+            >
+              <div className="flex items-center space-x-3 sm:space-x-4">
+                {banners.smallBanner2.imageUrl ? (
+                  <img 
+                    src={banners.smallBanner2.imageUrl}
+                    alt={banners.smallBanner2.title}
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
+                  />
+                ) : (
+                  <img 
+                    src={banners.smallBanner2.products[0]?.images[0] || '/images/image.png'}
+                    alt={banners.smallBanner2.products[0]?.name}
+                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
+                  />
+                )}
+                <div className="flex-1">
+                  <h3 className="text-gray-900 mb-2 sm:mb-3 text-sm sm:text-base font-medium">
+                    {banners.smallBanner2.title}
+                  </h3>
+                  <div className="text-sm sm:text-base font-medium text-gray-900 mb-3 sm:mb-4">
+                    {banners.smallBanner2.content || getProductPrice(banners.smallBanner2.products[0])}
+                  </div>
+                  <Link href={`/home/product-details/${banners.smallBanner2.products[0]?._id}`}>
+                    <button className="btn-mobile bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors duration-200">
+                      View Details
+                    </button>
+                  </Link>
+                </div>
               </div>
             </div>
-          </div> 
+          )}
         </div>
       </div>
 
-      {/* Features Section - Mobile Responsive */}
+      {/* Features Section */}
       <div className="mt-6 sm:mt-8 hidden md:block">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3 sm:gap-4">
           {features.map((feature, index) => (
