@@ -169,7 +169,13 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   };
 
   const getSelectedOptionCurrency = () => {
-    return                         selectedVariant?.options[0]?.currencySymbol || "$";
+     if (!productData?.variants?.[0]) return  "$";
+    const variant = productData.variants[0];
+    const optionId = selectedOptions[variant._id || variant.id];
+    const option = variant.options?.find(
+      (opt: any) => (opt.id || opt._id) === optionId && opt.value
+    );
+    return option?.currencySymbol  || "$";
   };
 
   const getSelectedOptionStock = () => {
@@ -1080,11 +1086,11 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
           onSubmitOffer={handleSubmitOffer}
           isSubmitting={isSubmittingOffer}
           selectedOptionId={
-            selectedOptions[
+            (selectedOptions[
               productData?.variants?.[0]?._id ??
                 productData?.variants?.[0]?.id ??
                 ""
-            ] || ""
+            ] || "") as string
           }
         />
       )}
