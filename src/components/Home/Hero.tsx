@@ -50,6 +50,7 @@ const MarketplaceSection = () => {
         console.error('Error fetching banners:', error);
       }
     });
+    
   }, []);
 
   const carouselItems = banners.bigBanner?.products?.slice(0, 3).map((product) => ({

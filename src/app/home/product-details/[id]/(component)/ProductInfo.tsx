@@ -169,7 +169,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   };
 
   const getSelectedOptionCurrency = () => {
-    return (productData as any)?.priceInfo?.currencySymbol || "$";
+    return                         selectedVariant?.options[0]?.currencySymbol || "$";
   };
 
   const getSelectedOptionStock = () => {
@@ -882,7 +882,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                       displayType={"text"}
                       thousandSeparator={true}
                       prefix={
-                        (productData as any)?.priceInfo?.currencySymbol || "$"
+                        selectedVariant?.options[0]?.currencySymbol || "$"
                       }
                       decimalScale={2}
                       fixedDecimalScale={true}
