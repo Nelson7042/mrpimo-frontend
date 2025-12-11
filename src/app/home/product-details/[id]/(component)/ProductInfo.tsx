@@ -169,13 +169,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   };
 
   const getSelectedOptionCurrency = () => {
-     if (!productData?.variants?.[0]) return  (productData as any)?.priceInfo?.currencySymbol;
+    if (!productData?.variants?.[0])
+      return (productData as any)?.priceInfo?.currencySymbol;
     const variant = productData.variants[0];
     const optionId = selectedOptions[variant._id || variant.id];
     const option = variant.options?.find(
       (opt: any) => (opt.id || opt._id) === optionId && opt.value
     );
-    return option?.currencySymbol  || "$";
+    return option?.currencySymbol || "$";
   };
 
   const getSelectedOptionStock = () => {
@@ -871,8 +872,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                       displayType={"text"}
                       thousandSeparator={true}
                       prefix={
-                         getSelectedOptionCurrency() || (productData as any)?.priceInfo?.currencySymbol
-                       
+                        getSelectedOptionCurrency() ||
+                        (productData as any)?.priceInfo?.currencySymbol
                       }
                       decimalScale={2}
                       fixedDecimalScale={true}
