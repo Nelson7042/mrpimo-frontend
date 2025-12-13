@@ -176,7 +176,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     const option = variant.options?.find(
       (opt: any) => (opt.id || opt._id) === optionId && opt.value
     );
-    return option?.currencySymbol || "$";
+    return option?.currencySymbol || (productData as any)?.priceInfo?.currencySymbol;
   };
 
   const getSelectedOptionStock = () => {
