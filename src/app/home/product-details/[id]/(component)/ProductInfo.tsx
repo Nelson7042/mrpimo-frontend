@@ -91,7 +91,36 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   const { user } = useUserStore();
   const router = useRouter();
 
-  // console.log("Product Data in ProductInfo:", productData);
+  // Console log product data in ProductInfo component
+  useEffect(() => {
+    if (productData) {
+      const totalQty = calculateTotalQuantity(productData);
+      console.log("=== PRODUCT INFO COMPONENT ===");
+      console.log("Product Data:", productData);
+      console.log("Product ID:", productData._id);
+      console.log("Product Name:", productData.name);
+      console.log("Product Variants:", productData.variants);
+      console.log("Variant Options:", productData.variants?.map((v: any) => ({
+        variantId: v._id || v.id,
+        variantName: v.name,
+        options: v.options?.map((opt: any) => ({
+          optionId: opt._id || opt.id,
+          value: opt.value,
+          price: opt.price,
+          salePrice: opt.salePrice,
+          displayPrice: opt.displayPrice,
+          quantity: opt.quantity,
+          sku: opt.sku,
+        }))
+      })));
+      console.log("Price Info:", productData.priceInfo);
+      console.log("Inventory:", productData.inventory);
+      console.log("Total Quantity:", totalQty);
+      console.log("All Properties:", Object.keys(productData));
+      console.log("==============================");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [productData]);
 
   const [selectedImage, setSelectedImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
@@ -159,13 +188,22 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   };
 
   const getSelectedOptionPrice = () => {
-    if (!productData?.variants?.[0]) return 0;
+    // Always prioritize priceInfo.displayPrice as the base price
+    const baseDisplayPrice = (productData as any)?.priceInfo?.displayPrice;
+    
+    if (!productData?.variants?.[0]) {
+      return baseDisplayPrice || 0;
+    }
+    
     const variant = productData.variants[0];
     const optionId = selectedOptions[variant._id || variant.id];
     const option = variant.options?.find(
       (opt: any) => (opt.id || opt._id) === optionId && opt.value
     );
-    return option?.displayPrice || option?.salePrice || option?.price || 0;
+    
+    // If variant option has its own displayPrice, use it; otherwise use base displayPrice
+    // Don't fall back to option.price or option.salePrice as they may be in original currency
+    return option?.displayPrice || baseDisplayPrice || 0;
   };
 
   const getSelectedOptionCurrency = () => {
@@ -198,7 +236,13 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
   };
 
-  const totalQuantity = calculateTotalQuantity(productData);
+  // Only calculate totalQuantity if productData and variants are available
+  // This prevents showing "unavailable" when data is still loading or incomplete
+  const totalQuantity = productData?.variants && Array.isArray(productData.variants) && productData.variants.length > 0
+    ? calculateTotalQuantity(productData)
+    : productData?.inventory?.listing?.type === "auction" 
+      ? 1 // Auction products should always show
+      : 0;
 
   let totalUserOffers;
   if (productData?.offers && productData.offers?.length > 0) {
@@ -625,7 +669,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   };
 
   // Don't render the component if total quantity is 0
-  if (totalQuantity === 0) {
+  // But only if we have complete product data (variants loaded) and it's not an auction
+  // This prevents showing "unavailable" when data is still loading
+  const hasCompleteData = productData?.variants && Array.isArray(productData.variants) && productData.variants.length > 0;
+  const isAuction = productData?.inventory?.listing?.type === "auction";
+  
+  if (totalQuantity === 0 && hasCompleteData && !isAuction) {
     return (
       <div className="p-3 md:p-5 lg:p-6 md:border rounded-lg border-[#ADADAD4D]">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -794,6 +843,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     exchangeRate:
                       (productData as any)?.priceInfo?.exchangeRate || 1,
                     currencySymbol: getSelectedOptionCurrency(),
+                    displayPrice: (productData as any)?.priceInfo?.displayPrice,
                   }}
                 />
 
@@ -845,7 +895,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                   if (isInWishlist(productData._id!)) {
                     removeFromWishlist(productData._id!);
                   } else {
-                    addToWishlist({ productId: productData._id!, price });
+                    addToWishlist({ 
+                      productId: productData._id!, 
+                      price,
+                      productData: {
+                        name: productData?.name,
+                        images: productData?.images,
+                      }
+                    });
                   }
                 }}
                 disabled={isAddingToWishlist}
@@ -884,12 +941,15 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                         selectedVariant?.options[0]?.displayPrice ||
                         selectedVariant?.options[0]?.salePrice ||
                         selectedVariant?.options[0]?.price ||
+                        (productData as any)?.priceInfo?.displayPrice ||
                         0
                       }
                       displayType={"text"}
                       thousandSeparator={true}
                       prefix={
-                        selectedVariant?.options[0]?.currencySymbol || "$"
+                        selectedVariant?.options[0]?.currencySymbol ||
+                        (productData as any)?.priceInfo?.currencySymbol ||
+                        "$"
                       }
                       decimalScale={2}
                       fixedDecimalScale={true}

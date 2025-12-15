@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Heart, Star, ChevronRight, ArrowRight, Loader2, ChevronLeft } from "lucide-react";
+import { Star, ChevronRight, ArrowRight, Loader2, ChevronLeft } from "lucide-react";
 import { useBestDeals } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
 import Link from "next/link";
@@ -9,6 +9,7 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import { Button } from "@/components/ui/button";
+import Wishlist from "@/components/client-component/Wishlist";
 
 
 const CountdownTimer = () => {
@@ -97,8 +98,6 @@ const ProductCard = ({
   product: ProductType;
   isLarge?: boolean;
 }) => {
-  const [isLiked, setIsLiked] = useState(false);
-
   return (
     <Link
       href={{
@@ -131,20 +130,16 @@ const ProductCard = ({
             />
           </div>
 
-          {/* Heart Icon */}
-          <button
-            onClick={(e) => {
-              e.preventDefault();
-              setIsLiked(!isLiked);
-            }}
-            className="absolute top-1 right-1 sm:top-3 sm:right-3 p-2 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200 min-h-[44px] min-w-[44px] flex items-center justify-center"
+          {/* Wishlist */}
+          <div 
+            className="absolute top-1 right-1 sm:top-3 sm:right-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center z-10"
+            onClick={(e) => e.preventDefault()}
           >
-            <Heart
-              className={`w-4 h-4 sm:w-5 sm:h-5 ${
-                isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
-              } transition-colors duration-200`}
+            <Wishlist
+              productData={product}
+              price={product.priceInfo?.displayPrice || product.priceInfo?.originalPrice || 0}
             />
-          </button>
+          </div>
         </div>
 
         {/* Product Info */}

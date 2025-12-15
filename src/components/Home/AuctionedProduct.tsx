@@ -1,6 +1,6 @@
 import { useProductsOnAuction } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
-import { Heart, Star, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
+import { Star, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -9,6 +9,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Button } from "@/components/ui/button";
+import Wishlist from "@/components/client-component/Wishlist";
 
 const AuctionTimer = ({ product }: { product: ProductType }) => {
   const [timeLeft, setTimeLeft] = useState({
@@ -82,8 +83,6 @@ const AuctionTimer = ({ product }: { product: ProductType }) => {
 };
 
 const ProductCard = ({ product }: { product: ProductType }) => {
-  const [isLiked, setIsLiked] = useState(false);
-
   const getAuctionBadge = () => {
     const auction = product.inventory?.listing?.auction;
     if (!auction) return null;
@@ -119,17 +118,13 @@ const ProductCard = ({ product }: { product: ProductType }) => {
           />
         </div>
 
-        <button
-          onClick={() => setIsLiked(!isLiked)}
-          className="absolute top-2 right-2 p-1.5 bg-white rounded-full shadow-md hover:shadow-lg transition-all duration-200"
-        >
-          <Heart
-            size={16}
-            className={`${
-              isLiked ? "fill-red-500 text-red-500" : "text-gray-400"
-            } transition-colors duration-200`}
+        {/* Wishlist */}
+        <div className="absolute top-2 right-2 rounded-full shadow-md hover:shadow-lg transition-all duration-200 z-10">
+          <Wishlist
+            productData={product}
+            price={product.priceInfo?.displayPrice || product.priceInfo?.originalPrice || 0}
           />
-        </button>
+        </div>
       </div>
 
       <Link

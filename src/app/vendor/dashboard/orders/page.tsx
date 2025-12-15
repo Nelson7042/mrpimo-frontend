@@ -3,7 +3,8 @@
 import React from "react";
 import AnalyticsCard from "../(components)/AnalyticsCard";
 import OrderTable from "./(components)/OrderTable";
-import { useVendorOrders, useVendorAnalytics } from "@/hooks/useVendor";
+import { useVendorOrders } from "@/hooks/useVendor";
+import { useVendorAnalytics } from "@/hooks/queries";
 import AnalyticsCardSkeleton from "../(components)/skeletons/AnalyticsCardSkeleton";
 import { useVendorStore } from "@/stores/useVendorStore";
 
@@ -26,7 +27,7 @@ const page = (props: Props) => {
   }
 
   const { data: analyticsData, isLoading: analyticsLoading } =
-    useVendorAnalytics(vendor?._id!);
+    useVendorAnalytics(vendor?._id || "");
 
   return (
     <div className="bg-[#f6f6f6] rounded-lg font-light shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)]">

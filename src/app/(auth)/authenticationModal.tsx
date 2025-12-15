@@ -1,11 +1,13 @@
 import Modal2 from "@/components/Modal2";
 import { X } from "lucide-react";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import LoginForm from "./(component)/LoginForm";
 import RegisterForm from "./(component)/RegisterForm";
 import RecoverPass from "./(component)/RecoverPass";
 import OTPModal from "./(component)/Otp";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
+import { useUserStore } from "@/stores/useUserStore";
+import { API_BASE_URL } from "@/utils/config";
 
 
 type ModalProps = {
@@ -14,6 +16,8 @@ type ModalProps = {
 };
 
 const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
+  const { user } = useUserStore();
+  const { closeModal } = useAuthModalStore();
   const [signState, setSignState] = React.useState<"login" | "register">(
     "login"
   );
@@ -21,12 +25,25 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
     "login"
   );
 
+  // Close modal if user is logged in
+  useEffect(() => {
+    if (user && isOpen) {
+      closeModal();
+      close();
+    }
+  }, [user, isOpen, closeModal, close]);
+
+  // Don't render modal if user is logged in
+  if (user) {
+    return null;
+  }
+
   const Login = () => {
     return (
       <div>
         <div className="py-4 flex justify-between mb-[16px] md:mb-[24px] lg-[40px] w-full ">
           <h3 className="text-[14px] flex-1   md:text-[20px] md:leading-[24px]  text-gray-700 font-semibold">
-            Log in or Create an Account to Continue
+            Log in or Create an Account to Continues
           </h3>
 
           <X onClick={close} className="cursor-pointer text-black" size={20} />
@@ -103,7 +120,7 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
 
               <div className=" mt-5 md:mt-8 flex flex-col gap-4">
                 <button
-                  onClick={() => window.location.href = 'http://localhost:5800/api/v1/auth/google'}
+                  onClick={() => window.location.href = `${API_BASE_URL}/auth/google`}
                   className={`w-full py-2 md:py-3 text-sm text-center px-4 flex items-center justify-center  bg-[#F6B76F]  text-[#121212] rounded-md hover:bg-[#F5A94E] transition-colors`}
                 >
                   <svg

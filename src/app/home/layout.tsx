@@ -7,6 +7,7 @@ import AuthenticationModal from '../(auth)/authenticationModal';
 import { useAuthModalStore } from '@/stores/useAuthModalStore';
 import { useCartSync } from '@/hooks/useCartSync';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserStore } from '@/stores/useUserStore';
 
 
 type HomepageProps = {
@@ -15,6 +16,7 @@ type HomepageProps = {
 
 const Homepage = ({ children }: HomepageProps) => {
   const { isOpen, closeModal } = useAuthModalStore();
+  const { user } = useUserStore();
   
   useAuth();
   useCartSync();
@@ -29,10 +31,12 @@ const Homepage = ({ children }: HomepageProps) => {
      </div>
      <Footer />
 
-      <AuthenticationModal
-        isOpen={isOpen} 
-        close={closeModal} 
-      />
+      {!user && (
+        <AuthenticationModal
+          isOpen={isOpen} 
+          close={closeModal} 
+        />
+      )}
      </div>
   );
 };

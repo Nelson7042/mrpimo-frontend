@@ -5,10 +5,11 @@ import {
   toastConfigSuccess,
 } from "@/app/config/toast.config";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
-import { WishlistResponse } from "@/types/wishlist.type";
+import { WishlistResponse, Wishlist } from "@/types/wishlist.type";
 import { useWishlistStore } from "@/stores/useWishlistStore";
 import { useEffect } from "react";
 import { API_BASE_URL } from "@/utils/config";
+import { useUserStore } from "@/stores/useUserStore";
 
 const API_BASE = `${API_BASE_URL}`;
 
@@ -23,19 +24,26 @@ const wishlistApi = {
   addToWishlist: async ({
     productId,
     price,
+    productData,
   }: {
     productId: string;
     price: number;
+    productData?: {
+      name?: string;
+      images?: string[];
+    };
   }) => {
     const response = await fetchWithAuth(
       `${API_BASE}/products/wishlist/${productId}`,
       {
         method: "POST",
-
         body: JSON.stringify({ price }),
       }
     );
-    if (!response.ok) throw new Error("Failed to add to wishlist");
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || "Failed to add to wishlist");
+    }
     return response.json();
   },
 
@@ -64,6 +72,7 @@ const wishlistApi = {
 
 export const useWishlist = () => {
   const queryClient = useQueryClient();
+  const { user } = useUserStore();
   const {
     setItems,
     addItem,
@@ -76,6 +85,7 @@ export const useWishlist = () => {
   const { data: wishlistData, isLoading } = useQuery({
     queryKey: ["wishlist"],
     queryFn: wishlistApi.getWishlist,
+    enabled: !!user?._id, // Only fetch when user is logged in
     refetchOnWindowFocus: false,
   });
 
@@ -89,12 +99,25 @@ export const useWishlist = () => {
 
   const addToWishlistMutation = useMutation({
     mutationFn: wishlistApi.addToWishlist,
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
+      // Optimistically update the store with the new item
+      // Use response data if available, otherwise create from variables
+      const wishlistItem: Wishlist = data?.data || {
+        productId: variables.productId,
+        name: variables.productData?.name || "",
+        images: variables.productData?.images || [],
+        price: variables.price,
+        variantId: "",
+        addedAt: new Date().toISOString(),
+        priceWhenAdded: variables.price,
+      };
+      
+      addItem(wishlistItem);
       queryClient.invalidateQueries({ queryKey: ["wishlist"] });
       toast.success("Added to wishlist!", toastConfigSuccess);
     },
-    onError: () => {
-      toast.error("Failed to add to wishlist", toastConfigError);
+    onError: (error: any) => {
+      toast.error(error?.message || "Failed to add to wishlist", toastConfigError);
     },
   });
 

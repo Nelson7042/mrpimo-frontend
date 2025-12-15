@@ -24,10 +24,11 @@ export const useUpdateOrderStatus = () => {
   return useMutation({
     mutationFn: ({ orderId, status }: { orderId: string; status: string }) =>
       vendorService.updateOrderStatus(orderId, status),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success('Order status updated successfully');
       queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
       queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to update order status');

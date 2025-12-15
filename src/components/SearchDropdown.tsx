@@ -3,6 +3,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { SearchSuggestion } from "@/types/search.types";
 import { Loader2 } from "lucide-react";
+import { formatProductPrice } from "@/utils/formatPrice";
 
 interface SearchDropdownProps {
   suggestions: SearchSuggestion[];
@@ -35,14 +36,7 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
       {suggestions.map((product) => (
         <Link
           key={product._id}
-          href={{
-            pathname: "/home/product-details/[slug]",
-            query: {
-              slug: product.slug,
-              productData: JSON.stringify(product),
-            },
-          }}
-          as={`/home/product-details/${product.slug}`}
+          href={`/home/product-details/${product._id}`}
           onClick={onClose}
           className="flex items-center p-3 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
         >
@@ -63,11 +57,17 @@ export const SearchDropdown: React.FC<SearchDropdownProps> = ({
                 product.category?.main?.name ||
                 "General"}
             </p>
-            {product.variants?.[0]?.options?.[0]?.price && (
-              <p className="text-sm font-semibold text-blue-600">
-                ₦ {product.variants[0].options[0].price.toLocaleString()}
-              </p>
-            )}
+            {(() => {
+              const price = formatProductPrice(product);
+              if (price && price !== "$0") {
+                return (
+                  <p className="text-sm font-semibold text-blue-600">
+                    {price}
+                  </p>
+                );
+              }
+              return null;
+            })()}
           </div>
         </Link>
       ))}

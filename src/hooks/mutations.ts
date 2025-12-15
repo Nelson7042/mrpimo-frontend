@@ -41,7 +41,7 @@ const signUpUser = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    toast.error(errorData.message, toastConfigError);
+    // Don't show toast here - let the component handle it via onError callback
     throw new Error(errorData.message);
   }
 

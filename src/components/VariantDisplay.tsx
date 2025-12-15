@@ -9,6 +9,7 @@ interface VariantDisplayProps {
   priceInfo?: {
     exchangeRate: number;
     currencySymbol: string;
+    displayPrice?: number;
   };
 }
 
@@ -20,11 +21,21 @@ const VariantDisplay: React.FC<VariantDisplayProps> = ({
   priceInfo
 }) => {
   
-  const getDisplayPrice = (price: number) => {
-    if (priceInfo?.exchangeRate) {
-      return price * priceInfo.exchangeRate;
+  const getDisplayPrice = (option: any) => {
+    // Always prioritize option.displayPrice if it exists
+    if (option?.displayPrice) {
+      return option.displayPrice;
     }
-    return price;
+    // Otherwise use the base displayPrice from priceInfo
+    if (priceInfo?.displayPrice) {
+      return priceInfo.displayPrice;
+    }
+    // Fallback to calculating from option price with exchange rate
+    if (priceInfo?.exchangeRate && option?.price) {
+      return option.price * priceInfo.exchangeRate;
+    }
+    // Last resort: use option price or salePrice
+    return option?.salePrice || option?.price || 0;
   };
   
   const getDisplayCurrency = () => {
@@ -175,7 +186,7 @@ const VariantDisplay: React.FC<VariantDisplayProps> = ({
         className={`relative w-12 h-12 rounded-full border-2 transition-all ${
           isSelected ? 'border-blue-500 ring-2 ring-blue-200' : 'border-gray-300 hover:border-gray-400'
         }`}
-        title={`${getColorName(option.value)} - ${getDisplayCurrency()}${(option.displayPrice || option.salePrice || option.price).toFixed(2)}`}
+        title={`${getColorName(option.value)} - ${getDisplayCurrency()}${getDisplayPrice(option).toFixed(2)}`}
       >
         {colorValue ? (
           <div
@@ -225,7 +236,7 @@ const VariantDisplay: React.FC<VariantDisplayProps> = ({
             ? 'border-blue-500 bg-blue-50 text-blue-700' 
             : 'border-gray-300 hover:border-gray-400 text-gray-700'
         }`}
-        title={`${option.value} - ${getDisplayCurrency()}${(option.displayPrice || option.salePrice || option.price).toFixed(2)}`}
+        title={`${option.value} - ${getDisplayCurrency()}${getDisplayPrice(option).toFixed(2)}`}
       >
         {colorValue && (
           <div
@@ -259,7 +270,7 @@ const VariantDisplay: React.FC<VariantDisplayProps> = ({
       {option.price && (
         <span className="ml-2 text-xs text-gray-500">
           <NumericFormat
-            value={option.displayPrice || option.salePrice || option.price}
+            value={getDisplayPrice(option)}
             displayType="text"
             thousandSeparator={true}
             prefix={getDisplayCurrency()}
@@ -293,7 +304,7 @@ const VariantDisplay: React.FC<VariantDisplayProps> = ({
                   {selectedOption.price && (
                     <span className="ml-2 text-green-600 font-semibold">
                       <NumericFormat
-                        value={selectedOption.displayPrice || selectedOption.salePrice || selectedOption.price}
+                        value={getDisplayPrice(selectedOption)}
                         displayType="text"
                         thousandSeparator={true}
                         prefix={getDisplayCurrency()}
