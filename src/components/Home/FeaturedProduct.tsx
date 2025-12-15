@@ -1,45 +1,94 @@
-import React from "react";
+import React, { useRef, useState } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-
+import { Swiper, SwiperSlide } from "swiper/react";
+import "swiper/css";
+import "swiper/css/navigation";
 import { AllProduct } from "@/utils/config";
 import { ProductType } from "@/types/product.type";
 import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 
-const navCategories = [
-  "All Products",
-  "Auction",
-  "Furniture",
-  "Offer",
-  "Buy Now",
-];
+type FeaturedCategory = {
+  _id: string;
+  name: string;
+  slug: string;
+};
 
 
 
 export default function FeaturedProducts() {
-  const fetchFeaturedProducts = async () => {
-    const response = await fetch(`${AllProduct}/featured?page=1&limit=12`);
-    if (!response.ok) {
-      throw new Error("Failed to fetch featured products");
-    }
-    const data = await response.json();
-    console.log("Featured products data:", data);
-    return data.products;
-  };
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["featuredCategories"],
+    queryFn: async () => {
+      const response = await fetch(`${AllProduct}/featured-categories`);
+      if (!response.ok) throw new Error("Failed to fetch categories");
+      return response.json();
+    },
+  });
 
   const {
     data: featuredProducts = [],
     isLoading,
-    isError,
-    error,
   } = useQuery({
-    queryKey: ["featuredProducts"],
-    queryFn: fetchFeaturedProducts,
+    queryKey: ["featuredProducts", selectedCategory],
+    queryFn: async () => {
+      const params = new URLSearchParams({ page: "1", limit: "12" });
+      if (selectedCategory !== "all") params.append("category", selectedCategory);
+      const response = await fetch(`${AllProduct}/featured?${params}`);
+      if (!response.ok) throw new Error("Failed to fetch featured products");
+      const data = await response.json();
+      return data.products || [];
+    },
     refetchOnWindowFocus: false,
     retry: 2,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
+
+
+  const otherProductsSwiperRef = useRef<any>(null);
+
+    // Reusable swiper component for other products
+  const MobileSwiper = ({
+    items,
+    renderItem,
+    swiperRef,
+    prevClass,
+    nextClass,
+  }: {
+    items: any[];
+    renderItem: (item: any) => React.ReactNode;
+    swiperRef: React.MutableRefObject<any>;
+    prevClass: string;
+    nextClass: string;
+  }) => {
+    if (!items || items.length === 0) return null;
+
+    return (
+      <div className="w-full">
+        <Swiper
+          ref={swiperRef}
+          spaceBetween={16}
+          slidesPerView={2.2}
+          breakpoints={{
+            480: { slidesPerView: 2 },
+            640: { slidesPerView: 2 },
+            768: { slidesPerView: 2.5 },
+            1024: { slidesPerView: 3 },
+            1280: { slidesPerView: 4 },
+          }}
+        >
+          {items.map((item: any) => (
+            <SwiperSlide key={item._id || Math.random()}>
+              {renderItem(item)}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+      </div>
+    );
+  };
 
   if (isLoading) {
     return (
@@ -103,23 +152,34 @@ export default function FeaturedProducts() {
           <div className="flex items-center gap-2">
             {/* Desktop navigation */}
             <div className="hidden lg:flex items-center">
-              {navCategories.map((category, index) => (
+              <button
+                onClick={() => setSelectedCategory("all")}
+                className={`px-2 py-2 text-xs font-medium transition-colors ${
+                  selectedCategory === "all"
+                    ? "text-gray-900 border-b-2 border-yellow-500"
+                    : "text-gray-500 hover:text-gray-900"
+                }`}
+              >
+                All
+              </button>
+              {categories?.data?.categories?.slice(0, 4).map((category: FeaturedCategory) => (
                 <button
-                  key={category}
+                  key={category._id}
+                  onClick={() => setSelectedCategory(category.slug)}
                   className={`px-2 py-2 text-xs font-medium transition-colors ${
-                    index === 0
+                    selectedCategory === category.slug
                       ? "text-gray-900 border-b-2 border-yellow-500"
                       : "text-gray-500 hover:text-gray-900"
                   }`}
                 >
-                  {category}
+                  {category.name}
                 </button>
               ))}
             </div>
 
-            <Link href="/home/categories">
+            <Link href="/home/feature-products">
               <button className="flex text-xs md:text-sm underline items-center gap-2 text-blue-600 hover:text-blue-700 font-medium transition-colors">
-                Browse All Products
+                Browse All
                 <ArrowRight className="w-4 h-4" />
               </button>
             </Link>
@@ -128,11 +188,23 @@ export default function FeaturedProducts() {
 
         {/* Products Grid */}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+
+        {/* <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
           {featuredProducts.map((product: ProductType) => (
             <ProductCard key={product._id} product={product} />
           ))}
-        </div>
+        </div> */}
+
+           {/* featured Products Swiper */}
+          <div className="lg:w-2/3">
+            <MobileSwiper
+              items={featuredProducts}
+              renderItem={(product: ProductType) => <ProductCard  key={product._id} product={product} />}
+              swiperRef={otherProductsSwiperRef}
+              prevClass="other-products-prev"
+              nextClass="other-products-next"
+            />
+          </div>
       </div>
     ) : (
       <></>

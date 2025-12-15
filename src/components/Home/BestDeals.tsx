@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
-import { Star, ChevronRight, ArrowRight, Loader2, ChevronLeft } from "lucide-react";
+import { Star, ArrowRight } from "lucide-react";
 import { useBestDeals } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
 import Link from "next/link";
@@ -256,7 +256,7 @@ export default function BestDeals() {
         <Swiper
           ref={swiperRef}
           spaceBetween={16}
-          slidesPerView={2.3}
+          slidesPerView={2.2}
           breakpoints={{
             480: { slidesPerView: 2 },
             640: { slidesPerView: 2 },
