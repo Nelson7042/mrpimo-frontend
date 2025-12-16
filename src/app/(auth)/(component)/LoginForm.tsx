@@ -129,7 +129,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
             name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            autoCapitalize="off"
+            autoCapitalize="none"
             autoCorrect="off"
             spellCheck="false"
           />
@@ -166,7 +166,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
             id="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
-            autoCapitalize="off"
+            autoCapitalize="none"
             autoCorrect="off"
             spellCheck="false"
           />

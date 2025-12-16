@@ -1,7 +1,7 @@
 "use client";
 
 import { useVendorOrders } from "@/hooks/queries";
-import { useProductStore } from "@/stores/useProductStore";
+import { useVendorStore } from "@/stores/useVendorStore";
 import { ChevronDown, Eye, Search } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import OrderTableSkeleton from "./OrderTableSkeleton";
@@ -32,8 +32,8 @@ const OrderTable = (props: Props) => {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [orders, setOrders] = useState<any[]>([]);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
-  const { vendor } = useProductStore();
-  const { data, isLoading } = useVendorOrders(vendor?._id!);
+  const { vendor } = useVendorStore();
+  const { data, isLoading } = useVendorOrders(vendor?._id || "");
 
   const router = useRouter();
 

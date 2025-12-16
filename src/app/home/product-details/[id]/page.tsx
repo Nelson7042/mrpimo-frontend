@@ -7,6 +7,7 @@ import ProductDetailsTabs from "./(component)/MoreDeatilsTab";
 import ReviewsPage from "./(component)/Review";
 import { useParams } from "next/navigation";
 import { useFetchProductById } from "@/hooks/queries";
+import { useEffect } from "react";
 
 const ProductPage: React.FC = () => {
   const { id } = useParams();
@@ -16,6 +17,29 @@ const ProductPage: React.FC = () => {
     isError,
     error,
   } = useFetchProductById(id as string);
+
+  // Console log product details
+  useEffect(() => {
+    if (productData?.product) {
+      console.log("=== PRODUCT DETAILS ===");
+      console.log("Full Product Data:", productData.product);
+      console.log("Product ID:", productData.product._id);
+      console.log("Product Name:", productData.product.name);
+      console.log("Product Slug:", productData.product.slug);
+      console.log("Product Variants:", productData.product.variants);
+      console.log("Product Images:", productData.product.images);
+      console.log("Product Price Info:", productData.product.priceInfo);
+      console.log("Product Inventory:", productData.product.inventory);
+      console.log("Product Category:", productData.product.category);
+      console.log("Product Description:", productData.product.description);
+      console.log("Product Condition:", productData.product.condition);
+      console.log("Product Rating:", productData.product.rating);
+      console.log("Product Reviews:", productData.product.reviews);
+      console.log("All Product Properties:", Object.keys(productData.product));
+      console.log("========================");
+    }
+  }, [productData]);
+
   if (isLoading) {
     return (
       <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10">

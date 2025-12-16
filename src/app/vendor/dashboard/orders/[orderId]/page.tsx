@@ -9,13 +9,14 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
-  Loader,
 } from "lucide-react";
 import { useOrderById } from "@/hooks/queries";
 import { useParams, useRouter } from "next/navigation";
 import { useProductStore } from "@/stores/useProductStore";
 import OrderDetailsSkeleton from "../(components)/OrderDetailsSkeleton";
 import { getCurrencySymbol } from "@/utils/currency";
+import { useUpdateOrderStatus } from "@/hooks/useVendor";
+import { useEffect } from "react";
 
 const Card = ({
   children,
@@ -40,14 +41,41 @@ const CardContent = ({
 }) => <div className={`${className}`}>{children}</div>;
 
 export default function OrderDetailsPage() {
-  const [vendorShippingState, setVendorShippingState] =
-    React.useState<string>("Reviewing Order");
-  const [showDropdown, setShowDropdown] = React.useState<boolean>(false);
   const params = useParams();
   const router = useRouter();
   const orderId = params.orderId as string;
   const { data: order, isLoading } = useOrderById(orderId);
   const { listedProducts } = useProductStore();
+  const updateOrderStatusMutation = useUpdateOrderStatus();
+  
+  // Map order status to display status
+  const getDisplayStatus = (status?: string): string => {
+    if (!status) return "Preparing Shipment";
+    const statusLower = status.toLowerCase();
+    if (statusLower.includes("shipped") || statusLower === "delivered") {
+      return "Shipped";
+    }
+    return "Preparing Shipment";
+  };
+
+  // Map display status to API status
+  const getApiStatus = (displayStatus: string): string => {
+    if (displayStatus === "Shipped") {
+      return "shipped";
+    }
+    return "preparing_shipment";
+  };
+
+  const [vendorShippingState, setVendorShippingState] =
+    React.useState<string>(getDisplayStatus(order?.status));
+  const [showDropdown, setShowDropdown] = React.useState<boolean>(false);
+
+  // Update state when order data loads
+  useEffect(() => {
+    if (order?.status) {
+      setVendorShippingState(getDisplayStatus(order.status));
+    }
+  }, [order?.status]);
 
   if (isLoading) {
     return <OrderDetailsSkeleton />;
@@ -85,6 +113,13 @@ export default function OrderDetailsPage() {
   const handleShippingStateChange = (newState: string) => {
     setVendorShippingState(newState);
     setShowDropdown(false);
+    
+    // Call API to update order status
+    const apiStatus = getApiStatus(newState);
+    updateOrderStatusMutation.mutate({
+      orderId: orderId,
+      status: apiStatus,
+    });
   };
 
   console.log(listedProducts, "Listed Products");
@@ -163,12 +198,6 @@ export default function OrderDetailsPage() {
                     Order Status
                   </h3>
                   <div
-                    onClick={() => handleShippingStateChange("Reviewing Order")}
-                    className="text-xs hover:bg-gray-100 cursor-pointer px-2 py-1 border-b border-gray-200"
-                  >
-                    Reviewing Order
-                  </div>
-                  <div
                     onClick={() =>
                       handleShippingStateChange("Preparing Shipment")
                     }
@@ -215,14 +244,11 @@ export default function OrderDetailsPage() {
               {/* Status Labels */}
               <div className="flex justify-between mb-2">
                 <span className="text-xs text-gray-600">
-                  {vendorShippingState === "Reviewing Order" && (
-                    <Loader className="inline-block size-4 mr-1 text-blue-500" />
-                  )}
-                  Reviewing Order
-                </span>
-                <span className="text-xs text-gray-600">
                   {vendorShippingState === "Preparing Shipment" && (
                     <LoaderCircle className="inline-block size-4 mr-1 text-yellow-500" />
+                  )}
+                  {vendorShippingState === "Shipped" && (
+                    <CheckCircle className="inline-block size-4 mr-1 text-green-500" />
                   )}
                   Preparing Shipment
                 </span>
@@ -235,28 +261,6 @@ export default function OrderDetailsPage() {
               </div>
               {/* Progress Bars */}
               <div className="flex gap-2 mb-2">
-                <div
-                  className="flex-1 h-2 rounded-full"
-                  style={{ backgroundColor: "#d3e1fe" }}
-                >
-                  <div
-                    className="h-2 rounded-full transition-all duration-300"
-                    style={{
-                      backgroundColor:
-                        vendorShippingState === "Reviewing Order" ||
-                        vendorShippingState === "Preparing Shipment" ||
-                        vendorShippingState === "Shipped"
-                          ? "#2563eb"
-                          : "#d3e1fe",
-                      width:
-                        vendorShippingState === "Reviewing Order" ||
-                        vendorShippingState === "Preparing Shipment" ||
-                        vendorShippingState === "Shipped"
-                          ? "100%"
-                          : "0%",
-                    }}
-                  />
-                </div>
                 <div
                   className="flex-1 h-2 rounded-full"
                   style={{ backgroundColor: "#d3e1fe" }}
@@ -337,7 +341,7 @@ export default function OrderDetailsPage() {
                 </div>
               </div>
               <span className="text-sm font-semibold text-gray-800">
-                {getCurrencySymbol(order.payment.currency)}
+                {getCurrencySymbol(order?.payment?.currency || "USD")}
                 {item.price.toFixed(2)}
               </span>
             </div>
@@ -355,7 +359,7 @@ export default function OrderDetailsPage() {
           {[
             {
               label: "Payment Method",
-              value: order?.payment?.method?.toUpperCase(),
+              value: order?.payment?.method?.toUpperCase() || "N/A",
             },
             {
               label: "Payment Status",
@@ -365,16 +369,18 @@ export default function OrderDetailsPage() {
                     order?.payment?.status
                   )}`}
                 >
-                  {order?.payment?.status}
+                  {order?.payment?.status || "N/A"}
                 </span>
               ),
             },
             {
               label: "Subtotal",
-              value: order?.payment?.amount?.toLocaleString("en-US", {
-                style: "currency",
-                currency: order?.payment?.currency || "USD",
-              }),
+              value: order?.payment?.amount
+                ? order.payment.amount.toLocaleString("en-US", {
+                    style: "currency",
+                    currency: order?.payment?.currency || "USD",
+                  })
+                : "N/A",
             },
             {
               label: "Order Status",

@@ -29,9 +29,18 @@ export const useWishlistStore = create<WishlistState>()(
 
       addItem: (item) => {
         const { items } = get();
-        const existingItem = items.find(
-          (existingItem) => existingItem.productId._id === item.productId._id
-        );
+        // Handle both string and object productId
+        const itemProductId = typeof item.productId === 'string' 
+          ? item.productId 
+          : item.productId._id || item.productId;
+        
+        const existingItem = items.find((existingItem) => {
+          const existingProductId = typeof existingItem.productId === 'string'
+            ? existingItem.productId
+            : existingItem.productId._id || existingItem.productId;
+          return String(existingProductId) === String(itemProductId);
+        });
+        
         if (!existingItem) {
           set({ items: [...items, item] });
         }
@@ -39,9 +48,12 @@ export const useWishlistStore = create<WishlistState>()(
 
       removeItem: (productId) => {
         const { items } = get();
-        const updatedItems = items.filter(
-          (item) => item.productId._id !== productId
-        );
+        const updatedItems = items.filter((item) => {
+          const itemProductId = typeof item.productId === 'string'
+            ? item.productId
+            : item.productId._id || item.productId;
+          return String(itemProductId) !== String(productId);
+        });
         set({ items: updatedItems });
       },
 
@@ -57,9 +69,12 @@ export const useWishlistStore = create<WishlistState>()(
 
       isInWishlist: (productId) => {
         const { items } = get();
-        return items.some(
-          (item) => String(item.productId) === String(productId)
-        );
+        return items.some((item) => {
+          const itemProductId = typeof item.productId === 'string'
+            ? item.productId
+            : item.productId._id || item.productId;
+          return String(itemProductId) === String(productId);
+        });
       },
     }),
     {

@@ -133,7 +133,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                         </span>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order?.items.length} item(s)
+                        {order?.items?.length || 0} item(s)
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
                         <button
@@ -193,7 +193,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                   </div>
                   <div className="text-sm text-gray-500 mb-1">
                     <span className="font-medium">
-                      {order.items.length} items
+                      {order?.items?.length || 0} items
                     </span>
                   </div>
                   <div className="mt-2 flex justify-end">

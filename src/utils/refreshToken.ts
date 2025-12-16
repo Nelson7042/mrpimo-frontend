@@ -1,6 +1,8 @@
+import { API_BASE_URL } from "./config";
+
 export const refreshToken = async (): Promise<boolean> => {
     try {
-      const response = await fetch("http://localhost:5800/api/v1/auth/refresh", {
+      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
         method: "POST",
         credentials: "include" // Include cookies in refresh request
       });

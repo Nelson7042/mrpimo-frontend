@@ -10,8 +10,22 @@ export interface SearchSuggestion {
   variants?: Array<{
     options: Array<{
       price: number;
+      displayPrice?: number;
+      currencySymbol?: string;
     }>;
   }>;
+  priceInfo?: {
+    displayPrice?: number;
+    originalPrice?: number;
+    currencySymbol?: string;
+    displayCurrency?: string;
+    exchangeRate?: number;
+    originalCurrency?: string;
+  };
+  country?: {
+    currency?: string;
+    currencySymbol?: string;
+  };
 }
 
 export interface SearchResponse {

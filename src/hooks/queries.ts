@@ -288,6 +288,7 @@ export const useVendorOrders = (vendorId: string) => {
   return useQuery({
     queryKey: ['vendorOrders', vendorId],
     queryFn: () => fetchVendorOrders(vendorId),
+    enabled: !!vendorId, // Only run query if vendorId exists
     refetchOnWindowFocus: false,
     retry: 1,
   });

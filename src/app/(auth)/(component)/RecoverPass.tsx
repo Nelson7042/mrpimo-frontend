@@ -25,7 +25,7 @@ const RecoverPass = () => {
             name="email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            autoCapitalize="off"
+            autoCapitalize="none"
             autoCorrect="off"
             spellCheck="false"
           />

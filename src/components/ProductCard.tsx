@@ -2,7 +2,9 @@ import { ProductType } from '@/types/product.type.ts_';
 import { Heart, Star } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react'
-import { useWishlistStore } from '@/stores/useWishlistStore';
+import { useWishlist } from '@/hooks/useWishlist';
+import { useUserStore } from '@/stores/useUserStore';
+import { useAuthModalStore } from '@/stores/useAuthModalStore';
 
 
 interface Product {
@@ -55,14 +57,30 @@ const ProductCard = ({
   isLarge?: boolean;
 }) => {
   const [isLiked, setIsLiked] = useState(false);
-  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlistStore();
+  const { user } = useUserStore();
+  const { openModal } = useAuthModalStore();
+  const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
   const isWishlisted = isInWishlist(product._id!);
 
   const handleWishlistToggle = () => {
+    if (!user) {
+      openModal();
+      return;
+    }
+
+    const price = product?.variants?.find((item) => item?.name === "Default")?.options?.[0]?.price ?? 0;
+    
     if (isWishlisted) {
       removeFromWishlist(product._id!);
     } else {
-      addToWishlist(product);
+      addToWishlist({ 
+        productId: product._id!, 
+        price,
+        productData: {
+          name: product?.name,
+          images: product?.images,
+        }
+      });
     }
   };
 

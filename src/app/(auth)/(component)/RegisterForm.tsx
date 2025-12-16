@@ -5,10 +5,10 @@ import {
 import FullButton from "@/components/FullButton";
 import { useLoginUser, useSignUp } from "@/hooks/mutations";
 import { useUserStore } from "@/stores/useUserStore";
-import { Eye, ChevronDown } from "lucide-react";
+import { Eye, ChevronDown, Search } from "lucide-react";
 import { Country } from "country-state-city";
 import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { FaEyeSlash } from "react-icons/fa";
 import { toast } from "react-toastify";
 
@@ -33,6 +33,9 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
     Country.getAllCountries().find((c) => c.isoCode === "US") ||
       Country.getAllCountries()[0]
   );
+  const [isCountryDropdownOpen, setIsCountryDropdownOpen] = useState(false);
+  const [countrySearchQuery, setCountrySearchQuery] = useState("");
+  const countryDropdownRef = useRef<HTMLDivElement>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState({
@@ -47,6 +50,29 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
   const { setUser } = useUserStore();
   const [isLoading, setIsLoading] = useState(false);
   const { mutate: signUpUser, isPending } = useSignUp();
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (
+        countryDropdownRef.current &&
+        !countryDropdownRef.current.contains(event.target as Node)
+      ) {
+        setIsCountryDropdownOpen(false);
+        setCountrySearchQuery("");
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, []);
+
+  // Filter countries based on search query
+  const filteredCountries = Country.getAllCountries().filter((country) =>
+    country.name.toLowerCase().includes(countrySearchQuery.toLowerCase())
+  );
 
   const validateForm = () => {
     const newErrors = {
@@ -215,24 +241,71 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
           Phone Number
         </label>
         <div className="flex">
-          <div className="relative">
-            <select
-              className="h-[48px] w-[90px] md:w-[110px]  px-[8px] py-[12px] text-[14px] text-[#344054] bg-[#F7F9FC] border-[#D0D5DD] border-[0.2px] rounded-l-[8px] focus:outline-none  appearance-none pr-2 md:pr-4"
-              value={selectedCountry.isoCode}
-              onChange={(e) => {
-                const country = Country.getAllCountries().find(
-                  (c) => c.isoCode === e.target.value
-                );
-                if (country) setSelectedCountry(country);
-              }}
+          <div className="relative" ref={countryDropdownRef}>
+            <button
+              type="button"
+              onClick={() => setIsCountryDropdownOpen(!isCountryDropdownOpen)}
+              className="h-[48px] w-[100px] md:w-[120px] px-[8px] py-[12px] text-[12px] md:text-[14px] text-[#344054] bg-[#F7F9FC] border-[#D0D5DD] border-[0.2px] rounded-l-[8px] focus:outline-none flex items-center justify-between pr-2 md:pr-4"
             >
-              {Country.getAllCountries().map((country) => (
-                <option key={country.isoCode} value={country.isoCode}>
-                  {country.flag} +{country.phonecode}
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none" />
+              <span className="flex items-center gap-1 truncate">
+                <span>{selectedCountry.flag}</span>
+                <span className="truncate">+{selectedCountry.phonecode}</span>
+              </span>
+              <ChevronDown
+                className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
+                  isCountryDropdownOpen ? "rotate-180" : ""
+                }`}
+              />
+            </button>
+
+            {isCountryDropdownOpen && (
+              <div className="absolute z-50 mt-1 w-[280px] md:w-[320px] bg-white border border-[#D0D5DD] rounded-[8px] shadow-lg max-h-[300px] flex flex-col">
+                {/* Search Input */}
+                <div className="p-2 border-b border-[#D0D5DD] sticky top-0 bg-white">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <input
+                      type="text"
+                      placeholder="Search country..."
+                      value={countrySearchQuery}
+                      onChange={(e) => setCountrySearchQuery(e.target.value)}
+                      className="w-full h-[36px] pl-9 pr-3 text-[14px] text-[#344054] bg-[#F7F9FC] border border-[#D0D5DD] rounded-[6px] focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                      autoFocus
+                    />
+                  </div>
+                </div>
+
+                {/* Country List */}
+                <div className="overflow-y-auto max-h-[240px]">
+                  {filteredCountries.length > 0 ? (
+                    filteredCountries.map((country) => (
+                      <button
+                        key={country.isoCode}
+                        type="button"
+                        onClick={() => {
+                          setSelectedCountry(country);
+                          setIsCountryDropdownOpen(false);
+                          setCountrySearchQuery("");
+                        }}
+                        className={`w-full px-3 py-2 text-left text-[14px] hover:bg-[#F7F9FC] flex items-center gap-2 ${
+                          selectedCountry.isoCode === country.isoCode
+                            ? "bg-blue-50"
+                            : ""
+                        }`}
+                      >
+                        <span className="text-lg">{country.flag}</span>
+                        <span className="flex-1 text-[#344054]">{country.name}</span>
+                        <span className="text-[#98A2B3]">+{country.phonecode}</span>
+                      </button>
+                    ))
+                  ) : (
+                    <div className="px-3 py-4 text-center text-[14px] text-gray-500">
+                      No countries found
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
           <input
             type="tel"

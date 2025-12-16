@@ -60,8 +60,11 @@ export interface VendorOrder {
 }
 
 export const vendorService = {
-  async getAnalytics(vendorId: string) {
-    const response = await fetchWithAuth(`${API_BASE_URL}/vendor/${vendorId}/analytics`);
+  async getAnalytics(vendorId: string, range = "7days") {
+    const response = await fetchWithAuth(`${API_BASE_URL}/dashboard/vendors/${vendorId}/analytics?range=${range}`);
+    if (!response.ok) {
+      throw new Error('Failed to fetch vendor analytics');
+    }
     return response.json();
   },
 

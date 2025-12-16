@@ -41,7 +41,14 @@ const Wishlist = ({ productData, price, optionId, variantId }: WishlistCompnent)
         if (isInWishlist(productData?._id!)) {
           removeFromWishlist({ productId: productData?._id!, variantId, optionId });
         } else {
-          addToWishlist({ productId: productData?._id!, price, optionId, variantId });
+          addToWishlist({ 
+            productId: productData?._id!, 
+            price,
+            productData: {
+              name: productData?.name,
+              images: productData?.images,
+            }
+          });
         }
       }}
       disabled={isAddingToWishlist}

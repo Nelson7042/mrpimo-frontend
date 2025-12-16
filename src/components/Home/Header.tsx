@@ -32,6 +32,7 @@ import { useVendorStore } from "@/stores/useVendorStore";
 import AuthenticationModalVendor from "@/app/(auth)/authenticationModalVendor";
 import { resetAllStores } from "@/stores/resetStore";
 import { ProfileCircle } from "iconsax-react";
+import { formatProductPrice } from "@/utils/formatPrice";
 
 const Header = () => {
   const [isSell, setIsSell] = useState(false);
@@ -69,13 +70,17 @@ const Header = () => {
   };
 
   const handleProfileClick = () => {
-    resetAllStores();
     if (!user) {
       // Store the intended redirect URL before opening modal
-      sessionStorage.setItem("redirectAfterLogin", "/home/user");
+        sessionStorage.setItem("redirectAfterLogin", "/home/user");
       openModal();
     } else {
-      router.push("/home/user");
+      // Check if user is a vendor and route accordingly
+      if (vendor) {
+        router.push("/vendor/dashboard");
+      } else {
+        router.push("/home/user");
+      }
     }
   };
   const handlecloseModal = () => {
@@ -156,7 +161,7 @@ const Header = () => {
             ))}
           </div>
 
-          {/* <button
+          {/* <button//www.w3.org/2000/svg
             onClick={handleSellClick}
             className="text-[#121212]  px-3 sm:px-4 py-2 lg:py-3  lg:w-[180px] rounded-md bg-white font-normal  text-xs sm:text-sm lg:text-base"
           >
@@ -265,38 +270,41 @@ const Header = () => {
                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-w-2xl mx-auto">
                   <div className="py-2">
                     {suggestionsData?.suggestions &&
-                      suggestionsData.suggestions.map((suggestion) => (
-                        <Link
-                          key={suggestion._id}
-                          href={`/home/product-details/${suggestion.slug}`}
-                          onClick={() => handleSuggestionClick(suggestion)}
-                          className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer"
-                        >
-                          <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0">
-                            {suggestion.images?.[0] && (
-                              <img
-                                src={suggestion.images[0]}
-                                alt={suggestion.name}
-                                className="w-full h-full object-cover rounded"
-                              />
-                            )}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium text-gray-900 truncate">
-                              {suggestion.name}
-                            </p>
-                            <p className="text-xs text-gray-500">
-                              {suggestion.category?.main?.name}
-                            </p>
-                          </div>
-                          {suggestion.variants?.[0]?.options?.[0]?.price && (
-                            <div className="text-sm font-semibold text-gray-900">
-                              ₦
-                              {suggestion.variants[0].options[0].price.toLocaleString()}
+                      suggestionsData.suggestions.map((suggestion) => {
+                        const price = formatProductPrice(suggestion);
+                        
+                        return (
+                          <Link
+                            key={suggestion._id}
+                            href={`/home/product-details/${suggestion._id}`}
+                            onClick={() => handleSuggestionClick(suggestion)}
+                            className="flex items-center gap-3 px-4 py-2 hover:bg-gray-50 cursor-pointer"
+                          >
+                            <div className="w-10 h-10 bg-gray-100 rounded flex-shrink-0">
+                              {suggestion.images?.[0] && (
+                                <img
+                                  src={suggestion.images[0]}
+                                  alt={suggestion.name}
+                                  className="w-full h-full object-cover rounded"
+                                />
+                              )}
                             </div>
-                          )}
-                        </Link>
-                      ))}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium text-gray-900 truncate">
+                                {suggestion.name}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {suggestion.category?.main?.name}
+                              </p>
+                            </div>
+                            {price && price !== "$0" && (
+                              <div className="text-sm font-semibold text-gray-900">
+                                {price}
+                              </div>
+                            )}
+                          </Link>
+                        );
+                      })}
                   </div>
                 </div>
               )}
@@ -376,7 +384,7 @@ const Header = () => {
                       suggestionsData.suggestions.map((suggestion) => (
                         <Link
                           key={suggestion._id}
-                          href={`/home/product-details/${suggestion.slug}`}
+                          href={`/home/product-details/${suggestion._id}`}
                           onClick={() => {
                             handleSuggestionClick(suggestion);
                             setIsSearchOpen(false);
@@ -400,12 +408,17 @@ const Header = () => {
                               {suggestion.category?.main?.name}
                             </p>
                           </div>
-                          {suggestion.variants?.[0]?.options?.[0]?.price && (
-                            <div className="text-xs font-semibold text-gray-900">
-                              ₦
-                              {suggestion.variants[0].options[0].price.toLocaleString()}
-                            </div>
-                          )}
+                          {(() => {
+                            const price = formatProductPrice(suggestion);
+                            if (price && price !== "$0") {
+                              return (
+                                <div className="text-xs font-semibold text-gray-900">
+                                  {price}
+                                </div>
+                              );
+                            }
+                            return null;
+                          })()}
                         </Link>
                       ))}
                   </div>

@@ -45,14 +45,24 @@ export default function BuyNowSummary({
   walletBalance: initialWalletBalance,
   isProcessing
 }: BuyNowSummaryProps) {
-  const [walletBalance, setWalletBalance] = useState(initialWalletBalance || 0);
+  // Ensure walletBalance is always a number
+  const getNumericBalance = (value: any): number => {
+    if (value === null || value === undefined) return 0;
+    const num = typeof value === 'string' ? parseFloat(value) : Number(value);
+    return isNaN(num) ? 0 : num;
+  };
+
+  const [walletBalance, setWalletBalance] = useState(getNumericBalance(initialWalletBalance));
   const [isLoadingWallet, setIsLoadingWallet] = useState(false);
 
   useEffect(() => {
     if (isOpen && !initialWalletBalance) {
       fetchWalletBalance();
+    } else if (isOpen && initialWalletBalance !== undefined) {
+      // Update state if initialWalletBalance changes
+      setWalletBalance(getNumericBalance(initialWalletBalance));
     }
-  }, [isOpen]);
+  }, [isOpen, initialWalletBalance]);
 
   const fetchWalletBalance = async () => {
     setIsLoadingWallet(true);
@@ -60,7 +70,7 @@ export default function BuyNowSummary({
       const response = await fetchWithAuth(`${API_BASE_URL}/wallets/balance`);
       const data = await response.json();
       if (data.success) {
-        setWalletBalance(data.balance || 0);
+        setWalletBalance(getNumericBalance(data.balance));
       }
     } catch (error) {
       console.error('Failed to fetch wallet balance:', error);
@@ -160,7 +170,7 @@ export default function BuyNowSummary({
               <span className="text-gray-500">Loading...</span>
             ) : (
               <span className={`font-medium ${canPayWithWallet ? 'text-green-600' : 'text-red-600'}`}>
-                {currencySymbol}{(walletBalance || 0).toFixed(2)}
+                {currencySymbol}{Number(walletBalance || 0).toFixed(2)}
               </span>
             )}
           </div>
