@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useValidateCart } from "@/hooks/useCheckout";
 import React, { useEffect } from "react";
 import CartTotalSkeleton from "./CartTotalSkeleton";
-import { useCartStore } from "@/stores/cartStore_";
+import { useCartStore } from "@/stores/cartStore";
 
 type Props = {
   openModal: () => void;

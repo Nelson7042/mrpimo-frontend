@@ -39,7 +39,6 @@ const alexandria = Alexandria({
 export const metadata: Metadata = {
   title: "Mprimo",
   description: "A global marketplace",
-  themeColor: '#2563EB',
   manifest: '/manifest.json',
 };
 
@@ -48,6 +47,7 @@ export const viewport = {
   initialScale: 1,
   maximumScale: 1,
   userScalable: false,
+  themeColor: '#2563EB',
 };
 
 export default function RootLayout({

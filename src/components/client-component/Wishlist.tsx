@@ -2,7 +2,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useWishlistStore } from "@/stores/useWishlistStore";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type.ts";
 import { User } from "@/types/user.type";
 import { Heart } from "lucide-react";
 import React from "react";
