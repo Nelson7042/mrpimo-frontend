@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { AllProduct } from "@/utils/config";
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 import { ProductCard } from "@/components/Home/ProductCard";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter } from "next/navigation";

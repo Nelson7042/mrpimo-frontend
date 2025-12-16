@@ -2,7 +2,7 @@ import React from "react";
 import {  ArrowRight, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import { API_BASE_URL } from "@/utils/config";

@@ -52,7 +52,7 @@ export default function CustomerReviews() {
   }
 
   return (
-    <section className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-14 lg:py-18">
+    <section className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10">
       <div className="text-center mb-12 lg:mb-16">
         <h2 className="text-lg lg:text-2xl font-bold text-gray-900">Customer Reviews</h2>
       </div>

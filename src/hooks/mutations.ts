@@ -714,16 +714,15 @@ export const useDeletePaymentMethod = () => {
   });
 };
 
+
+
 // Create order from buy now
 const createBuyNowOrder = async (data: {
   validatedItems: Array<{
     productId: string;
-    variantId: string;
+    variantId?: string;
     optionId?: string;
     quantity?: number;
-    price: number;
-    vendorPrice: number;
-    total: number;
   }>;
   pricing: {
     subtotal: number;
@@ -731,9 +730,11 @@ const createBuyNowOrder = async (data: {
     shipping: number;
     total: number;
     currency: string;
+    userCurrency?: string;
   };
   paymentData: any;
   address: any;
+  isBuyNow?: boolean;
 }) => {
   const response = await fetchWithAuth(`${API_BASE_URL}/orders/`, {
     method: 'POST',

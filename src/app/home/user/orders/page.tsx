@@ -109,137 +109,147 @@ export default function OrdersPage() {
   }
 
   const orders = ordersData?.orders || [];
-  const totalPages = ordersData?.totalPages || 1;
+  const totalPages = ordersData?.pagination?.pages || ordersData?.totalPages || 1;
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Breadcrumbs
-        items={manualBreadcrumbs}
-        onItemClick={handleBreadcrumbClick}
-        className="mb-4"
-      />
+        <Breadcrumbs
+          items={manualBreadcrumbs}
+          onItemClick={handleBreadcrumbClick}
+          className="mb-2 md:mb-6"
+        />
 
+      
       <div className="mb-4 md:mb-6">
         <h1 className="text-lg md:text-xl lg:text-2xl font-bold">My Orders</h1>
       </div>
 
-      <div className="bg-white rounded-lg border overflow-hidden">
-        <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-gray-700">
-          <div className="col-span-2">ORDER ID</div>
-          <div className="col-span-2">DATE</div>
-          <div className="col-span-2">STATUS</div>
-          <div className="col-span-2">TOTAL</div>
-          <div className="col-span-2">ITEMS</div>
-          <div className="col-span-2">ACTIONS</div>
-        </div>
+        <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 md:p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b font-semibold text-sm text-gray-700 uppercase tracking-wide">
+            <div className="col-span-2">Order ID</div>
+            <div className="col-span-2">Date</div>
+            <div className="col-span-2">Status</div>
+            <div className="col-span-2">Total</div>
+            <div className="col-span-2">Items</div>
+            <div className="col-span-2">Actions</div>
+          </div>
 
-        <div className="divide-y">
-          {orders.length === 0 ? (
-            <div className="p-8 text-center">
-              <Package className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-              <p className="text-gray-500">No orders found</p>
-            </div>
-          ) : (
+          <div className="divide-y divide-gray-100">
+            {orders.length === 0 ? (
+              <div className="p-12 text-center">
+                <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
+                  <Package className="w-8 h-8 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-1">No orders yet</h3>
+                <p className="text-gray-500 mb-4">Start shopping to see your orders here</p>
+                <Button onClick={() => router.push('/home')} className="bg-blue-600 hover:bg-blue-700">
+                  Start Shopping
+                </Button>
+              </div>
+            ) : (
             orders.map((order: any) => {
               const itemCount = order.items.length;
               const isExpanded = expandedOrders.has(order._id);
               
               return (
-                <div key={order._id} className="border-b last:border-b-0">
-                  <div className="p-4 hover:bg-gray-50 transition-colors">
-                    <div className="md:hidden">
-                      <div className="flex justify-between items-start mb-3">
+                <div key={order._id} className="transition-all duration-200 hover:bg-gray-50/50">
+                  <div className="p-5">
+                    <div className="md:hidden space-y-4">
+                      <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-medium text-sm">#{order._id.slice(-8)}</p>
-                          <p className="text-xs text-gray-500">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</p>
+                          <p className="font-semibold text-gray-900">#{order._id.slice(-8)}</p>
+                          <p className="text-sm text-gray-500 mt-0.5">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</p>
                         </div>
-                        <Badge className={getStatusColor(order.status)}>
-                          <span className="flex items-center gap-1">
+                        <Badge className={`${getStatusColor(order.status)} px-3 py-1`}>
+                          <span className="flex items-center gap-1.5 text-xs font-medium">
                             {getStatusIcon(order.status)}
-                            {order.status}
+                            <span className="capitalize">{order.status}</span>
                           </span>
                         </Badge>
                       </div>
-                      <div className="flex justify-between items-center mb-3">
-                        <span className="font-medium">${order.paymentId?.amount?.toFixed(2) || '0.00'}</span>
-                        <span className="text-sm text-gray-600">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <div className="flex gap-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm"
-                            onClick={() => toggleOrderExpansion(order._id)}
-                            className="text-blue-600 p-0"
-                          >
-                            {isExpanded ? 'Hide' : 'Show'} Items
-                            {isExpanded ? <ChevronUp className="w-4 h-4 ml-1" /> : <ChevronDown className="w-4 h-4 ml-1" />}
-                          </Button>
-                          <Button 
-                            size="sm" 
-                            variant="link" 
-                            className="text-blue-600 p-0"
-                            onClick={() => handleViewDetails(order._id)}
-                          >
-                            View Details
-                          </Button>
+                      <div className="flex justify-between items-center py-3 border-t border-b border-gray-100">
+                        <div>
+                          <p className="text-xs text-gray-500 mb-1">Total Amount</p>
+                          <p className="text-lg font-bold text-gray-900">${order.paymentId?.amount?.toFixed(2) || '0.00'}</p>
                         </div>
-                        <div className="flex gap-2">
-                          {(order.status === 'pending' || order.status === 'processing') && (
-                            <Button 
-                              size="sm" 
-                              variant="link" 
-                              className="text-red-600 p-0"
-                              onClick={() => handleCancelOrder(order._id)}
-                              disabled={cancelOrderMutation.isPending}
-                            >
-                              Cancel
-                            </Button>
-                          )}
+                        <div className="text-right">
+                          <p className="text-xs text-gray-500 mb-1">Items</p>
+                          <p className="text-lg font-semibold text-gray-700">{itemCount}</p>
                         </div>
                       </div>
-                    </div>
-
-                    <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
-                      <div className="col-span-2">
-                        <p className="font-medium">#{order._id.slice(-8)}</p>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-sm">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</span>
-                      </div>
-                      <div className="col-span-2">
-                        <Badge className={getStatusColor(order.status)}>
-                          <span className="flex items-center gap-1">
-                            {getStatusIcon(order.status)}
-                            {order.status}
-                          </span>
-                        </Badge>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="font-medium">${order.paymentId?.amount?.toFixed(2) || '0.00'}</span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-sm">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
-                      </div>
-                      <div className="col-span-2 flex gap-2">
+                      <div className="grid grid-cols-2 gap-2">
                         <Button 
-                          size="sm" 
+                          size="sm"
                           variant="outline"
                           onClick={() => toggleOrderExpansion(order._id)}
+                          className="border-gray-300 hover:bg-gray-50"
                         >
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          {isExpanded ? <ChevronUp className="w-4 h-4 mr-1" /> : <ChevronDown className="w-4 h-4 mr-1" />}
+                          {isExpanded ? 'Hide' : 'Show'}
                         </Button>
                         <Button 
                           size="sm" 
-                          variant="outline"
                           onClick={() => handleViewDetails(order._id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           View
                         </Button>
                         {(order.status === 'pending' || order.status === 'processing') && (
                           <Button 
                             size="sm" 
-                            variant="destructive"
+                            variant="outline"
+                            className="col-span-2 border-red-300 text-red-600 hover:bg-red-50"
+                            onClick={() => handleCancelOrder(order._id)}
+                            disabled={cancelOrderMutation.isPending}
+                          >
+                            Cancel Order
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
+                      <div className="col-span-2">
+                        <p className="font-semibold text-gray-900">#{order._id.slice(-8)}</p>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-sm text-gray-600">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <Badge className={`${getStatusColor(order.status)} px-3 py-1.5`}>
+                          <span className="flex items-center gap-1.5 text-xs font-medium">
+                            {getStatusIcon(order.status)}
+                            <span className="capitalize">{order.status}</span>
+                          </span>
+                        </Badge>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="font-semibold text-gray-900">${order.paymentId?.amount?.toFixed(2) || '0.00'}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-sm text-gray-600">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
+                      </div>
+                      <div className="col-span-2 flex flex-col md:flex-row gap-2">
+                        <Button 
+                          size="sm" 
+                          variant="ghost"
+                          onClick={() => toggleOrderExpansion(order._id)}
+                          className="hover:bg-gray-100"
+                        >
+                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        </Button>
+                        <Button 
+                          size="sm" 
+                          onClick={() => handleViewDetails(order._id)}
+                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                        >
+                          View
+                        </Button>
+                        {(order.status === 'pending' || order.status === 'processing') && (
+                          <Button 
+                            size="sm" 
+                            variant="outline"
+                            className="border-red-300 text-red-600 hover:bg-red-50"
                             onClick={() => handleCancelOrder(order._id)}
                             disabled={cancelOrderMutation.isPending}
                           >
@@ -250,82 +260,213 @@ export default function OrdersPage() {
                     </div>
                   </div>
 
-                  {isExpanded && (
-                    <div className="px-4 pb-4 bg-gray-50">
-                      <div className="space-y-3">
-                        <div>
-                          <h4 className="font-medium text-sm mb-2">Order Items</h4>
-                          <div className="space-y-2">
-                            {order.items.map((item: any, idx: number) => (
-                              <div key={idx} className="flex gap-3 p-3 bg-white rounded-lg border">
-                                <Image
-                                  src={item.productId?.images?.[0] || "/placeholder.svg"}
-                                  alt={item.productId?.name || "Product"}
-                                  width={60}
-                                  height={60}
-                                  className="rounded object-cover"
-                                />
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm truncate">{item.productId?.name}</p>
-                                  <p className="text-xs text-gray-600">Qty: {item.quantity}</p>
-                                  <p className="text-sm font-medium text-blue-600">${(item.displayPrice || item.price)?.toFixed(2)}</p>
-                                </div>
-                                <div className="text-right">
-                                  <p className="font-medium text-sm">${((item.displayPrice || item.price) * item.quantity)?.toFixed(2)}</p>
-                                </div>
+                  {isExpanded && (() => {
+                    // Group items by shipment
+                    const shipmentGroups = new Map<string, { shipment: any; items: any[] }>();
+                    
+                    order.shipments?.forEach((shipment: any) => {
+                      const trackingKey = shipment.shipping?.trackingNumber || `shipment-${shipment._id}`;
+                      shipmentGroups.set(trackingKey, {
+                        shipment,
+                        items: order.items.filter((item: any) => 
+                          shipment.items?.some((si: any) => 
+                            si.productId === item.productId?._id || 
+                            si.productId === item.productId?.id ||
+                            si._id === item._id
+                          )
+                        )
+                      });
+                    });
+
+                    // Items without shipment info
+                    const itemsWithoutShipment = order.items.filter((item: any) => 
+                      !order.shipments?.some((s: any) => 
+                        s.items?.some((si: any) => 
+                          si.productId === item.productId?._id || 
+                          si.productId === item.productId?.id ||
+                          si._id === item._id
+                        )
+                      )
+                    );
+
+                    return (
+                      <div className="px-5 pb-5 bg-gradient-to-b from-gray-50 to-white border-t border-gray-100">
+                        <div className="space-y-4 pt-4">
+                          {/* Delivery Address */}
+                          {order.items?.[0]?.deliveryAddress && (
+                            <div className="mb-4">
+                              <h4 className="font-semibold text-gray-900 mb-2 flex items-center gap-2 text-sm">
+                                <Truck className="w-4 h-4" />
+                                Delivery Address
+                              </h4>
+                              <div className="p-3 bg-white rounded-lg border border-gray-200 text-sm">
+                                <p className="font-medium text-gray-900">{order.items[0].deliveryAddress.street}</p>
+                                <p className="text-gray-600">{order.items[0].deliveryAddress.city}, {order.items[0].deliveryAddress.state} {order.items[0].deliveryAddress.postalCode}</p>
                               </div>
-                            ))}
-                          </div>
+                            </div>
+                          )}
+
+                          {/* Order Items Table */}
+                          {shipmentGroups.size === 0 ? (
+                            <div className="bg-white rounded-lg border border-gray-200 p-8 text-center">
+                              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-orange-100 mb-3">
+                                <Package className="w-6 h-6 text-orange-600" />
+                              </div>
+                              <h3 className="text-lg font-semibold text-gray-900 mb-1">Item(s) not shipped yet</h3>
+                              <p className="text-sm text-gray-600">Your order is being prepared. Tracking information will be available soon.</p>
+                            </div>
+                          ) : (
+                            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                              {/* Desktop Table */}
+                              <div className="hidden lg:block overflow-x-auto">
+                                <table className="w-full">
+                                  <thead className="bg-gray-50 border-b border-gray-200">
+                                    <tr>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Product</th>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Qty</th>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Price</th>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Tracking</th>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Carrier</th>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Status</th>
+                                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 uppercase">Est. Delivery</th>
+                                    </tr>
+                                  </thead>
+                                  <tbody className="divide-y divide-gray-200">
+                                    {Array.from(shipmentGroups.values()).map((group, groupIdx) => {
+                                      const { shipment, items } = group;
+                                      return items.map((item: any, itemIdx: number) => (
+                                        <tr key={`${groupIdx}-${itemIdx}`} className="hover:bg-gray-50">
+                                          <td className="px-4 py-3">
+                                            <div className="flex items-center gap-3">
+                                              <Image
+                                                src={item.productId?.images?.[0] || "/placeholder.svg"}
+                                                alt={item.productId?.name || "Product"}
+                                                width={50}
+                                                height={50}
+                                                className="rounded-lg object-cover"
+                                              />
+                                              <div className="min-w-0">
+                                                <p className="font-semibold text-sm text-gray-900 truncate">{item.productId?.name}</p>
+                                                {items.length > 1 && itemIdx > 0 && (
+                                                  <p className="text-xs text-blue-600 flex items-center gap-1 mt-0.5">
+                                                    <Truck className="w-3 h-3" />
+                                                    Ships with item above
+                                                  </p>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </td>
+                                          <td className="px-4 py-3 text-sm text-gray-900">{item.quantity}</td>
+                                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate).toFixed(2)}</td>
+                                          <td className="px-4 py-3">
+                                            {itemIdx === 0 ? (
+                                              <p className="text-xs font-semibold text-blue-600 break-all">
+                                                {shipment.shipping?.trackingNumber || 'Pending'}
+                                              </p>
+                                            ) : (
+                                              <p className="text-xs text-gray-400 italic">Same as above</p>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {itemIdx === 0 ? (
+                                              <p className="text-xs font-semibold text-gray-900 capitalize">
+                                                {shipment.shipping?.carrier || 'TBD'}
+                                              </p>
+                                            ) : (
+                                              <p className="text-xs text-gray-400 italic">—</p>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {itemIdx === 0 ? (
+                                              <Badge className={`${shipment.shipping?.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} hover:bg-current`}>
+                                                <span className="capitalize text-xs">{shipment.shipping?.status || 'pending'}</span>
+                                              </Badge>
+                                            ) : (
+                                              <p className="text-xs text-gray-400 italic">—</p>
+                                            )}
+                                          </td>
+                                          <td className="px-4 py-3">
+                                            {itemIdx === 0 ? (
+                                              <p className="text-xs font-semibold text-gray-900">
+                                                {shipment.shipping?.estimatedDelivery 
+                                                  ? format(new Date(shipment.shipping.estimatedDelivery), 'MMM dd, yyyy')
+                                                  : 'TBD'
+                                                }
+                                              </p>
+                                            ) : (
+                                              <p className="text-xs text-gray-400 italic">—</p>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      ));
+                                    })}
+                                  </tbody>
+                                </table>
+                              </div>
+
+                              {/* Mobile Cards */}
+                              <div className="lg:hidden divide-y divide-gray-200">
+                                {Array.from(shipmentGroups.values()).map((group, groupIdx) => {
+                                  const { shipment, items } = group;
+                                  return items.map((item: any, itemIdx: number) => (
+                                    <div key={`${groupIdx}-${itemIdx}`} className="p-4 space-y-3">
+                                      <div className="flex gap-3">
+                                        <Image
+                                          src={item.productId?.images?.[0] || "/placeholder.svg"}
+                                          alt={item.productId?.name || "Product"}
+                                          width={60}
+                                          height={60}
+                                          className="rounded-lg object-cover"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                          <p className="font-semibold text-sm text-gray-900">{item.productId?.name}</p>
+                                          <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity}</p>
+                                          <p className="text-sm font-bold text-gray-900 mt-1">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate).toFixed(2)}</p>
+                                          {items.length > 1 && itemIdx > 0 && (
+                                            <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
+                                              <Truck className="w-3 h-3" />
+                                              Ships with item above
+                                            </p>
+                                          )}
+                                        </div>
+                                      </div>
+                                      {itemIdx === 0 && (
+                                        <div className="bg-gray-50 rounded-lg p-3 space-y-2 text-xs">
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Tracking:</span>
+                                            <span className="font-semibold text-blue-600">{shipment.shipping?.trackingNumber || 'Pending'}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Carrier:</span>
+                                            <span className="font-semibold text-gray-900 capitalize">{shipment.shipping?.carrier || 'TBD'}</span>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Status:</span>
+                                            <Badge className={`${shipment.shipping?.status === 'delivered' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'} hover:bg-current`}>
+                                              <span className="capitalize text-xs">{shipment.shipping?.status || 'pending'}</span>
+                                            </Badge>
+                                          </div>
+                                          <div className="flex justify-between">
+                                            <span className="text-gray-600">Est. Delivery:</span>
+                                            <span className="font-semibold text-gray-900">
+                                              {shipment.shipping?.estimatedDelivery 
+                                                ? format(new Date(shipment.shipping.estimatedDelivery), 'MMM dd, yyyy')
+                                                : 'TBD'
+                                              }
+                                            </span>
+                                          </div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ));
+                                })}
+                              </div>
+                            </div>
+                          )}
                         </div>
-
-                        {order.items?.[0]?.deliveryAddress && (
-                          <div>
-                            <h4 className="font-medium text-sm mb-2">Delivery Address</h4>
-                            <div className="p-3 bg-white rounded-lg border text-sm">
-                              <p>{order.items[0].deliveryAddress.street}</p>
-                              <p>{order.items[0].deliveryAddress.city}, {order.items[0].deliveryAddress.state}</p>
-                              <p>{order.items[0].deliveryAddress.country} {order.items[0].deliveryAddress.postalCode}</p>
-                            </div>
-                          </div>
-                        )}
-
-                        {order.shipments && order.shipments.length > 0 && (
-                          <div>
-                            <h4 className="font-medium text-sm mb-2">Shipping Information</h4>
-                            <div className="space-y-2">
-                              {order.shipments.map((shipment: any, idx: number) => (
-                                <div key={idx} className="p-3 bg-white rounded-lg border">
-                                  <div className="grid grid-cols-2 gap-2 text-sm">
-                                    <div>
-                                      <p className="text-gray-600">Tracking</p>
-                                      <p className="font-medium text-blue-600">{shipment.shipping?.trackingNumber || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-gray-600">Carrier</p>
-                                      <p className="font-medium capitalize">{shipment.shipping?.carrier || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-gray-600">Status</p>
-                                      <p className="font-medium capitalize">{shipment.shipping?.status || 'N/A'}</p>
-                                    </div>
-                                    <div>
-                                      <p className="text-gray-600">Est. Delivery</p>
-                                      <p className="font-medium">
-                                        {shipment.shipping?.estimatedDelivery 
-                                          ? format(new Date(shipment.shipping.estimatedDelivery), 'MMM dd, yyyy')
-                                          : 'TBD'
-                                        }
-                                      </p>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
                       </div>
-                    </div>
-                  )}
+                    );
+                  })()}
                 </div>
               )
             })
@@ -333,27 +474,29 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      {totalPages > 1 && (
-        <div className="mt-6 flex justify-center gap-2">
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            disabled={currentPage === 1}
-          >
-            Previous
-          </Button>
-          <span className="flex items-center px-4">
-            Page {currentPage} of {totalPages}
-          </span>
-          <Button
-            variant="outline"
-            onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            disabled={currentPage === totalPages}
-          >
-            Next
-          </Button>
-        </div>
-      )}
+        {totalPages > 1 && (
+          <div className="mt-8 flex justify-center items-center gap-3">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="px-6 border-gray-300 hover:bg-gray-50"
+            >
+              Previous
+            </Button>
+            <span className="flex items-center px-6 py-2 bg-white rounded-lg border border-gray-200 font-medium text-sm">
+              Page {currentPage} of {totalPages}
+            </span>
+            <Button
+              variant="outline"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="px-6 border-gray-300 hover:bg-gray-50"
+            >
+              Next
+            </Button>
+          </div>
+        )}
     </div>
   )
 }

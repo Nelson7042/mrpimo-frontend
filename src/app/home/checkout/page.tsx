@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import {  Copy, Check, Loader2 } from "lucide-react";
+import {  Copy, Check, Loader2, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,28 +77,7 @@ export default function CheckoutPage() {
     if (cartItems.length > 0) {
       validateCart();
     }
-  }, [cartItems.length]);
-
-  useEffect(() => {
-    if (user) {
-      const billingAddr = user.addresses?.find(addr => addr.type === "billing");
-      setFormData({
-        firstName: user.profile?.firstName || "",
-        middleName: "",
-        lastName: user.profile?.lastName || "",
-        email: user.email || "",
-        address: {
-          type: "billing" as const,
-          street: billingAddr?.street || "",
-          city: billingAddr?.city || "",
-          state: billingAddr?.state || "",
-          country: billingAddr?.country || "",
-          postalCode: billingAddr?.postalCode || "",
-          isDefault: true,
-        },
-      });
-    }
-  }, [user]);
+  }, []);
 
   const checkout = validationData?.checkout;
   const subtotal = checkout?.pricing?.subtotal || 0;
@@ -111,12 +90,20 @@ export default function CheckoutPage() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const [paymentIntentData, setPaymentIntentData] = useState<any>(null);
   const [showPaymentUI, setShowPaymentUI] = useState(false);
+  const [orderProcessingStage, setOrderProcessingStage] = useState<'idle' | 'validating' | 'creating' | 'finalizing' | 'complete' | 'error'>('idle');
+  const [showOrderProcessing, setShowOrderProcessing] = useState(false);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
   const handleProceedToPayment = async () => {
+    if (!user) {
+      toast.error("You have to be logged in to proceed to checkout");
+      // router.push('/home/my-cart'); we have to use the sign up modal
+      return;
+    }
+
     // Validate form
     if (
       !formData.firstName ||
@@ -150,25 +137,26 @@ export default function CheckoutPage() {
           address: formData.address,
           duplicateForShipping: sameAsShipping
         });
-        console.log('Step 1: Billing address saved');
 
         // Save shipping address if different
         if (!sameAsShipping && shippingAddress.street) {
-          console.log('Step 2: Saving shipping address...');
           await addAddressMutation.mutateAsync({
             address: shippingAddress
           });
-          console.log('Step 2: Shipping address saved');
         }
       }
 
-      const items = checkout?.items?.map((item: any) => ({
-        productId: item.productId,
-        quantity: item.quantity,
-        variantId: item.variantId,
-        price: item.price,
-        optionId:item.optionId
-      })) || [];
+      const items = checkout?.items?.map((item: any) => {
+        const itemData: any = {
+          productId: item.productId,
+          quantity: item.quantity,
+          price: item.price,
+        };
+        if (item.variantId) itemData.variantId = item.variantId;
+        if (item.optionId) itemData.optionId = item.optionId;
+        if (item.priceInfo?.exchangeRate) itemData.exchangeRate = item.priceInfo.exchangeRate;
+        return itemData;
+      }) || [];
 
       let paymentData: any = {
         type: paymentCategory,
@@ -176,12 +164,10 @@ export default function CheckoutPage() {
       };
 
       if (paymentCategory === 'fiat') {
-        console.log('Step 3: Creating fiat payment intent...');
         const response: any = await createPaymentIntentMutation.mutateAsync({
           items,
           paymentMethod: fiatProvider || 'stripe',
         });
-        console.log('Step 3: Payment intent response:', response);
         
         if (response.success) {
           // Store payment intent data and show payment UI
@@ -191,18 +177,15 @@ export default function CheckoutPage() {
             provider: fiatProvider,
             items,
             pricing: { subtotal, shipping, tax, total, currency },
-            deliveryMethod: 'standard',
           });
           setShowPaymentUI(true);
         }
       } else if (paymentCategory === 'crypto') {
-        console.log('Step 3: Creating crypto payment intent...');
         const response: any = await createPaymentIntentMutation.mutateAsync({
           items,
           paymentMethod: 'crypto',
           tokenType: 'USDC',
         });
-        console.log('Step 3: Payment intent response:', response);
         
         if (response.success) {
           // For crypto, proceed directly to order creation after wallet confirmation
@@ -211,12 +194,10 @@ export default function CheckoutPage() {
             type: 'crypto',
             items,
             pricing: { subtotal, shipping, tax, total, currency },
-            deliveryMethod: 'standard',
           });
         }
       }
     } catch (error: any) {
-      console.error("Payment setup failed:", error);
       toast.error(error.message || "Failed to setup payment");
     } finally {
       setIsProcessing(false);
@@ -224,40 +205,90 @@ export default function CheckoutPage() {
   };
 
   const handleCreateOrder = async (paymentData: any) => {
-    setIsProcessing(true);
+    // Close Stripe modal immediately after payment success
+    setShowPaymentUI(false);
+    
+    // Show order processing modal
+    setShowOrderProcessing(true);
+    setOrderProcessingStage('validating');
+    
     try {
-      const orderData = {
-        validatedItems: paymentData.items,
-        pricing: paymentData.pricing,
-        paymentData: {
-          type: paymentData.type,
-          paymentIntentId: paymentData.paymentIntentId,
-          provider: paymentData.provider,
-        },
-        address: formData.address,
-        deliveryMethod: paymentData.deliveryMethod || "standard",
+      // Stage 1: Validating payment
+      await new Promise(resolve => setTimeout(resolve, 1500));
+      
+      const cleanedItems = paymentData.items.map((item: any) => {
+        const cleaned: any = {
+          productId: item.productId,
+          quantity: item.quantity,
+        };
+        if (item.variantId) cleaned.variantId = item.variantId;
+        if (item.optionId) cleaned.optionId = item.optionId;
+        return cleaned;
+      });
+
+      const paymentType = paymentData.provider || paymentData.type;
+      const orderPaymentData: any = {
+        type: paymentType,
+        amount: paymentData.pricing.total,
       };
 
-      console.log('Creating order after payment...', orderData);
-      const result: any = await createOrderMutation.mutateAsync(orderData);
-      console.log('Order created:', result);
+      if (paymentType === 'stripe' && paymentData.paymentIntentId) {
+        orderPaymentData.paymentIntentId = paymentData.paymentIntentId;
+      } else if (paymentType === 'crypto') {
+        if (paymentData.token) orderPaymentData.token = paymentData.token;
+        if (paymentData.walletAddress) orderPaymentData.walletAddress = paymentData.walletAddress;
+      }
 
-      if (result.order || result.data) {
+      // Stage 2: Creating order
+      setOrderProcessingStage('creating');
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const orderData = {
+        validatedItems: cleanedItems,
+        pricing: paymentData.pricing,
+        paymentData: orderPaymentData,
+        address: {
+          street: formData.address.street,
+          city: formData.address.city,
+          state: formData.address.state,
+          country: formData.address.country,
+          postalCode: formData.address.postalCode,
+          type: formData.address.type,
+        },
+      };
+
+      const result: any = await createOrderMutation.mutateAsync(orderData);
+
+      if (result.success === false) {
+        throw new Error(result.message || 'Order creation failed');
+      }
+
+      // Stage 3: Finalizing
+      setOrderProcessingStage('finalizing');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+
+      if (result.order || result.data || result.message === 'Order created successfully') {
         const order = result.order || result.data;
         setOrderId(order._id || order.id);
+        
+        // Stage 4: Complete
+        setOrderProcessingStage('complete');
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        
         await clearCart();
-        // Refresh user data to update order history
+        await useCartStore.getState().loadCart();
         const { useUserStore } = await import('@/stores/useUserStore');
         await useUserStore.getState().refreshUser();
-        setShowPaymentUI(false);
-        setShowSuccess(true);
+        
+        // Close processing modal and redirect
+        setShowOrderProcessing(false);
+        router.push('/home/user/orders');
       }
     } catch (error: any) {
-      console.error("Order creation failed:", error);
-      const errorMsg = error?.response?.data?.message || error?.message || "Failed to create order";
-      toast.error(errorMsg);
-    } finally {
-      setIsProcessing(false);
+      setOrderProcessingStage('error');
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setShowOrderProcessing(false);
+      toast.error(error.message || "An error occurred while creating your order");
     }
   };
 
@@ -272,15 +303,13 @@ export default function CheckoutPage() {
     e: React.MouseEvent<HTMLAnchorElement>
   ): void => {
     e.preventDefault();
-    console.log("Breadcrumb clicked:", item);
     if (item.href) {
       router.push(item?.href);
     }
   };
 
   const paymentCategories = [
-    { id: 'fiat', name: 'Fiat Currency', icon: '💳' },
-    // { id: 'crypto', name: 'Cryptocurrency', icon: '₿' },
+    { id: 'fiat', name: 'Fiat Currency', icon: CreditCard },
   ];
 
   const getProviderByCurrency = (currency: string): string => {
@@ -300,8 +329,9 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <div className="min-h-screen font-roboto bg-gray-50 body-padding">
-        <div className=" py-4 ">
+     
+      <div className="min-h-screen font-roboto bg-gray-50  ">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10 font-roboto  ">
           {/* Breadcrumb */}
           <Breadcrumbs
             items={manualBreadcrumbs}
@@ -318,7 +348,7 @@ export default function CheckoutPage() {
                   Provide your billing information to proceed
                 </p>
 
-                <div className="space-y-4 md:space-y-6">
+                <div className="space-y-6">
                   {/* Name Fields */}
                   <div className="grid md:grid-cols-3 gap-4">
                     <div>
@@ -330,7 +360,7 @@ export default function CheckoutPage() {
                         onChange={(e) =>
                           handleInputChange("firstName", e.target.value)
                         }
-                        className="mt-1 font-normal"
+                        className="mt-1"
                       />
                     </div>
                     <div>
@@ -499,7 +529,7 @@ export default function CheckoutPage() {
 
                 {/* Payment Method */}
                 <div className="mt-8">
-                  <h3 className="text-base md:text-lg font-bold mb-2">Payment Method</h3>
+                  <h3 className="text-xl font-bold mb-2">Payment Method</h3>
                   <p className="text-gray-600 mb-6">
                     Choose your preferred payment method
                   </p>
@@ -527,7 +557,7 @@ export default function CheckoutPage() {
                             htmlFor={category.id}
                             className="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50"
                           >
-                            <div className="text-2xl mb-2">{category.icon}</div>
+                            <category.icon className="w-6 h-6 mb-2" />
                             <span className="text-sm font-medium text-center">
                               {category.name}
                             </span>
@@ -546,7 +576,7 @@ export default function CheckoutPage() {
                   )}
 
                   {/* Bank Transfer Details */}
-                  {paymentMethod === "bank-transfer" && (
+                  {/* {paymentMethod === "bank-transfer" && (
                     <div className="bg-gray-50 rounded-lg p-6">
                       <div className="text-center mb-4">
                         <p className="font-medium">
@@ -589,10 +619,10 @@ export default function CheckoutPage() {
                         29:00
                       </p>
                     </div>
-                  )}
+                  )} */}
 
                   {/* Card Payment Details */}
-                  {paymentMethod === "card" && (
+                  {/* {paymentMethod === "card" && (
                     <div className="bg-gray-50 rounded-lg p-6">
                       <div className="flex items-center justify-between mb-4">
                         <h4 className="font-medium">Card Payment</h4>
@@ -610,7 +640,7 @@ export default function CheckoutPage() {
                         <span>123 **** **** **** **65</span>
                       </div>
                     </div>
-                  )}
+                  )} */}
                 </div>
               </div>
             </div>
@@ -628,7 +658,7 @@ export default function CheckoutPage() {
                   ) : (
                     <>
                       {/* Order Items */}
-                      <div className="space-y-4 mb-6">
+                      <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto">
                         {checkout?.items?.map((item: any) => (
                           <div
                             key={item.productId + (item.variantId || "")}
@@ -695,6 +725,7 @@ export default function CheckoutPage() {
                     <Button
                       variant="outline"
                       className="w-full bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200"
+                      onClick={() => router.back()}
                     >
                       Cancel
                     </Button>
@@ -707,9 +738,9 @@ export default function CheckoutPage() {
           {/* Success Modal */}
           <Dialog open={showSuccess} onOpenChange={setShowSuccess}>
             <DialogContent className="sm:max-w-md">
-              <div className="flex flex-col items-center text-center">
-                <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-                  <Check className="w-8 h-8 text-green-600" />
+              <div className="flex flex-col items-center text-center p-4 md:p-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                  <Check className="w-8 h-8 text-blue-600" />
                 </div>
                 <h3 className="text-base md:text-lg font-bold mb-2">
                   Order Placed Successfully
@@ -720,7 +751,7 @@ export default function CheckoutPage() {
                 </p>
                 <div className="space-y-3 w-full">
                   <Button 
-                    className="w-full bg-primary hover:bg-blue-700"
+                    className="w-full bg-blue-600 hover:bg-blue-700"
                     onClick={() => router.push('/home/user/orders')}
                   >
                     View Orders
@@ -740,8 +771,8 @@ export default function CheckoutPage() {
           {/* Shipping Address Modal */}
           <Dialog open={showShippingModal} onOpenChange={setShowShippingModal}>
             <DialogContent className="sm:max-w-md">
-              <div className="">
-                <h3 className="text-lg font-semibold mb-4">Add Shipping Address</h3>
+              <div className="p-6">
+                <h3 className="text-xl font-bold mb-4">Add Shipping Address</h3>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="shipStreet">Street Address</Label>
@@ -821,39 +852,123 @@ export default function CheckoutPage() {
             </DialogContent>
           </Dialog>
 
-          {/* Stripe Payment Modal */}
-          <Dialog open={showPaymentUI} onOpenChange={setShowPaymentUI}>
-            <DialogContent className="sm:max-w-md">
-              <div className="relative">
-                {isProcessing && (
-                  <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50 rounded-lg">
-                    <div className="text-center">
-                      <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
-                      <p className="text-sm text-gray-600">Creating your order...</p>
-                    </div>
-                  </div>
-                )}
-                <h3 className="textsm md:text-lg font-bold mb-4">Complete Payment</h3>
-                {paymentIntentData?.clientSecret && (
-                  <Elements stripe={stripePromise}>
-                    <StripePaymentForm
-                      clientSecret={paymentIntentData.clientSecret}
-                      amount={paymentIntentData.pricing.total}
-                      currency={paymentIntentData.pricing.currency}
-                      onSuccess={(paymentIntentId) => {
-                        handleCreateOrder({
-                          ...paymentIntentData,
-                          type: 'stripe',
-                          paymentIntentId,
-                        });
-                      }}
-                      onCancel={() => {
-                        setShowPaymentUI(false);
-                        setIsProcessing(false);
-                      }}
-                    />
-                  </Elements>
-                )}
+        
+
+           {/* Stripe Payment Modal */}
+                    <Dialog open={showPaymentUI} onOpenChange={setShowPaymentUI}>
+                      <DialogContent className="sm:max-w-md">
+                        <div className="relative">
+                          {isProcessing && (
+                            <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50 rounded-lg">
+                              <div className="text-center">
+                                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2 text-blue-600" />
+                                <p className="text-sm text-gray-600">Creating your order...</p>
+                              </div>
+                            </div>
+                          )}
+                          <h3 className="textsm md:text-lg font-bold mb-4">Complete Payment</h3>
+                          {paymentIntentData?.clientSecret && (
+                            <Elements stripe={stripePromise}>
+                              <StripePaymentForm
+                                clientSecret={paymentIntentData.clientSecret}
+                                amount={paymentIntentData.pricing.total}
+                                currency={paymentIntentData.pricing.currency}
+                                onSuccess={(paymentIntentId) => {
+                                  handleCreateOrder({
+                                    ...paymentIntentData,
+                                    type: 'stripe',
+                                    paymentIntentId,
+                                  });
+                                }}
+                                onCancel={() => {
+                                  setShowPaymentUI(false);
+                                  setIsProcessing(false);
+                                }}
+                              />
+                            </Elements>
+                          )}
+                        </div>
+                      </DialogContent>
+                    </Dialog>
+
+          {/* Order Processing Modal */}
+          <Dialog open={showOrderProcessing} onOpenChange={() => {}}>
+            <DialogContent className="sm:max-w-md" onInteractOutside={(e) => e.preventDefault()}>
+              <div className="p-4 md:p-6">
+                <div className="flex flex-col items-center text-center">
+                  {orderProcessingStage === 'validating' && (
+                    <>
+                      <div className="w-14 h-14 md:w-20 md:h-20 mb-6 relative">
+                        <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <CreditCard className="w-5 h-5 md:w-8 md:h-8 text-blue-600" />
+                        </div>
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold mb-2">Validating Payment</h3>
+                      <p className="text-sm md:text-base text-gray-600">Confirming your payment details...</p>
+                    </>
+                  )}
+
+                  {orderProcessingStage === 'creating' && (
+                    <>
+                      <div className="w-14 h-14 md:w-20 md:h-20 mb-6 relative">
+                        <div className="absolute inset-0 border-4 border-blue-200 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-blue-600 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Loader2 className="w-5 h-5 md:w-8 md:h-8 text-blue-600 animate-pulse" />
+                        </div>
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold mb-2">Creating Your Order</h3>
+                      <p className="text-sm md:text-base text-gray-600">Setting up your order details...</p>
+                      <div className="mt-2 md:mt-4 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div className="bg-primary h-full rounded-full animate-pulse" style={{width: '60%'}}></div>
+                      </div>
+                    </>
+                  )}
+
+                  {orderProcessingStage === 'finalizing' && (
+                    <>
+                      <div className="w-14 h-14 md:w-20 md:h-20 mb-6 relative">
+                        <div className="absolute inset-0 border-4 border-orange-200 rounded-full"></div>
+                        <div className="absolute inset-0 border-4 border-orange-600 rounded-full border-t-transparent animate-spin"></div>
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <Check className="w-5 h-5 md:w-8 md:h-8 text-orange-600 animate-bounce" />
+                        </div>
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold mb-2">Finalizing Order</h3>
+                      <p className="text-sm md:text-base text-gray-600">Almost there! Completing your purchase...</p>
+                      <div className="mt-4 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div className="bg-orange-600 h-full rounded-full animate-pulse" style={{width: '90%'}}></div>
+                      </div>
+                    </>
+                  )}
+
+                  {orderProcessingStage === 'complete' && (
+                    <>
+                      <div className="w-14 h-14 md:w-20 md:h-20 bg-blue-100 rounded-full flex items-center justify-center animate-scale-in">
+                        <Check className="w-5 h-5 md:w-8 md:h-8 text-blue-600" />
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold mb-2 text-blue-600">Order Created!</h3>
+                      <p className="text-gray-600">Your order has been successfully placed</p>
+                      <div className="mt-4 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
+                        <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{width: '100%'}}></div>
+                      </div>
+                    </>
+                  )}
+
+                  {orderProcessingStage === 'error' && (
+                    <>
+                      <div className="w-20 h-20 mb-6 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg className="w-10 h-10 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg md:text-xl font-bold mb-2 text-red-600">Order Failed</h3>
+                      <p className="text-gray-600">Something went wrong. Please try again.</p>
+                    </>
+                  )}
+                </div>
               </div>
             </DialogContent>
           </Dialog>

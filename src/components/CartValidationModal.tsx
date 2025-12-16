@@ -6,7 +6,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, CheckCircle } from "lucide-react";
-import { CartValidationResponse } from "@/types/checkout.types";
+import { CartValidationResponse } from "@/types/checkout.types.ts_";
 import { CartValidation } from "./CartValidation";
 
 interface CartValidationModalProps {

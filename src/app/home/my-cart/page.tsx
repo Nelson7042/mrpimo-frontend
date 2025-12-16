@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Home, Minus, Plus, X, Gavel } from "lucide-react";
@@ -20,6 +20,38 @@ import { CartValidationResponse } from "@/utils/checkoutService";
 import { cartService } from "@/utils/cartService";
 import CartSidebar from "./(components)/CartSidebar";
 // import { BidModal1 } from "../product-details/[id]/(component)/(component)/BidModal";
+
+const isHexColor = (value: string) => /^#[0-9A-F]{6}$/i.test(value);
+
+const extractColorFromValue = (value: string) => {
+  const colors = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'gray', 'grey', 'silver', 'gold', 'rose', 'space'];
+  const lowerValue = value.toLowerCase();
+  return colors.find(color => lowerValue.includes(color)) || null;
+};
+
+const getColorForValue = (value: string) => {
+  // Check if it starts with a hex color
+  const hexMatch = value.match(/^#[0-9A-F]{6}/i);
+  if (hexMatch) return hexMatch[0];
+  
+  const colorMap: { [key: string]: string } = {
+    'black': '#000000', 'white': '#FFFFFF', 'red': '#FF0000', 'blue': '#0000FF',
+    'green': '#008000', 'yellow': '#FFFF00', 'purple': '#800080', 'pink': '#FFC0CB',
+    'orange': '#FFA500', 'gray': '#808080', 'grey': '#808080', 'silver': '#C0C0C0', 
+    'gold': '#FFD700', 'rose': '#FF69B4', 'space': '#2F2F2F'
+  };
+  
+  const colorName = extractColorFromValue(value);
+  return colorName ? colorMap[colorName] : null;
+};
+
+const getItemPrice = (item: any) => {
+  return item.selectedVariant?.price * item?.priceInfo?.exchangeRate || 0;
+};
+
+const getItemTotal = (item: any) => {
+  return getItemPrice(item) * item.quantity;
+};
 
 export default function CartPage() {
   const {
@@ -41,9 +73,7 @@ export default function CartPage() {
   useCartSync();
 
   useEffect(() => {
-    if (isLoggedIn) {
-      loadCart();
-    }
+    loadCart();
   }, [isLoggedIn, loadCart]);
 
 
@@ -52,6 +82,10 @@ export default function CartPage() {
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [validationData, setValidationData] =
     useState<CartValidationResponse | null>(null);
+  const [availableQuantities, setAvailableQuantities] = useState<{[key: string]: number}>({});
+  const [isCheckingQuantity, setIsCheckingQuantity] = useState<{[key: string]: boolean}>({});
+  const debounceTimers = useRef<{[key: string]: NodeJS.Timeout}>({});
+  const hasCheckedQuantities = useRef(false);
 
   const buyItems = cartItem || [];
 
@@ -62,19 +96,75 @@ export default function CartPage() {
   const handleRemove = async (item: any) => {
     const productId = item?.product?._id;
     const variantKey = item?.selectedVariant
-      ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
+      ? `${item.selectedVariant.variantId}::${item.selectedVariant.optionId}`
       : undefined;
     await removeFromCart(productId, variantKey);
   };
 
-  const handleUpdateQuantity = async (item: any, newQuantity: number) => {
+  const checkAvailableQuantity = useCallback(async (item: any) => {
+    if (!item?.selectedVariant || !item?.product?._id) return;
+    
+    const key = `${item.product._id}-${item.selectedVariant.optionId}`;
+    setIsCheckingQuantity(prev => ({ ...prev, [key]: true }));
+    
+    try {
+      const result = await cartService.getOptionQuantity(
+        item.product._id,
+        item.selectedVariant.variantId,
+        item.selectedVariant.optionId
+      );
+      
+      if (result.success && result.data) {
+        setAvailableQuantities(prev => ({ ...prev, [key]: result.data!.quantity }));
+      }
+    } catch (error) {
+      console.error('Failed to check quantity:', error);
+      // Set a default high value so buttons aren't disabled on error
+      setAvailableQuantities(prev => ({ ...prev, [key]: 999 }));
+    } finally {
+      setIsCheckingQuantity(prev => ({ ...prev, [key]: false }));
+    }
+  }, []);
+
+  const handleUpdateQuantity = useCallback(async (item: any, newQuantity: number) => {
     if (newQuantity < 1) return;
+    
     const productId = item?.product?._id;
     const variantKey = item?.selectedVariant
-      ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
+      ? `${item.selectedVariant.variantId}::${item.selectedVariant.optionId}`
       : undefined;
-    await updateQuantity(productId, newQuantity, variantKey);
-  };
+    const key = `${productId}-${item?.selectedVariant?.optionId}`;
+    
+    // Clear existing timer
+    if (debounceTimers.current[key]) {
+      clearTimeout(debounceTimers.current[key]);
+    }
+    
+    // Set new timer
+    debounceTimers.current[key] = setTimeout(async () => {
+      await updateQuantity(productId, newQuantity, variantKey);
+      await checkAvailableQuantity(item);
+    }, 300);
+  }, [updateQuantity, checkAvailableQuantity]);
+
+  useEffect(() => {
+    // Check quantities only once on mount or when cart items change
+    if (buyItems.length > 0 && !hasCheckedQuantities.current) {
+      buyItems.forEach(item => {
+        if (item?.selectedVariant) {
+          checkAvailableQuantity(item);
+        }
+      });
+      hasCheckedQuantities.current = true;
+    }
+  }, [buyItems.length, checkAvailableQuantity]);
+
+  useEffect(() => {
+    return () => {
+      // Cleanup timers on unmount
+      Object.values(debounceTimers.current).forEach(timer => clearTimeout(timer));
+    };
+  }, []);
 
   const router = useRouter();
 
@@ -93,7 +183,7 @@ export default function CartPage() {
   };
 
   const BuyNow = () => {
-    const subtotal = cartSummary?.subtotal;
+    const subtotal = cartSummary.subtotal;
     const shipping = 50000;
     const discount = 5000;
     const tax = 5000;
@@ -104,15 +194,16 @@ export default function CartPage() {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg border overflow-hidden">
               {/* Desktop Header */}
-              <div className="hidden md:grid md:grid-cols-10 gap-4 p-4 bg-gray-50 border-b font-medium text-gray-700">
+              <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-gray-700">
                 <div className="col-span-4">Products</div>
+                <div className="col-span-2">Variant</div>
                 <div className="col-span-2">Amount</div>
                 <div className="col-span-2">Quantity</div>
                 <div className="col-span-2">Sub Total</div>
               </div>
 
               {/* Items */}
-              <div className="divide-y">
+              <div className="divide-y overflow-x-auto">
                 {buyItems.map((item) => (
                   <div
                     key={
@@ -120,108 +211,107 @@ export default function CartPage() {
                     }
                     className="p-4"
                   >
-                    {/* ...mobile layout... */}
-                    <div className="md:hidden space-y-3">
-                      <div className="flex justify-between items-start">
-                        <Link
-                          href={{
-                            pathname: "/home/product-details/[id]",
-                            query: {
-                              id: item?.product._id,
-                              productData: JSON.stringify(item?.product), // Pass full product data
-                            },
-                          }}
-                          as={`/home/product-details/${item?.product._id}`} // Clean URL in browser
-                          className=""
-                        >
-                          {" "}
-                          <div className="flex space-x-3 flex-1">
-                            <div className="relative">
-                              <Image
-                                src={
-                                  item?.product?.images?.[0] ||
-                                  "/placeholder.svg"
-                                }
-                                alt={item?.product?.name || "product image"}
-                                width={60}
-                                height={60}
-                                className="rounded-lg object-cover"
-                              />
-                              {/* {item.badge && (
-                              <Badge className="absolute -bottom-1 -right-1 text-xs px-1 py-0 h-5 bg-yellow-100 text-yellow-800 hover:bg-yellow-100">
-                                {item.badge}
-                              </Badge>
-                            )} */}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-medium text-sm leading-tight">
-                                {item?.product?.name}
-                              </h3>
-                              <p className="text-xs text-gray-500 mt-1">
-                                {item?.product?.description}
-                              </p>
-                              <div className="flex items-center space-x-2 mt-2">
-                                <span className="font-bold text-sm">
-                                  {item?.priceInfo?.currencySymbol}
-                                  {item?.priceInfo?.displayPrice?.toFixed(2)}
-                                </span>
+                    {/* Mobile Layout */}
+                    <div className="md:hidden relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-0 right-0 text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 z-10"
+                        onClick={() => handleRemove(item)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                      <Link
+                        href={{
+                          pathname: "/home/product-details/[id]",
+                          query: {
+                            id: item?.product._id,
+                            productData: JSON.stringify(item?.product),
+                          },
+                        }}
+                        as={`/home/product-details/${item?.product._id}`}
+                        className="block"
+                      >
+                        <div className="flex gap-3 mb-3">
+                          <Image
+                            src={item?.product?.images?.[0] || "/placeholder.svg"}
+                            alt={item?.product?.name || "product image"}
+                            width={80}
+                            height={80}
+                            className="rounded-lg object-cover flex-shrink-0"
+                          />
+                          <div className="flex-1 min-w-0 pr-6">
+                            <h3 className="font-semibold text-sm leading-tight mb-1">
+                              {item?.product?.name}
+                            </h3>
+                            <p className="text-xs text-gray-500 line-clamp-2 mb-2">
+                              {item?.product?.description}
+                            </p>
+                            {item?.selectedVariant && (
+                              <div className="flex items-center gap-1.5 mb-2">
+                                <span className="text-xs text-gray-500">{item.selectedVariant.variantName}:</span>
+                                {getColorForValue(item.selectedVariant.optionValue) ? (
+                                  <div className="flex items-center gap-1">
+                                    <div className="w-3.5 h-3.5 rounded-full border border-gray-300" style={{ backgroundColor: getColorForValue(item.selectedVariant.optionValue) || undefined }} />
+                                    <span className="text-xs font-medium">{item.selectedVariant.optionValue}</span>
+                                  </div>
+                                ) : (
+                                  <span className="text-xs font-medium">{item.selectedVariant.optionValue}</span>
+                                )}
                               </div>
+                            )}
+                            <div className="text-base font-bold text-gray-900">
+                              {item?.priceInfo?.currencySymbol || "$"}
+                              {getItemPrice(item).toFixed(2)}
                             </div>
                           </div>
-                        </Link>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 p-1"
-                          onClick={() => handleRemove(item)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
+                        </div>
+                      </Link>
+                      <div className="flex items-center justify-between pt-2 border-t border-gray-100">
+                        <div className="flex items-center gap-3">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              handleUpdateQuantity(item, item.quantity - 1)
-                            }
+                            className="h-8 w-8 p-0 rounded-md"
+                            onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
                           >
-                            <Minus className="w-3 h-3" />
+                            <Minus className="w-3.5 h-3.5" />
                           </Button>
-                          <span className="w-8 text-center text-sm">
-                            {item.quantity.toString().padStart(2, "0")}
+                          <span className="w-10 text-center text-sm font-medium">
+                            {item.quantity}
                           </span>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 w-8 p-0"
-                            onClick={() =>
-                              handleUpdateQuantity(item, item.quantity + 1)
-                            }
+                            className="h-8 w-8 p-0 rounded-md"
+                            disabled={(() => {
+                              const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
+                              const available = availableQuantities[key];
+                              return available !== undefined && item.quantity >= available;
+                            })()}
+                            onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-3.5 h-3.5" />
                           </Button>
                         </div>
-                        <div className="font-bold text-sm">
-                          {item?.priceInfo?.currencySymbol}
-                          {(item?.priceInfo?.displayPrice || 0 * item.quantity).toFixed(2)}
+                        <div className="text-base font-bold text-gray-900">
+                          {item?.priceInfo?.currencySymbol || "$"}
+                          {getItemTotal(item).toFixed(2)}
                         </div>
                       </div>
                     </div>
 
                     {/* Desktop Layout */}
-                    <div className="hidden md:grid md:grid-cols-10 gap-4 items-center">
+                    <div className="hidden md:grid md:grid-cols-12 gap-4 items-center relative">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 z-10"
+                        onClick={() => handleRemove(item)}
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
                       <div className="col-span-4 flex items-center space-x-3">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="text-red-500 hover:text-red-700 p-1"
-                          onClick={() => handleRemove(item)}
-                        >
-                          <X className="w-4 h-4" />
-                        </Button>
                         <Link
                           href={{
                             pathname: "/home/product-details/[id]",
@@ -249,17 +339,32 @@ export default function CartPage() {
                             <h3 className="font-medium">
                               {item?.product?.name}
                             </h3>
-                            <p className="text-sm text-gray-500">
-                              {item?.product?.description}{" "}
+                            <p className="text-sm text-gray-500 line-clamp-2">
+                              {item?.product?.description}
                             </p>
                           </div>
                         </Link>
                       </div>
                       <div className="col-span-2">
+                        {item?.selectedVariant && (
+                          <div className="flex flex-col gap-1">
+                            <span className="text-xs text-gray-500">{item.selectedVariant.variantName}</span>
+                            {getColorForValue(item.selectedVariant.optionValue) ? (
+                              <div className="flex items-center gap-1">
+                                <div className="w-5 h-5 rounded-full border border-gray-300" style={{ backgroundColor: getColorForValue(item.selectedVariant.optionValue) || undefined }} />
+                                <span className="text-sm font-medium">{item.selectedVariant.optionValue}</span>
+                              </div>
+                            ) : (
+                              <span className="text-sm font-medium">{item.selectedVariant.optionValue}</span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="col-span-2">
                         <div className="flex items-center space-x-2">
                           <span className="font-bold">
-                            {item?.priceInfo?.currencySymbol}
-                            {item?.priceInfo?.displayPrice?.toFixed(2)}
+                            {item?.priceInfo?.currencySymbol || "$"}
+                            {getItemPrice(item).toFixed(2)}
                           </span>
                         </div>
                       </div>
@@ -282,6 +387,11 @@ export default function CartPage() {
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0"
+                            disabled={(() => {
+                              const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
+                              const available = availableQuantities[key];
+                              return available !== undefined && item.quantity >= available;
+                            })()}
                             onClick={() =>
                               handleUpdateQuantity(item, item.quantity + 1)
                             }
@@ -291,8 +401,8 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="col-span-2 font-bold">
-                        {item?.priceInfo?.currencySymbol}
-                        {(item?.priceInfo?.displayPrice || 0 * item.quantity).toFixed(2)}
+                        {item?.priceInfo?.currencySymbol || "$"}
+                        {getItemTotal(item).toFixed(2)}
                       </div>
                     </div>
                   </div>
@@ -313,10 +423,10 @@ export default function CartPage() {
     );
   };
 
-  if (!isLoading && buyItems && buyItems.length < 1) {
+   if (!isLoading && buyItems && buyItems.length < 1) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]  md:py-14 lg:py-18 font-roboto body-padding">
+        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]   md:py-8 lg:py-10 font-roboto  ">
           <div className="pt-4">
             {/* Breadcrumb */}
             <Breadcrumbs
@@ -346,7 +456,8 @@ export default function CartPage() {
   }
 
   return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]  md:py-10 lg:py-10">
+    <div className="min-h-screen bg-gray-50">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10 font-roboto  ">
         <div className="pt-4">
           {/* Breadcrumb */}
           <Breadcrumbs
@@ -356,10 +467,9 @@ export default function CartPage() {
           />
 
           {/* Header */}
-          {/* Header */}
-          <div className="flex flex-row items-center justify-between mb-4 md:mb-6">
-            <div className="flex items-center space-x-2 ">
-              <h1 className="text-base md:text-lg lg:text-2xl font-bold">My Cart</h1>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6">
+            <div className="flex items-center space-x-2 mb-4 sm:mb-0">
+              <h1 className="text-2xl font-bold">My Cart</h1>
               <span className="text-gray-600">
                 {cartSummary.totalItems} Items
               </span>
@@ -397,6 +507,7 @@ export default function CartPage() {
             router.push("/home/checkout");
           }}
         />
+      </div>
     </div>
   );
 }

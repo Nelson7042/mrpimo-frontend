@@ -12,7 +12,7 @@ import { categoriesConfig } from "@/lib/categories-config";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/hooks/queries";
-import { Category } from "@/types/product.type";
+import { Category } from "@/types/product.type.ts_";
 
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/utils/config";
@@ -73,7 +73,7 @@ export default function CategoriesPage() {
     [];
 
   return (
-    <div className="min-h-screen body-padding py-8 md:py-10 bg-gray-50">
+    <div className="min-h-screen   py-8 md:py-10 bg-gray-50">
       <main className="">
         <nav className="pt-3">
           <Breadcrumbs

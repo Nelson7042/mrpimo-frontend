@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Heart, Star, ChevronRight, ArrowRight, } from "lucide-react";
 import { useBestDeals } from "@/hooks/queries";
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -331,7 +331,7 @@ export default function BestDeals() {
 
   // if (isError) {
   //   return (
-  //     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-14 lg:py-18">
+  //     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10">
   //       <div className="flex items-center justify-center min-h-[400px]">
   //         <div className="text-center">
   //           <p className="text-red-600 mb-4">
@@ -348,7 +348,7 @@ export default function BestDeals() {
 
   // if (!products.length) {
   //   return (
-  //     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-14 lg:py-18">
+  //     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10">
   //       <div className="flex items-center justify-center min-h-[400px]">
   //         <p className="text-gray-600">No deals available at the moment.</p>
   //       </div>

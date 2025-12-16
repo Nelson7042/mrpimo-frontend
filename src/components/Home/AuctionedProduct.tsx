@@ -1,5 +1,5 @@
 import { useProductsOnAuction } from "@/hooks/queries";
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 import { Heart, Star, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useEffect, useRef } from "react";

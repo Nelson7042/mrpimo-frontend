@@ -82,7 +82,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
         <div className="flex-1">
           {/* Mobile Header with Hamburger */}
-          <div className="lg:hidden flex items-center justify-between  ">
+          <div className="lg:hidden flex items-center justify-between pt-4">
             <Button
               variant="ghost"
               size="sm"
@@ -91,7 +91,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             >
               <Menu className="h-5 w-5" />
             </Button>
-            <div className="w-9" /> 
           </div>
 
           <main className="p-4 md:p-6">{children}</main>

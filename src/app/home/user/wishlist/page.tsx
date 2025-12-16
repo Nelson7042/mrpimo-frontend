@@ -9,7 +9,7 @@ import { Badge } from "@/components/ui/badge"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs"
 import { useRouter } from "next/navigation"
 import { useWishlist } from "@/hooks/useWishlist"
-import { useCartStore } from "@/stores/cartStore"
+import { useCartStore } from "@/stores/cartStore_"
 
 export default function WishlistPage() {
   const [currentPage, setCurrentPage] = useState(1)

@@ -1,4 +1,4 @@
-import { PopulatedCategory, ProductType } from "@/types/product.type";
+import { PopulatedCategory, ProductType } from "@/types/product.type.ts_";
 import React, { useState } from "react";
 
 interface Props {

@@ -9,7 +9,7 @@ import {
   CreditCard,
 
 } from "lucide-react";
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 type ProductInfoProps = {
   productData: ProductType;
 };

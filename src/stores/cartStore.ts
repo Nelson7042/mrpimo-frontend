@@ -3,11 +3,10 @@ import { persist } from "zustand/middleware";
 import { CartItem, CartSummary, ProductType } from "@/types/product.type";
 import { cartService } from "@/utils/cartService";
 import { useUserStore } from "./useUserStore";
-import {
-  toastConfigError,
-  toastConfigSuccess,
-} from "@/app/config/toast.config";
+import { toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
 import { toast } from "react-toastify";
+
+const KEY_SEPARATOR = "::";
 
 interface CartState {
   items: CartItem[];
@@ -27,6 +26,14 @@ interface CartState {
       price: number;
     }
   ) => Promise<void>;
+
+  addBulkToCart: (items: Array<{
+    productId: string;
+    quantity: number;
+    price: number;
+    variantId: string;
+    optionId: string;
+  }>) => Promise<{ successful: any[]; failed: any[] }>;
 
   removeFromCart: (productId: string, variantKey?: string) => Promise<void>;
   updateQuantity: (
@@ -49,18 +56,18 @@ interface CartState {
 
   // Private methods
   calculateSummary: () => void;
-  generateCartItemKey: (productId: string, variantKey?: string) => string;
+  generateCartItemKey: (productId: string, variantId?: string, optionId?: string) => string;
 }
 
 const calculateCartSummary = (items: CartItem[]): CartSummary => {
   const subtotal = items.reduce((total, item) => {
-    const price = Number(item.selectedVariant?.price || item.priceInfo?.displayPrice || item.product?.price || 0);
+    const price = item.priceInfo?.displayPrice || item.selectedVariant?.price || 0;
     return total + price * item.quantity;
   }, 0);
 
   return {
     subtotal,
-    total: subtotal,
+    total: subtotal, 
     totalItems: items.length,
     totalQuantity: items.reduce((total, item) => total + item.quantity, 0),
   };
@@ -79,8 +86,8 @@ export const useCartStore = create<CartState>()(
       isLoading: false,
       error: null,
 
-      generateCartItemKey: (productId: string, variantKey?: string) => {
-        return variantKey ? `${productId}-${variantKey}` : productId;
+      generateCartItemKey: (productId: string, variantId?: string, optionId?: string) => {
+        return variantId && optionId ? `${productId}${KEY_SEPARATOR}${variantId}${KEY_SEPARATOR}${optionId}` : productId;
       },
 
       calculateSummary: () => {
@@ -91,14 +98,32 @@ export const useCartStore = create<CartState>()(
 
       addToCart: async (product, quantity = 1, selectedVariant) => {
         const { items, calculateSummary, generateCartItemKey } = get();
-
-        console.log("Adding to cart:", product.name, quantity, selectedVariant)
         const isLoggedIn = !!useUserStore.getState().user;
 
         set({ isLoading: true, error: null });
+        
 
         try {
-          if (isLoggedIn) {
+          // Check available quantity from backend for logged-in users
+          if (isLoggedIn && selectedVariant && selectedVariant.optionId) {
+            const quantityCheck = await cartService.getOptionQuantity(
+              product._id!,
+              selectedVariant.variantId,
+              selectedVariant.optionId
+            );
+
+            if (!quantityCheck.success || !quantityCheck.data) {
+              throw new Error('Failed to verify product availability');
+            }
+
+            const variantKey = `${selectedVariant.variantId}${KEY_SEPARATOR}${selectedVariant.optionId}`;
+            const currentQty = get().getItemQuantity(product._id!, variantKey);
+            const newTotalQty = currentQty + quantity;
+
+            if (newTotalQty > quantityCheck.data.quantity) {
+              throw new Error(`Only ${quantityCheck.data.quantity} items available`);
+            }
+
             // Add to backend
             await cartService.addToCart({
               productId: product._id!,
@@ -106,38 +131,54 @@ export const useCartStore = create<CartState>()(
               price: selectedVariant?.price,
               variantId: selectedVariant?.variantId,
               optionId: selectedVariant?.optionId,
+              name: product.name,
+              images: product.images || [],
+              variantName: selectedVariant?.variantName,
+              optionValue: selectedVariant?.optionValue,
+              priceInfo: (product as any).priceInfo
             });
-            toast.success(
-              "Product Added to Cart Successfully",
-              toastConfigSuccess
-            );
-
+            toast.success("Product Added to Cart Successfully", toastConfigSuccess);
+            
             // Reload cart from backend to get updated state
             await get().loadCart();
-            console.log("Cart updated for logged in user");
           } else {
-            // Add to local store
-            const variantKey = selectedVariant
-              ? `${selectedVariant.variantId}-${selectedVariant.optionId}`
-              : undefined;
+            // Check available quantity from backend for offline users
+            if (!selectedVariant || !selectedVariant.optionId) {
+              throw new Error('Product variant is required');
+            }
 
-            const itemKey = generateCartItemKey(product._id!, variantKey);
+            const quantityCheck = await cartService.getOptionQuantity(
+              product._id!,
+              selectedVariant.variantId,
+              selectedVariant.optionId
+            );
+
+            if (!quantityCheck.success || !quantityCheck.data) {
+              throw new Error('Failed to verify product availability');
+            }
+
+            const itemKey = generateCartItemKey(product._id!, selectedVariant.variantId, selectedVariant.optionId);
 
             const existingItemIndex = items.findIndex((item) => {
-              const existingVariantKey = item.selectedVariant
-                ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
-                : undefined;
               return (
                 generateCartItemKey(
                   item.product?._id ?? "",
-                  existingVariantKey
+                  item.selectedVariant?.variantId,
+                  item.selectedVariant?.optionId
                 ) === itemKey
               );
             });
 
+            const currentQty = existingItemIndex > -1 ? items[existingItemIndex].quantity : 0;
+            const newTotalQty = currentQty + quantity;
+
+            if (newTotalQty > quantityCheck.data.quantity) {
+              throw new Error(`Only ${quantityCheck.data.quantity} items available`);
+            }
+
             if (existingItemIndex > -1) {
               const updatedItems = [...items];
-              updatedItems[existingItemIndex].quantity += quantity;
+              updatedItems[existingItemIndex].quantity = newTotalQty;
               set({ items: updatedItems });
             } else {
               const newItem: CartItem = {
@@ -145,23 +186,53 @@ export const useCartStore = create<CartState>()(
                 quantity,
                 selectedVariant,
                 addedAt: new Date().toISOString(),
+                priceInfo: (product as any).priceInfo
               };
               set({ items: [...items, newItem] });
             }
 
             calculateSummary();
-            // console.log('Cart updated for guest user', get().summary);
-            toast.success(
-              "Product Added to Cart Successfully",
-              toastConfigSuccess
-            );
+            toast.success("Product Added to Cart Successfully", toastConfigSuccess);
           }
         } catch (error) {
-          set({
-            error:
-              error instanceof Error ? error.message : "Failed to add to cart",
-          });
-          toast.error("Failed to add to cart", toastConfigError);
+          console.log(error)
+          set({ error: error instanceof Error ? error.message : 'Failed to add to cart' });
+          toast.error(error instanceof Error ? error.message : 'Failed to add to cart', toastConfigError);
+
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+
+      addBulkToCart: async (items) => {
+        const isLoggedIn = !!useUserStore.getState().user;
+        
+        if (!isLoggedIn) {
+          throw new Error('Must be logged in to add multiple items');
+        }
+
+        set({ isLoading: true, error: null });
+
+        try {
+          const response = await cartService.addBulkToCart(items);
+          
+          if (response.results.totalSuccessful > 0) {
+            toast.success(`${response.results.totalSuccessful} item(s) added to cart`, toastConfigSuccess);
+            await get().loadCart();
+          }
+          
+          if (response.results.totalFailed > 0) {
+            toast.error(`${response.results.totalFailed} item(s) failed to add`, toastConfigError);
+          }
+
+          return {
+            successful: response.results.successful,
+            failed: response.results.failed
+          };
+        } catch (error) {
+          set({ error: error instanceof Error ? error.message : 'Failed to add items to cart' });
+          toast.error('Failed to add items to cart', toastConfigError);
+          throw error;
         } finally {
           set({ isLoading: false });
         }
@@ -173,23 +244,26 @@ export const useCartStore = create<CartState>()(
 
         try {
           if (isLoggedIn) {
-            await cartService.updateCartItem(productId, {
-              productId,
-              quantity: 0,
-            });
+            if (variantKey) {
+              const parts = variantKey.split(KEY_SEPARATOR);
+              const [variantId, optionId] = parts.length >= 2 ? [parts[0], parts[1]] : [undefined, undefined];
+              if (variantId && optionId) {
+                await cartService.deleteCartItem(productId, variantId, optionId);
+              }
+            }
             await get().loadCart();
           } else {
             const { items, calculateSummary, generateCartItemKey } = get();
-            const itemKey = generateCartItemKey(productId, variantKey);
+            const parts = variantKey ? variantKey.split(KEY_SEPARATOR) : [];
+            const [variantId, optionId] = parts.length >= 2 ? [parts[0], parts[1]] : [undefined, undefined];
+            const itemKey = generateCartItemKey(productId, variantId, optionId);
 
             const updatedItems = items.filter((item) => {
-              const existingVariantKey = item.selectedVariant
-                ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
-                : undefined;
               return (
                 generateCartItemKey(
                   item.product._id ?? "",
-                  existingVariantKey
+                  item.selectedVariant?.variantId,
+                  item.selectedVariant?.optionId
                 ) !== itemKey
               );
             });
@@ -198,12 +272,7 @@ export const useCartStore = create<CartState>()(
             calculateSummary();
           }
         } catch (error) {
-          set({
-            error:
-              error instanceof Error
-                ? error.message
-                : "Failed to remove from cart",
-          });
+          set({ error: error instanceof Error ? error.message : 'Failed to remove from cart' });
         } finally {
           set({ isLoading: false });
         }
@@ -219,25 +288,55 @@ export const useCartStore = create<CartState>()(
         set({ isLoading: true, error: null });
 
         try {
+          // Check backend stock availability
+          if (variantKey) {
+            const parts = variantKey.split(KEY_SEPARATOR);
+            const [variantId, optionId] = parts.length >= 2 ? [parts[0], parts[1]] : [undefined, undefined];
+            if (!variantId || !optionId) {
+              throw new Error('Invalid variant key');
+            }
+            const result = await cartService.getOptionQuantity(productId, variantId, optionId);
+            if (result.success && result.data) {
+              if (quantity > result.data.quantity) {
+                toast.error(`Only ${result.data.quantity} items available`, toastConfigError);
+                throw new Error(`Only ${result.data.quantity} items available`);
+              }
+            }
+          }
+
           if (isLoggedIn) {
-            await cartService.updateCartItem(productId, {
+            // Get current item to extract variant details
+            const currentItem = get().getCartItem(productId, variantKey);
+            if (!currentItem || !currentItem.selectedVariant) {
+              throw new Error('Item not found in cart');
+            }
+            
+            // Use addToCart with the new quantity (backend will update existing item)
+            await cartService.addToCart({
               productId,
               quantity,
+              price: currentItem.selectedVariant.price,
+              variantId: currentItem.selectedVariant.variantId,
+              optionId: currentItem.selectedVariant.optionId,
+              name: currentItem.product.name,
+              images: currentItem.product.images || [],
+              variantName: currentItem.selectedVariant.variantName,
+              optionValue: currentItem.selectedVariant.optionValue,
+              priceInfo: currentItem.priceInfo
             });
             await get().loadCart();
           } else {
             const { items, calculateSummary, generateCartItemKey } = get();
-            const itemKey = generateCartItemKey(productId, variantKey);
+            const parts = variantKey ? variantKey.split(KEY_SEPARATOR) : [];
+            const [variantId, optionId] = parts.length >= 2 ? [parts[0], parts[1]] : [undefined, undefined];
+            const itemKey = generateCartItemKey(productId, variantId, optionId);
 
             const updatedItems = items.map((item) => {
-              const existingVariantKey = item.selectedVariant
-                ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
-                : undefined;
-
               if (
                 generateCartItemKey(
                   item.product._id ?? "",
-                  existingVariantKey
+                  item.selectedVariant?.variantId,
+                  item.selectedVariant?.optionId
                 ) === itemKey
               ) {
                 return { ...item, quantity };
@@ -248,27 +347,25 @@ export const useCartStore = create<CartState>()(
             set({ items: updatedItems });
             calculateSummary();
           }
-        } catch (error) {
-          set({
-            error:
-              error instanceof Error
-                ? error.message
-                : "Failed to update quantity",
-          });
+        } catch (error: any) {
+          set({ error: error instanceof Error ? error.message : 'Failed to update quantity' });
+          if (!error.message?.includes('items available')) {
+            toast.error('Failed to update quantity', toastConfigError);
+          }
         } finally {
           set({ isLoading: false });
         }
       },
 
       increaseQuantity: async (productId, variantKey) => {
-        const { getItemQuantity, updateQuantity } = get();
-        const currentQuantity = getItemQuantity(productId, variantKey);
+        const { updateQuantity } = get();
+        const currentQuantity = get().getItemQuantity(productId, variantKey);
         await updateQuantity(productId, currentQuantity + 1, variantKey);
       },
 
       decreaseQuantity: async (productId, variantKey) => {
-        const { getItemQuantity, updateQuantity } = get();
-        const currentQuantity = getItemQuantity(productId, variantKey);
+        const { updateQuantity } = get();
+        const currentQuantity = get().getItemQuantity(productId, variantKey);
         if (currentQuantity > 1) {
           await updateQuantity(productId, currentQuantity - 1, variantKey);
         } else {
@@ -283,16 +380,15 @@ export const useCartStore = create<CartState>()(
         try {
           if (isLoggedIn) {
             await cartService.clearCart();
+          } else {
+            cartService.clearOfflineCart();
           }
           set({
             items: [],
             summary: { subtotal: 0, total: 0, totalItems: 0, totalQuantity: 0 },
           });
         } catch (error) {
-          set({
-            error:
-              error instanceof Error ? error.message : "Failed to clear cart",
-          });
+          set({ error: error instanceof Error ? error.message : 'Failed to clear cart' });
         } finally {
           set({ isLoading: false });
         }
@@ -301,7 +397,10 @@ export const useCartStore = create<CartState>()(
       loadCart: async () => {
         const isLoggedIn = !!useUserStore.getState().user;
         if (!isLoggedIn) {
-          get().calculateSummary();
+          // For logged-out users, recalculate summary from persisted items
+          const { items } = get();
+          const summary = calculateCartSummary(items);
+          set({ summary });
           return;
         }
 
@@ -310,42 +409,32 @@ export const useCartStore = create<CartState>()(
         try {
           const response = await cartService.getCart();
           const cartItems = response.cart || [];
-
+          
           const items: CartItem[] = cartItems.map((item: any) => ({
             product: {
               _id: item.productId,
               name: item.name,
               images: item.images || [],
               price: item.price,
+              variants: item.variants
             },
             quantity: item.quantity,
-            selectedVariant: item.variantId
-              ? {
-                  variantId: item.variantId,
-                  optionId: item.optionId,
-                  variantName: "",
-                  optionValue: "",
-                  price: item.priceInfo?.displayPrice || item.price,
-                }
-              : {
-                  variantId: "",
-                  optionId: "",
-                  variantName: "",
-                  optionValue: "",
-                  price: item.priceInfo?.displayPrice || item.price,
-                },
+            selectedVariant: item.variantId ? {
+              variantId: item.variantId,
+              optionId: item.optionId,
+              variantName: item.variantDetails?.variantName || '',
+              optionValue: item.variantDetails?.optionValue || '',
+              price: item.price
+            } : undefined,
             addedAt: item.addedAt || new Date().toISOString(),
-            priceInfo: item.priceInfo,
+            priceInfo: item.priceInfo
           }));
 
           const summary = calculateCartSummary(items);
           set({ items, summary });
         } catch (error) {
-          console.error("Failed to load cart:", error);
-          set({
-            error:
-              error instanceof Error ? error.message : "Failed to load cart",
-          });
+          console.error('Failed to load cart:', error);
+          set({ error: error instanceof Error ? error.message : 'Failed to load cart' });
         } finally {
           set({ isLoading: false });
         }
@@ -353,27 +442,20 @@ export const useCartStore = create<CartState>()(
 
       syncCartOnLogin: async () => {
         const { items } = get();
+        
         set({ isLoading: true, error: null });
 
         try {
           if (items.length > 0) {
-            console.log(`Syncing ${items.length} local cart items...`);
+            // Merge local cart items with backend cart
             await cartService.mergeCart(items);
-            console.log("Cart merge successful");
+            // Clear local items after successful merge
+            set({ items: [] });
           }
-          
+          // Load cart from backend (this will get the merged cart)
           await get().loadCart();
-          
-          if (items.length > 0) {
-            localStorage.removeItem("mprimo-cart");
-          }
         } catch (error) {
-          console.error("Cart sync failed:", error);
-          set({
-            error:
-              error instanceof Error ? error.message : "Failed to sync cart",
-          });
-          toast.error("Failed to sync cart", toastConfigError);
+          set({ error: error instanceof Error ? error.message : 'Failed to sync cart' });
         } finally {
           set({ isLoading: false });
         }
@@ -389,15 +471,17 @@ export const useCartStore = create<CartState>()(
 
       getItemQuantity: (productId, variantKey) => {
         const { items, generateCartItemKey } = get();
-        const itemKey = generateCartItemKey(productId, variantKey);
+        const parts = variantKey ? variantKey.split(KEY_SEPARATOR) : [];
+        const [variantId, optionId] = parts.length >= 2 ? [parts[0], parts[1]] : [undefined, undefined];
+        const itemKey = generateCartItemKey(productId, variantId, optionId);
 
         const item = items.find((item) => {
-          const existingVariantKey = item.selectedVariant
-            ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
-            : undefined;
           return (
-            generateCartItemKey(item.product._id ?? "", existingVariantKey) ===
-            itemKey
+            generateCartItemKey(
+              item.product._id ?? "",
+              item.selectedVariant?.variantId,
+              item.selectedVariant?.optionId
+            ) === itemKey
           );
         });
 
@@ -410,30 +494,26 @@ export const useCartStore = create<CartState>()(
 
       getCartItem: (productId, variantKey) => {
         const { items, generateCartItemKey } = get();
-        const itemKey = generateCartItemKey(productId, variantKey);
+        const parts = variantKey ? variantKey.split(KEY_SEPARATOR) : [];
+        const [variantId, optionId] = parts.length >= 2 ? [parts[0], parts[1]] : [undefined, undefined];
+        const itemKey = generateCartItemKey(productId, variantId, optionId);
 
         return items.find((item) => {
-          const existingVariantKey = item.selectedVariant
-            ? `${item.selectedVariant.variantId}-${item.selectedVariant.optionId}`
-            : undefined;
           return (
-            generateCartItemKey(item.product._id ?? "", existingVariantKey) ===
-            itemKey
+            generateCartItemKey(
+              item.product._id ?? "",
+              item.selectedVariant?.variantId,
+              item.selectedVariant?.optionId
+            ) === itemKey
           );
         });
       },
     }),
-    {
+     {
       name: "mprimo-cart",
       partialize: (state) => ({
         items: state.items,
-        summary: state.summary,
       }),
-      onRehydrateStorage: () => (state) => {
-        if (state) {
-          console.log("Cart rehydrated:", state.summary);
-        }
-      },
     }
   )
 );

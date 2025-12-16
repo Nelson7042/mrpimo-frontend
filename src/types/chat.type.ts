@@ -1,4 +1,4 @@
-import { ProductType } from "./product.type";
+import { ProductType } from "./product.type.ts_";
 import { IUser } from "./user.type";
 
 export interface IChat extends Document {

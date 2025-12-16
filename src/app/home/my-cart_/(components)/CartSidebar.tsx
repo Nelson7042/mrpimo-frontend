@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useValidateCart } from "@/hooks/useCheckout";
 import React, { useEffect } from "react";
 import CartTotalSkeleton from "./CartTotalSkeleton";
-import { useCartStore } from "@/stores/cartStore";
+import { useCartStore } from "@/stores/cartStore_";
 
 type Props = {
   openModal: () => void;
@@ -20,52 +20,47 @@ const CartSidebar = (props: Props) => {
     data,
     error,
   } = useValidateCart();
-  // Just rely on store's derived state
   const { summary, items } = useCartStore();
   const hasValidatedRef = React.useRef(false);
   const prevItemsCountRef = React.useRef(summary.totalItems);
-  const isLoggedIn = !!props.user;
+  const [, forceUpdate] = React.useReducer(x => x + 1, 0);
 
-  console.log("CartSidebar data:", data);
-
+  // Force re-render when cart summary changes
   useEffect(() => {
-    if (!isLoggedIn) return;
+    forceUpdate();
+  }, [summary.subtotal, summary.total, summary.totalItems]);
 
-    // Reset validation flag when items count changes
-    if (prevItemsCountRef.current !== summary.totalItems) {
-      hasValidatedRef.current = false;
-      prevItemsCountRef.current = summary.totalItems;
-    }
+  // useEffect(() => {
+  //   if (prevItemsCountRef.current !== summary.totalItems) {
+  //     hasValidatedRef.current = false;
+  //     prevItemsCountRef.current = summary.totalItems;
+  //   }
 
-    if (summary.totalItems === 0 || hasValidatedRef.current) return;
+  //   if (!props.user || summary.totalItems === 0 || hasValidatedRef.current) return;
 
-    const runValidation = async () => {
-      try {
-        const result = await validateCart();
-        hasValidatedRef.current = true;
-      } catch (err) {
-        console.error("Validation failed:", err);
-      }
-    };
+  //   const runValidation = async () => {
+  //     try {
+  //       const result = await validateCart();
+  //       hasValidatedRef.current = true;
+  //     } catch (err) {
+  //       console.error("Validation failed:", err);
+  //     }
+  //   };
 
-    runValidation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summary.totalItems, isLoggedIn, validateCart]);
+  //   runValidation();
+  // }, [summary.totalItems, props.user]);
 
-  if (isValidating && isLoggedIn) {
-    return <CartTotalSkeleton />;
-  }
+  // if (isValidating && props.user) {
+  //   return (<CartTotalSkeleton />)
+  // }
 
-  // Get currency from first item's priceInfo
-  const currencySymbol = items[0]?.priceInfo?.currencySymbol || "$";
-  const displayCurrency = items[0]?.priceInfo?.displayCurrency || "USD";
-
-  // Use validated data if available (online), otherwise use local summary (offline)
-  const subtotal = data?.checkout?.pricing?.subtotal || summary.subtotal;
-  const shipping = data?.checkout?.pricing?.shipping || 0;
-  const tax = data?.checkout?.pricing?.tax || 0;
-  const total = data?.checkout?.pricing?.total || summary.total;
-  const currency = data?.checkout?.pricing?.currency || displayCurrency;
+  const pricing = props.user && data?.checkout?.pricing ? data.checkout.pricing : {
+    currency: items[0]?.priceInfo?.currencySymbol || "₦",
+    subtotal: summary.subtotal || 0,
+    shipping: 0,
+    tax: 0,
+    total: summary.subtotal || 0
+  };
 
   return (
     <div className="lg:col-span-1">
@@ -76,33 +71,32 @@ const CartSidebar = (props: Props) => {
             <div className="flex justify-between">
               <span>Sub Total:</span>
               <span>
-                {currencySymbol} {subtotal.toFixed(2)}
+                {pricing.currency}
+                {pricing.subtotal?.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping:</span>
               <span>
-                {currencySymbol} {shipping.toFixed(2)}
+                {pricing.currency}
+                {pricing.shipping?.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Tax:</span>
               <span>
-                {currencySymbol} {tax.toFixed(2)}
+                {pricing.currency}
+                {pricing.tax?.toFixed(2)}
               </span>
             </div>
             <hr />
             <div className="flex justify-between font-bold text-lg">
               <span>TOTAL:</span>
               <span>
-                {currencySymbol} {total.toFixed(2)}
+                {pricing.currency}
+                {pricing.total?.toFixed(2)}
               </span>
             </div>
-            {!isLoggedIn && (
-              <p className="text-xs text-gray-500 text-center mt-2">
-                Login to see shipping and tax
-              </p>
-            )}
           </div>
           <div className="space-y-3 mt-6">
             <Button

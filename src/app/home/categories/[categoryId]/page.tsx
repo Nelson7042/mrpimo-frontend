@@ -22,7 +22,7 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useProducts, useCategoryBySlug, useCategoryTree, useProductsByCategory } from "@/hooks/useProducts";
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 import { ProductCard } from "@/components/Home/ProductCard";
 import { filterAvailableProducts } from "@/utils/productUtils";
 
@@ -246,7 +246,7 @@ export default function CategoryPage() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 body-padding max-w-7xl mx-auto pb-10">
+    <div className="min-h-screen bg-gray-50   max-w-7xl mx-auto pb-10">
       {/* Header */}
       <nav className="mt-3">
         <Breadcrumbs

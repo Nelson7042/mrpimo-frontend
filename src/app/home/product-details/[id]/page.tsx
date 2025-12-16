@@ -18,7 +18,7 @@ const ProductPage: React.FC = () => {
   } = useFetchProductById(id as string);
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-14 lg:py-18">
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10">
         <div className="animate-pulse">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
             <div className="lg:col-span-2 space-y-4">

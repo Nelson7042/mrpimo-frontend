@@ -2,7 +2,7 @@ import { useWishlist } from "@/hooks/useWishlist";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { useWishlistStore } from "@/stores/useWishlistStore";
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 import { User } from "@/types/user.type";
 import { Heart } from "lucide-react";
 import React from "react";
@@ -10,9 +10,11 @@ import React from "react";
 interface WishlistCompnent {
   productData: ProductType;
   price: number;
+  optionId?: string;
+  variantId?: string;
 }
 
-const Wishlist = ({ productData, price }: WishlistCompnent) => {
+const Wishlist = ({ productData, price, optionId, variantId }: WishlistCompnent) => {
   const { openModal } = useAuthModalStore();
   const { user } = useUserStore();
 
@@ -27,16 +29,19 @@ const Wishlist = ({ productData, price }: WishlistCompnent) => {
 
   return (
     <button
-      onClick={() => {
+      onClick={(e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        
         if (!user) {
           openModal();
           return;
         }
 
         if (isInWishlist(productData?._id!)) {
-          removeFromWishlist(productData?._id!);
+          removeFromWishlist({ productId: productData?._id!, variantId, optionId });
         } else {
-          addToWishlist({ productId: productData?._id!, price });
+          addToWishlist({ productId: productData?._id!, price, optionId, variantId });
         }
       }}
       disabled={isAddingToWishlist}

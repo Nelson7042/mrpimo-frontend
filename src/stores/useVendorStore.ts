@@ -1,4 +1,4 @@
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 import { User } from "@/types/user.type";
 import {IVendor} from "@/types/vendor.type";
 import { create } from "zustand";

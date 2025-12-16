@@ -270,7 +270,7 @@ export default function OrderDetailsPage() {
           {/* Order Details */}
           <div className="lg:col-span-2 space-y-3 md:space-y-6">
             {/* Order Header */}
-            <Card className="shadow-lg border-t-4 border-t-blue-500">
+            <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -294,178 +294,157 @@ export default function OrderDetailsPage() {
               </CardHeader>
             </Card>
 
-            {/* Order Items with Shipping */}
-            <Card className="shadow-lg">
+            {/* Order Items */}
+            <Card>
               <CardHeader>
                 <CardTitle>Order Items</CardTitle>
               </CardHeader>
               <CardContent>
-                {order.items?.[0]?.deliveryAddress && (
-                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg flex items-start gap-2 border border-blue-100">
-                    <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium">Delivery Address</p>
-                      <p className="text-gray-600">
-                        {order.items[0].deliveryAddress.street}, {order.items[0].deliveryAddress.city}, {order.items[0].deliveryAddress.state}, {order.items[0].deliveryAddress.country} {order.items[0].deliveryAddress.postalCode}
-                      </p>
-                    </div>
-                  </div>
-                )}
-
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full">
-                    <thead className="border-b bg-gradient-to-r from-gray-50 to-blue-50">
-                      <tr className="text-left text-sm text-gray-700 font-semibold">
-                        <th className="p-2 pl-4 font-medium">Product</th>
-                        <th className=" p-2 font-medium text-center">Price</th>
-                        <th className=" p-2 font-medium text-center">Qty</th>
-                        <th className=" p-2 font-medium text-center">Total</th>
-                        <th className=" p-2 font-medium">Shipping</th>
-                        {order.status === "delivered" && <th className=" pr-4 p-2 font-medium text-center">Action</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {order.items?.map((item: any, index: number) => {
-                        const shipment = order.shipments?.find((s: any) =>
-                          s.items?.some((si: any) => {
-                            const productId = typeof item.productId === 'object' ? (item.productId._id || item.productId.id) : item.productId;
-                            return si.productId === productId;
-                          })
-                        );
-                        return (
-                          <tr key={index} className="border-b last:border-0">
-                            <td className="py-4 pl-4">
-                              <div className="flex items-center gap-3">
-                                <Link href={`/home/product-details/${item?.productId._id}`}>
-                                  <Image
-                                    src={item.productId?.images?.[0] || "/placeholder.svg"}
-                                    alt={item.productId?.name || "Product"}
-                                    width={60}
-                                    height={60}
-                                    className="rounded-lg object-cover"
-                                  />
-                                </Link>
-                                <div>
-                                  <p className="font-medium">{item.productId?.name}</p>
-                                </div>
-                              </div>
-                            </td>
-                            <td className="py-4 text-center">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate)?.toFixed(2) || "0.00"}</td>
-                            <td className="py-4 text-center">{item.quantity}</td>
-                            <td className="py-4 font-medium text-center">${((item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity)?.toFixed(2) || "0.00"}</td>
-                            <td className="py-4 px-2">
-                              {shipment?.shipping ? (
-                                <div className="text-sm space-y-1">
-                                  <p className="flex items-center gap-1">
-                                    <Truck className="w-3 h-3" />
-                                    <span className="text-blue-600">{shipment.shipping.trackingNumber}</span>
-                                  </p>
-                                  <p className="text-gray-600 capitalize">{shipment.shipping.carrier}</p>
-                                  <p className="text-gray-500">
-                                    {shipment.shipping.estimatedDelivery
-                                      ? format(new Date(shipment.shipping.estimatedDelivery), "MMM dd")
-                                      : "TBD"}
-                                  </p>
-                                </div>
-                              ) : (
-                                <span className="text-gray-400 text-sm">Pending</span>
-                              )}
-                            </td>
-                            {order.status === "delivered" && (
-                              <td className="py-4 pr-4 text-center">
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => handleOpenReviewModal(item.productId)}
-                                  className="flex items-center gap-1 mx-auto"
-                                >
-                                  <Star className="w-3 h-3" />
-                                  Review
-                                </Button>
-                              </td>
-                            )}
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-
-                <div className="md:hidden space-y-4">
-                  {order.items?.map((item: any, index: number) => {
-                    const shipment = order.shipments?.find((s: any) =>
-                      s.items?.some((si: any) => {
-                        const productId = typeof item.productId === 'object' ? (item.productId._id || item.productId.id) : item.productId;
-                        return si.productId === productId;
-                      })
-                    );
-                    return (
-                      <div key={index} className="border rounded-lg p-4 space-y-3">
-                        <div className="flex gap-3">
-                          <Link href={`/home/product-details/${item?.productId._id}`}>
-                            <Image
-                              src={item.productId?.images?.[0] || "/placeholder.svg"}
-                              alt={item.productId?.name || "Product"}
-                              width={80}
-                              height={80}
-                              className="rounded-lg object-cover"
-                            />
-                          </Link>
-                          <div className="flex-1">
-                            <p className="font-medium">{item.productId?.name}</p>
-                            <p className="text-sm text-gray-600 mt-1">Qty: {item.quantity}</p>
-                            <p className="text-blue-600 font-medium mt-1">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate)?.toFixed(2)}</p>
-                          </div>
-                        </div>
-                        <Separator />
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">Total:</span>
-                            <span className="font-medium">${((item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity)?.toFixed(2)}</span>
-                          </div>
-                          {shipment?.shipping && (
-                            <>
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Tracking:</span>
-                                <span className="text-blue-600">{shipment.shipping.trackingNumber}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Carrier:</span>
-                                <span className="capitalize">{shipment.shipping.carrier}</span>
-                              </div>
-                              <div className="flex justify-between">
-                                <span className="text-gray-600">Est. Delivery:</span>
-                                <span>
-                                  {shipment.shipping.estimatedDelivery
-                                    ? format(new Date(shipment.shipping.estimatedDelivery), "MMM dd, yyyy")
-                                    : "TBD"}
-                                </span>
-                              </div>
-                            </>
-                          )}
-                        </div>
+                <div className="space-y-4">
+                  {order.items?.map((item: any, index: number) => (
+                    <div
+                      key={index}
+                      className="flex items-center space-x-4 p-4 border rounded-lg"
+                    >
+                      <Link
+                        href={{
+                          pathname: "/home/product-details/[id]",
+                          query: {
+                            id: item?.productId._id,
+                            productData: JSON.stringify(item?.productId), // Pass full product data
+                          },
+                        }}
+                        as={`/home/product-details/${item?.productId._id}`} // Clean URL in browser
+                        className=""
+                      >
+                        <Image
+                          src={
+                            item.productId?.images?.[0] || "/placeholder.svg"
+                          }
+                          alt={item.productId?.name || "Product"}
+                          width={80}
+                          height={80}
+                          className="rounded-lg object-cover"
+                        />
+                      </Link>
+                      <div className="flex-1">
+                        <h3 className="font-medium">{item.productId?.name}</h3>
+                        <p className="text-gray-600">
+                          Quantity: {item.quantity}
+                        </p>
+                        <p className="text-blue-600 font-medium">
+                          $
+                          {(item.displayPrice || item.price)?.toFixed(2) ||
+                            "0.00"}
+                        </p>
+                      </div>
+                      <div className="text-right space-y-2">
+                        <p className="font-medium">
+                          $
+                          {(
+                            (item.displayPrice || item.price) * item.quantity
+                          )?.toFixed(2) || "0.00"}
+                        </p>
                         {order.status === "delivered" && (
                           <Button
                             size="sm"
                             variant="outline"
-                            onClick={() => handleOpenReviewModal(item.productId)}
-                            className="w-full flex items-center justify-center gap-1"
+                            onClick={() =>
+                              handleOpenReviewModal(item.productId)
+                            }
+                            className="flex items-center gap-1"
                           >
                             <Star className="w-3 h-3" />
                             Review
                           </Button>
                         )}
                       </div>
-                    );
-                  })}
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Shipping Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Truck className="w-5 h-5" />
+                  Shipping Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {order.items?.[0]?.deliveryAddress && (
+                    <>
+                      <div className="flex items-start gap-3">
+                        <MapPin className="w-5 h-5 text-gray-400 mt-0.5" />
+                        <div>
+                          <p className="font-medium">Delivery Address</p>
+                          <p className="text-gray-600">
+                            {order.items[0].deliveryAddress.street}
+                            <br />
+                            {order.items[0].deliveryAddress.city},{" "}
+                            {order.items[0].deliveryAddress.state}
+                            <br />
+                            {order.items[0].deliveryAddress.country}{" "}
+                            {order.items[0].deliveryAddress.postalCode}
+                          </p>
+                        </div>
+                      </div>
+                      <Separator />
+                    </>
+                  )}
+
+                  {order.shipments?.map((shipment: any, idx: number) => (
+                    <div key={idx} className="space-y-3">
+                      {order.shipments.length > 1 && (
+                        <p className="font-medium text-sm">
+                          Shipment {idx + 1}
+                        </p>
+                      )}
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div>
+                          <p className="font-medium">Tracking Number</p>
+                          <p className="text-blue-600">
+                            {shipment.shipping?.trackingNumber || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Carrier</p>
+                          <p className="text-gray-600 capitalize">
+                            {shipment.shipping?.carrier || "N/A"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Estimated Delivery</p>
+                          <p className="text-gray-600">
+                            {shipment.shipping?.estimatedDelivery
+                              ? format(
+                                  new Date(shipment.shipping.estimatedDelivery),
+                                  "MMMM dd, yyyy"
+                                )
+                              : "TBD"}
+                          </p>
+                        </div>
+                        <div>
+                          <p className="font-medium">Shipping Status</p>
+                          <p className="text-gray-600 capitalize">
+                            {shipment.shipping?.status || "N/A"}
+                          </p>
+                        </div>
+                      </div>
+                      {idx < order.shipments.length - 1 && <Separator />}
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
             {/* Order Actions */}
-            <Card className="shadow-lg">
+            <Card>
               <CardContent className="pt-6">
-                <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex flex-wrap gap-3">
                   {(order.status === "pending" ||
                     order.status === "processing") && (
                     <Button
@@ -549,7 +528,7 @@ export default function OrderDetailsPage() {
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <Card className="shadow-lg bg-gradient-to-br from-white to-blue-50">
+            <Card>
               <CardHeader>
                 <CardTitle>Order Summary</CardTitle>
               </CardHeader>
@@ -563,7 +542,7 @@ export default function OrderDetailsPage() {
                         ?.reduce(
                           (sum: number, item: any) =>
                             sum +
-                            (item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity,
+                            (item.displayPrice || item.price) * item.quantity,
                           0
                         )
                         ?.toFixed(2) || "0.00"}
@@ -578,7 +557,7 @@ export default function OrderDetailsPage() {
                         order.items?.reduce(
                           (sum: number, item: any) =>
                             sum +
-                            (item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity,
+                            (item.displayPrice || item.price) * item.quantity,
                           0
                         )
                       )?.toFixed(2) || "0.00"}
@@ -586,12 +565,12 @@ export default function OrderDetailsPage() {
                   </div>
                 </div>
 
-                <Separator className="my-4 bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+                <Separator className="my-4" />
 
                 {/* Payment Information */}
                 <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2 text-blue-700">
-                    <CreditCard className="w-4 h-4 text-blue-600" />
+                  <h4 className="font-medium mb-3 flex items-center gap-2">
+                    <CreditCard className="w-4 h-4" />
                     Payment Information
                   </h4>
                   <div className="space-y-2 text-sm">

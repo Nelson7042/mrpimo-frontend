@@ -1,4 +1,4 @@
-import { ProductType } from "@/types/product.type";
+import { ProductType } from "@/types/product.type.ts_";
 
 /**
  * Calculates the total available quantity for a product
