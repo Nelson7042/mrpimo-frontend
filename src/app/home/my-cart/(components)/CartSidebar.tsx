@@ -5,6 +5,7 @@ import { useValidateCart } from "@/hooks/useCheckout";
 import React, { useEffect } from "react";
 import CartTotalSkeleton from "./CartTotalSkeleton";
 import { useCartStore } from "@/stores/cartStore";
+import { NumericFormat } from "react-number-format";
 
 type Props = {
   openModal: () => void;
@@ -62,9 +63,16 @@ const CartSidebar = (props: Props) => {
 
   // Use validated data if available (online), otherwise use local summary (offline)
   const subtotal = data?.checkout?.pricing?.subtotal || summary.subtotal;
+  // console.log("subtotal", subtotal)
   const shipping = data?.checkout?.pricing?.shipping || 0;
+  // console.log("shipping", shipping)
+
   const tax = data?.checkout?.pricing?.tax || 0;
+  // console.log("tax", tax)
+  
   const total = data?.checkout?.pricing?.total || summary.total;
+  // console.log("total", total)
+
   const currency = data?.checkout?.pricing?.currency || displayCurrency;
 
   return (
@@ -76,26 +84,54 @@ const CartSidebar = (props: Props) => {
             <div className="flex justify-between">
               <span>Sub Total:</span>
               <span>
-                {currencySymbol} {subtotal.toFixed(2)}
+                <NumericFormat
+                  value={subtotal.toFixed(2)}
+                  displayType={"text"}
+                  thousandSeparator={true}
+                  prefix={currency || "$"}
+                  decimalScale={2}
+                  fixedDecimalScale={true}
+                />
               </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping:</span>
               <span>
-                {currencySymbol} {shipping.toFixed(2)}
+                <NumericFormat
+                  value={shipping.toFixed(2)}
+                  displayType={"text"}
+                  thousandSeparator={true}
+                  prefix={currency || "$"}
+                  decimalScale={2}
+                  fixedDecimalScale={true}
+                />
               </span>
             </div>
             <div className="flex justify-between">
               <span>Tax:</span>
               <span>
-                {currencySymbol} {tax.toFixed(2)}
+                <NumericFormat
+                  value={tax.toFixed(2)}
+                  displayType={"text"}
+                  thousandSeparator={true}
+                  prefix={currency || "$"}
+                  decimalScale={2}
+                  fixedDecimalScale={true}
+                />
               </span>
             </div>
             <hr />
             <div className="flex justify-between font-bold text-lg">
               <span>TOTAL:</span>
               <span>
-                {currencySymbol} {total.toFixed(2)}
+                <NumericFormat
+                  value={total.toFixed(2)}
+                  displayType={"text"}
+                  thousandSeparator={true}
+                  prefix={currency || "$"}
+                  decimalScale={2}
+                  fixedDecimalScale={true}
+                />
               </span>
             </div>
             {!isLoggedIn && (

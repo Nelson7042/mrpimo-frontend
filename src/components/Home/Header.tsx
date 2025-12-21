@@ -76,11 +76,11 @@ const Header = () => {
       openModal();
     } else {
       // Check if user is a vendor and route accordingly
-      if (vendor) {
-        router.push("/vendor/dashboard");
-      } else {
+      // if (vendor) {
+      //   router.push("/vendor/dashboard");
+      // } if {
         router.push("/home/user");
-      }
+      // }
     }
   };
   const handlecloseModal = () => {
@@ -136,6 +136,7 @@ const Header = () => {
       link: "/contact",
     },
   ];
+  
   return (
     <header className="text-white ">
       {/* Top banner - responsive */}

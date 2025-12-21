@@ -4,7 +4,7 @@ import type React from "react";
 
 import { useState, useCallback, useEffect } from "react";
 import { Star, Heart, X, MessageSquare, Tag } from "lucide-react";
-import { ProductType, VariantType } from "@/types/product.type.ts";
+import { ProductType, VariantType } from "@/types/product.type";
 import { NumericFormat } from "react-number-format";
 import { convertFromUSD, getCurrencySymbol } from "@/utils/currencyService";
 import { useCartStore } from "@/stores/cartStore";
@@ -29,6 +29,7 @@ import { calculateTotalQuantity } from "@/utils/productUtils";
 import OfferModal from "./OfferModal";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { API_BASE_URL } from "@/utils/config";
+import { usePriceInfo } from "@/hooks/usePriceInfo";
 
 export const AuctionCountdown = ({ auction }: { auction: any }) => {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -96,29 +97,32 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   useEffect(() => {
     if (productData) {
       const totalQty = calculateTotalQuantity(productData);
-      console.log("=== PRODUCT INFO COMPONENT ===");
-      console.log("Product Data:", productData);
-      console.log("Product ID:", productData._id);
-      console.log("Product Name:", productData.name);
-      console.log("Product Variants:", productData.variants);
-      console.log("Variant Options:", productData.variants?.map((v: any) => ({
-        variantId: v._id || v.id,
-        variantName: v.name,
-        options: v.options?.map((opt: any) => ({
-          optionId: opt._id || opt.id,
-          value: opt.value,
-          price: opt.price,
-          salePrice: opt.salePrice,
-          displayPrice: opt.displayPrice,
-          quantity: opt.quantity,
-          sku: opt.sku,
-        }))
-      })));
-      console.log("Price Info:", productData.priceInfo);
-      console.log("Inventory:", productData.inventory);
-      console.log("Total Quantity:", totalQty);
-      console.log("All Properties:", Object.keys(productData));
-      console.log("==============================");
+      // console.log("=== PRODUCT INFO COMPONENT ===");
+      // console.log("Product Data:", productData);
+      // console.log("Product ID:", productData._id);
+      // console.log("Product Name:", productData.name);
+      // console.log("Product Variants:", productData.variants);
+      // console.log(
+      //   "Variant Options:",
+      //   productData.variants?.map((v: any) => ({
+      //     variantId: v._id || v.id,
+      //     variantName: v.name,
+      //     options: v.options?.map((opt: any) => ({
+      //       optionId: opt._id || opt.id,
+      //       value: opt.value,
+      //       price: opt.price,
+      //       salePrice: opt.salePrice,
+      //       displayPrice: opt.displayPrice,
+      //       quantity: opt.quantity,
+      //       sku: opt.sku,
+      //     })),
+      //   }))
+      // );
+      // console.log("Price Info:", productData.priceInfo);
+      // console.log("Inventory:", productData.inventory);
+      // console.log("Total Quantity:", totalQty);
+      // console.log("All Properties:", Object.keys(productData));
+      // console.log("==============================");
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [productData]);
@@ -186,28 +190,19 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       (opt: any) => (opt.id || opt._id) === optionId && opt.value
     );
   };
+  // Use the custom hook for price calculations
+  const priceInfo = usePriceInfo(productData, selectedOptions, quantity);
 
   const getSelectedOptionPrice = () => {
-    // Always prioritize priceInfo.displayPrice as the base price
-    const baseDisplayPrice = (productData as any)?.priceInfo?.displayPrice;
-    
-    if (!productData?.variants?.[0]) {
-      return baseDisplayPrice || 0;
-    }
-    
-    const variant = productData.variants[0];
-    const optionId = selectedOptions[variant._id || variant.id];
-    const option = variant.options?.find(
-      (opt: any) => (opt.id || opt._id) === optionId && opt.value
-    );
-    
-    // If variant option has its own displayPrice, use it; otherwise use base displayPrice
-    // Don't fall back to option.price or option.salePrice as they may be in original currency
-    return option?.displayPrice || baseDisplayPrice || 0;
+    return priceInfo.unitPrice;
   };
 
   const getSelectedOptionCurrency = () => {
-    return (productData as any)?.priceInfo?.currencySymbol || "$";
+    return priceInfo.currencySymbol;
+  };
+
+  const getTotalPrice = () => {
+    return priceInfo.totalPrice;
   };
 
   const getSelectedOptionStock = () => {
@@ -229,13 +224,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     setQuantity((prev) => (prev > 1 ? prev - 1 : 1));
   };
 
-  // Only calculate totalQuantity if productData and variants are available
-  // This prevents showing "unavailable" when data is still loading or incomplete
-  const totalQuantity = productData?.variants && Array.isArray(productData.variants) && productData.variants.length > 0
-    ? calculateTotalQuantity(productData)
-    : productData?.inventory?.listing?.type === "auction" 
-      ? 1 // Auction products should always show
-      : 0;
+  const totalQuantity = calculateTotalQuantity(productData);
 
   let totalUserOffers;
   if (productData?.offers && productData.offers?.length > 0) {
@@ -392,7 +381,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       };
 
       const buyNowData = await buyNowMutation.mutateAsync(orderData);
-      console.log("=== BUY NOW RESPONSE ===", JSON.stringify(buyNowData, null, 2));
+      console.log(
+        "=== BUY NOW RESPONSE ===",
+        JSON.stringify(buyNowData, null, 2)
+      );
 
       if (!buyNowData.success) {
         toast.error(buyNowData.message || "Failed to process buy now");
@@ -402,7 +394,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
 
       const { pricing, userFiatWallet, item, product } = buyNowData.buyNow;
       const priceInfo = product?.priceInfo || (productData as any)?.priceInfo;
-      
+
       setBuyNowOrderData({
         ...orderData,
         price: item.price,
@@ -446,7 +438,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
 
     try {
       const availableBalance = walletData?.available || 0;
-      
+
       if (availableBalance >= summaryData.totalAmount) {
         const paymentIntent = await createPaymentIntentMutation.mutateAsync({
           productId: buyNowOrderData.productId,
@@ -457,12 +449,16 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
         });
 
         if (paymentIntent.success) {
-          const cleanedItems: any[] = [{
-            productId: buyNowOrderData.productId,
-            quantity: buyNowOrderData.quantity,
-          }];
-          if (buyNowOrderData.variantId) cleanedItems[0].variantId = buyNowOrderData.variantId;
-          if (buyNowOrderData.optionId) cleanedItems[0].optionId = buyNowOrderData.optionId;
+          const cleanedItems: any[] = [
+            {
+              productId: buyNowOrderData.productId,
+              quantity: buyNowOrderData.quantity,
+            },
+          ];
+          if (buyNowOrderData.variantId)
+            cleanedItems[0].variantId = buyNowOrderData.variantId;
+          if (buyNowOrderData.optionId)
+            cleanedItems[0].optionId = buyNowOrderData.optionId;
 
           const orderPaymentData: any = {
             type: "wallet",
@@ -486,7 +482,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
               currency: summaryData.currency,
             },
             paymentData: {
-              type: "wallet"
+              type: "wallet",
             },
             address: {
               street: shippingAddr?.street,
@@ -539,14 +535,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
         optionValue: option.value,
         price: option.salePrice || option.price,
       });
-      router.push('/home/checkout');
+      router.push("/home/checkout");
     } catch (error: any) {
       console.error("Add to cart error:", error);
       toast.error(error.message || "Failed to proceed to checkout");
     }
   };
-
-
 
   const handlePlaceBidClicked = async () => {
     if (!user || !user._id) {
@@ -594,7 +588,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     setIsSubmittingOffer(true);
     try {
       const response = await fetchWithAuth(
-        `${API_BASE_URL}/v1/products/offer/${productData._id}`,
+        `${API_BASE_URL}/products/offer/${productData._id}`,
         {
           method: "POST",
           body: JSON.stringify({
@@ -634,13 +628,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     ));
   };
 
-  // Don't render the component if total quantity is 0
-  // But only if we have complete product data (variants loaded) and it's not an auction
-  // This prevents showing "unavailable" when data is still loading
-  const hasCompleteData = productData?.variants && Array.isArray(productData.variants) && productData.variants.length > 0;
-  const isAuction = productData?.inventory?.listing?.type === "auction";
-  
-  if (totalQuantity === 0 && hasCompleteData && !isAuction) {
+  if (totalQuantity === 0) {
     return (
       <div className="p-3 md:p-5 lg:p-6 md:border rounded-lg border-[#ADADAD4D]">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -809,7 +797,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     exchangeRate:
                       (productData as any)?.priceInfo?.exchangeRate || 1,
                     currencySymbol: getSelectedOptionCurrency(),
-                    displayPrice: (productData as any)?.priceInfo?.displayPrice,
                   }}
                 />
 
@@ -848,81 +835,146 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
             )}
 
           <div className="space-y-4">
-            {/* <button
-                onClick={() => {
-                  if (!user) {
-                    openModal();
-                    return;
-                  }
-                  const price =
-                    selectedVariant?.options?.[0]?.salePrice ||
-                    selectedVariant?.options?.[0]?.price ||
-                    0;
-                  if (isInWishlist(productData._id!)) {
-                    removeFromWishlist(productData._id!);
-                  } else {
-                    addToWishlist({ 
-                      productId: productData._id!, 
-                      price,
-                      productData: {
-                        name: productData?.name,
-                        images: productData?.images,
-                      }
-                    });
-                  }
-                }}
-                disabled={isAddingToWishlist}
-                className="p-2 rounded-full hover:bg-gray-100 transition-colors disabled:opacity-50"
-                aria-label="Add to wishlist"
-              >
-                <Heart
-                  size={24}
-                  className={`${
-                    isInWishlist(productData?._id!)
-                      ? "text-red-500 fill-current"
-                      : "text-gray-400"
-                  } transition-colors`}
-                />
-              </button> */}
-
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
               {/* Price and Actions */}
               <div>
-                <div className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">
-                  {saleType === "instant" ? (
-                    <NumericFormat
-                      value={getSelectedOptionPrice()}
-                      displayType={"text"}
-                      thousandSeparator={true}
-                      prefix={
-                        getSelectedOptionCurrency() ||
-                        (productData as any)?.priceInfo?.currencySymbol
-                      }
-                      decimalScale={2}
-                      fixedDecimalScale={true}
-                    />
-                  ) : (
-                    <NumericFormat
-                      value={
-                        selectedVariant?.options[0]?.displayPrice ||
-                        selectedVariant?.options[0]?.salePrice ||
-                        selectedVariant?.options[0]?.price ||
-                        (productData as any)?.priceInfo?.displayPrice ||
-                        0
-                      }
-                      displayType={"text"}
-                      thousandSeparator={true}
-                      prefix={
-                        selectedVariant?.options[0]?.currencySymbol ||
-                        (productData as any)?.priceInfo?.currencySymbol ||
-                        "$"
-                      }
-                      decimalScale={2}
-                      fixedDecimalScale={true}
-                    />
-                  )}
-                </div>
-                <div className="text-xs md:text-sm text-gray-500">Buy now</div>
+                {saleType === "instant" ? (
+                  (() => {
+                    const variant = productData?.variants?.[0];
+                    const variantId = variant?._id || variant?.id || "";
+                    const optionId = selectedOptions[variantId];
+                    const option = variant?.options?.find(
+                      (opt: any) => (opt.id || opt._id) === optionId
+                    );
+                    const exchangeRate =
+                      (productData as any)?.priceInfo?.exchangeRate || 1;
+                    const price = (option?.price || 0) * exchangeRate;
+                    const salePrice = (option?.salePrice || 0) * exchangeRate;
+                    const hasDiscount = salePrice > 0 && salePrice < price;
+
+                    return (
+                      <div>
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <div className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">
+                              <NumericFormat
+                                value={getSelectedOptionPrice()}
+                                displayType={"text"}
+                                thousandSeparator={true}
+                                prefix={getSelectedOptionCurrency()}
+                                decimalScale={2}
+                                fixedDecimalScale={true}
+                              />
+                            </div>
+                            {hasDiscount && (
+                              <>
+                                <div className="text-sm md:text-base text-gray-400 line-through">
+                                  <NumericFormat
+                                    value={price}
+                                    displayType={"text"}
+                                    thousandSeparator={true}
+                                    prefix={getSelectedOptionCurrency()}
+                                    decimalScale={2}
+                                    fixedDecimalScale={true}
+                                  />
+                                </div>
+                                <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-medium">
+                                  {Math.round(
+                                    ((price - salePrice) / price) * 100
+                                  )}
+                                  % OFF
+                                </span>
+                              </>
+                            )}
+                          </div>
+                          {quantity > 1 && (
+                            <div className="text-sm text-gray-600">
+                              Total:{" "}
+                              <NumericFormat
+                                value={getTotalPrice()}
+                                displayType={"text"}
+                                thousandSeparator={true}
+                                prefix={getSelectedOptionCurrency()}
+                                decimalScale={2}
+                                fixedDecimalScale={true}
+                              />{" "}
+                              ({quantity} × {getSelectedOptionCurrency()}
+                              {getSelectedOptionPrice().toFixed(2)})
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs md:text-sm text-gray-500">
+                          Buy now
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : saleType === "auction" ? (
+                  (() => {
+                    const winningBid = productData?.bids?.find(
+                      (bid: any) => bid.isWinning
+                    );
+                    const highestBid =
+                      winningBid?.currentAmount || auction?.startBidPrice || 0;
+                    const isAuctionStarted = auction?.isStarted;
+                    const userCurrency =
+                      (productData as any)?.priceInfo?.currency || "USD";
+                    const convertedAmount =
+                      (productData as any)?.priceInfo?.displayPrice ||
+                      highestBid;
+                    const currencySymbol =
+                      (productData as any)?.priceInfo?.currencySymbol || "$";
+
+                    return (
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <div className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">
+                            <NumericFormat
+                              value={highestBid}
+                              displayType={"text"}
+                              thousandSeparator={true}
+                              prefix="$"
+                              decimalScale={2}
+                              fixedDecimalScale={true}
+                            />
+                          </div>
+                          {userCurrency !== "USD" && (
+                            <div className="text-sm text-gray-500">
+                              ≈{" "}
+                              <NumericFormat
+                                value={convertedAmount}
+                                displayType={"text"}
+                                thousandSeparator={true}
+                                prefix={currencySymbol}
+                                decimalScale={2}
+                                fixedDecimalScale={true}
+                              />
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-xs md:text-sm text-gray-500">
+                          {isAuctionStarted ? "Bid now" : "Buy now"}
+                        </div>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div>
+                    <div className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">
+                      <NumericFormat
+                        value={(productData as any)?.priceInfo?.displayPrice}
+                        displayType={"text"}
+                        thousandSeparator={true}
+                        prefix="$"
+                        decimalScale={2}
+                        fixedDecimalScale={true}
+                      />
+                    </div>
+                    <div className="text-xs md:text-sm text-gray-500">
+                      Buy now
+                    </div>
+                  </div>
+                )}
               </div>
               {productData?.inventory?.listing?.type !== "auction" && (
                 <div className="flex items-center gap-2">
@@ -930,7 +982,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     productData={productData}
                     price={(() => {
                       const variant = productData?.variants?.[0];
-                      const optionId = selectedOptions[variant?._id || variant?.id || ''];
+                      const optionId =
+                        selectedOptions[variant?._id || variant?.id || ""];
                       const option = variant?.options?.find(
                         (opt: any) => (opt.id || opt._id) === optionId
                       );
@@ -938,9 +991,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     })()}
                     optionId={(() => {
                       const variant = productData?.variants?.[0];
-                      return selectedOptions[variant?._id || variant?.id || ''];
+                      return selectedOptions[variant?._id || variant?.id || ""];
                     })()}
-                    variantId={productData?.variants?.[0]?._id || productData?.variants?.[0]?.id}
+                    variantId={
+                      productData?.variants?.[0]?._id ||
+                      productData?.variants?.[0]?.id
+                    }
                   />
                   <span className="text-gray-600 text-sm">Add to Wishlist</span>
                 </div>
@@ -1102,8 +1158,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
           }
         />
       )}
-
-
 
       {/* Offer Modal */}
       {showOfferModal && (

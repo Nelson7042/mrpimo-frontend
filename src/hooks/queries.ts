@@ -82,7 +82,6 @@ const fetchUserSubscriptions = async () => {
     throw new Error('Failed to fetch user subscriptions');
   }
   const data = await response.json();
-  console.log("User subscriptions:", data);
   return data;
 };
 

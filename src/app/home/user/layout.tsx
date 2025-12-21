@@ -10,13 +10,32 @@ import { toast } from "react-toastify";
 import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { resetAllStores } from "@/stores/resetStore";
+import AuthenticationModalVendor from "@/app/(auth)/authenticationModalVendor";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
+import { useVendorStore } from "@/stores/useVendorStore";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const logoutMutation = useLogoutUser();
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
+  const [isSell, setIsSell] = useState(false);
+  const { setAuthType } = useAuthModalStore();
+  const { vendor } = useVendorStore();
 
+  const handleSellClick = () => {
+    if (!vendor) {
+      setAuthType("vendor");
+      setIsSell(!isSell);
+    } else {
+      // console.log("vendor", vendor);
+      router.push("/vendor/dashboard");
+    }
+  };
+   const handleCloseVendorModal = () => {
+    setIsSell(false);
+    setAuthType("");
+  };
 
   const closeLogoutModal = () => {
     setIsLogoutModalOpen(false);
@@ -38,7 +57,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
         toast.success("Logout Successfull");
-        resetAllStores()
+        resetAllStores();
         closeLogoutModal();
         router.push("/home");
       },
@@ -50,22 +69,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">
-          <Sidebar openLogoutModal={openLogoutModal} />
+          <Sidebar
+            openLogoutModal={openLogoutModal}
+            handleSellClick={handleSellClick}
+          />
         </div>
 
         {/* Mobile Sidebar Overlay */}
         {isMobileSidebarOpen && (
-          <div 
+          <div
             className="fixed inset-0 bg-black/10 z-40 lg:hidden"
             onClick={closeMobileSidebar}
           />
         )}
 
         {/* Mobile Sidebar */}
-        <div className={`
+        <div
+          className={`
           fixed top-0 left-0 h-full w-64 bg-white z-50 transform transition-transform duration-300 ease-in-out lg:hidden
-          ${isMobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        `}>
+          ${isMobileSidebarOpen ? "translate-x-0" : "-translate-x-full"}
+        `}
+        >
           <div className="flex items-center justify-between p-4 border-b">
             <h2 className="text-lg font-medium">Menu</h2>
             <Button
@@ -77,7 +101,11 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
               <X className="h-5 w-5" />
             </Button>
           </div>
-          <Sidebar openLogoutModal={openLogoutModal} onNavigate={closeMobileSidebar} />
+          <Sidebar
+            openLogoutModal={openLogoutModal}
+            onNavigate={closeMobileSidebar}
+              handleSellClick={handleSellClick}
+          />
         </div>
 
         <div className="flex-1">
@@ -102,6 +130,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           logout={handleLogout}
           isLoading={logoutMutation.isPending}
         />
+
+        <AuthenticationModalVendor isOpen={isSell} close={handleCloseVendorModal} />
       </div>
     </div>
   );

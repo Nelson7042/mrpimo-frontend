@@ -19,28 +19,56 @@ import { CartValidationModal } from "@/components/CartValidationModal";
 import { CartValidationResponse } from "@/utils/checkoutService";
 import { cartService } from "@/utils/cartService";
 import CartSidebar from "./(components)/CartSidebar";
+import { NumericFormat } from "react-number-format";
 // import { BidModal1 } from "../product-details/[id]/(component)/(component)/BidModal";
 
 const isHexColor = (value: string) => /^#[0-9A-F]{6}$/i.test(value);
 
 const extractColorFromValue = (value: string) => {
-  const colors = ['black', 'white', 'red', 'blue', 'green', 'yellow', 'purple', 'pink', 'orange', 'gray', 'grey', 'silver', 'gold', 'rose', 'space'];
+  const colors = [
+    "black",
+    "white",
+    "red",
+    "blue",
+    "green",
+    "yellow",
+    "purple",
+    "pink",
+    "orange",
+    "gray",
+    "grey",
+    "silver",
+    "gold",
+    "rose",
+    "space",
+  ];
   const lowerValue = value.toLowerCase();
-  return colors.find(color => lowerValue.includes(color)) || null;
+  return colors.find((color) => lowerValue.includes(color)) || null;
 };
 
 const getColorForValue = (value: string) => {
   // Check if it starts with a hex color
   const hexMatch = value.match(/^#[0-9A-F]{6}/i);
   if (hexMatch) return hexMatch[0];
-  
+
   const colorMap: { [key: string]: string } = {
-    'black': '#000000', 'white': '#FFFFFF', 'red': '#FF0000', 'blue': '#0000FF',
-    'green': '#008000', 'yellow': '#FFFF00', 'purple': '#800080', 'pink': '#FFC0CB',
-    'orange': '#FFA500', 'gray': '#808080', 'grey': '#808080', 'silver': '#C0C0C0', 
-    'gold': '#FFD700', 'rose': '#FF69B4', 'space': '#2F2F2F'
+    black: "#000000",
+    white: "#FFFFFF",
+    red: "#FF0000",
+    blue: "#0000FF",
+    green: "#008000",
+    yellow: "#FFFF00",
+    purple: "#800080",
+    pink: "#FFC0CB",
+    orange: "#FFA500",
+    gray: "#808080",
+    grey: "#808080",
+    silver: "#C0C0C0",
+    gold: "#FFD700",
+    rose: "#FF69B4",
+    space: "#2F2F2F",
   };
-  
+
   const colorName = extractColorFromValue(value);
   return colorName ? colorMap[colorName] : null;
 };
@@ -69,22 +97,24 @@ export default function CartPage() {
   const isLoggedIn = !!user;
   const { openModal } = useAuthModalStore();
 
-
   useCartSync();
 
   useEffect(() => {
     loadCart();
   }, [isLoggedIn, loadCart]);
 
-
   const [showBidModal, setShowBidModal] = useState(false);
   const [selectedAuctionItem, setSelectedAuctionItem] = useState<any>(null);
   const [showValidationModal, setShowValidationModal] = useState(false);
   const [validationData, setValidationData] =
     useState<CartValidationResponse | null>(null);
-  const [availableQuantities, setAvailableQuantities] = useState<{[key: string]: number}>({});
-  const [isCheckingQuantity, setIsCheckingQuantity] = useState<{[key: string]: boolean}>({});
-  const debounceTimers = useRef<{[key: string]: NodeJS.Timeout}>({});
+  const [availableQuantities, setAvailableQuantities] = useState<{
+    [key: string]: number;
+  }>({});
+  const [isCheckingQuantity, setIsCheckingQuantity] = useState<{
+    [key: string]: boolean;
+  }>({});
+  const debounceTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
   const hasCheckedQuantities = useRef(false);
 
   const buyItems = cartItem || [];
@@ -103,54 +133,60 @@ export default function CartPage() {
 
   const checkAvailableQuantity = useCallback(async (item: any) => {
     if (!item?.selectedVariant || !item?.product?._id) return;
-    
+
     const key = `${item.product._id}-${item.selectedVariant.optionId}`;
-    setIsCheckingQuantity(prev => ({ ...prev, [key]: true }));
-    
+    setIsCheckingQuantity((prev) => ({ ...prev, [key]: true }));
+
     try {
       const result = await cartService.getOptionQuantity(
         item.product._id,
         item.selectedVariant.variantId,
         item.selectedVariant.optionId
       );
-      
+
       if (result.success && result.data) {
-        setAvailableQuantities(prev => ({ ...prev, [key]: result.data!.quantity }));
+        setAvailableQuantities((prev) => ({
+          ...prev,
+          [key]: result.data!.quantity,
+        }));
       }
     } catch (error) {
-      console.error('Failed to check quantity:', error);
+      console.error("Failed to check quantity:", error);
       // Set a default high value so buttons aren't disabled on error
-      setAvailableQuantities(prev => ({ ...prev, [key]: 999 }));
+      setAvailableQuantities((prev) => ({ ...prev, [key]: 999 }));
     } finally {
-      setIsCheckingQuantity(prev => ({ ...prev, [key]: false }));
+      setIsCheckingQuantity((prev) => ({ ...prev, [key]: false }));
     }
   }, []);
 
-  const handleUpdateQuantity = useCallback(async (item: any, newQuantity: number) => {
-    if (newQuantity < 1) return;
-    
-    const productId = item?.product?._id;
-    const variantKey = item?.selectedVariant
-      ? `${item.selectedVariant.variantId}::${item.selectedVariant.optionId}`
-      : undefined;
-    const key = `${productId}-${item?.selectedVariant?.optionId}`;
-    
-    // Clear existing timer
-    if (debounceTimers.current[key]) {
-      clearTimeout(debounceTimers.current[key]);
-    }
-    
-    // Set new timer
-    debounceTimers.current[key] = setTimeout(async () => {
-      await updateQuantity(productId, newQuantity, variantKey);
-      await checkAvailableQuantity(item);
-    }, 300);
-  }, [updateQuantity, checkAvailableQuantity]);
+  const handleUpdateQuantity = useCallback(
+    async (item: any, newQuantity: number) => {
+      if (newQuantity < 1) return;
+
+      const productId = item?.product?._id;
+      const variantKey = item?.selectedVariant
+        ? `${item.selectedVariant.variantId}::${item.selectedVariant.optionId}`
+        : undefined;
+      const key = `${productId}-${item?.selectedVariant?.optionId}`;
+
+      // Clear existing timer
+      if (debounceTimers.current[key]) {
+        clearTimeout(debounceTimers.current[key]);
+      }
+
+      // Set new timer
+      debounceTimers.current[key] = setTimeout(async () => {
+        await updateQuantity(productId, newQuantity, variantKey);
+        await checkAvailableQuantity(item);
+      }, 300);
+    },
+    [updateQuantity, checkAvailableQuantity]
+  );
 
   useEffect(() => {
     // Check quantities only once on mount or when cart items change
     if (buyItems.length > 0 && !hasCheckedQuantities.current) {
-      buyItems.forEach(item => {
+      buyItems.forEach((item) => {
         if (item?.selectedVariant) {
           checkAvailableQuantity(item);
         }
@@ -162,7 +198,9 @@ export default function CartPage() {
   useEffect(() => {
     return () => {
       // Cleanup timers on unmount
-      Object.values(debounceTimers.current).forEach(timer => clearTimeout(timer));
+      Object.values(debounceTimers.current).forEach((timer) =>
+        clearTimeout(timer)
+      );
     };
   }, []);
 
@@ -234,7 +272,9 @@ export default function CartPage() {
                       >
                         <div className="flex gap-3 mb-3">
                           <Image
-                            src={item?.product?.images?.[0] || "/placeholder.svg"}
+                            src={
+                              item?.product?.images?.[0] || "/placeholder.svg"
+                            }
                             alt={item?.product?.name || "product image"}
                             width={80}
                             height={80}
@@ -249,20 +289,42 @@ export default function CartPage() {
                             </p>
                             {item?.selectedVariant && (
                               <div className="flex items-center gap-1.5 mb-2">
-                                <span className="text-xs text-gray-500">{item.selectedVariant.variantName}:</span>
-                                {getColorForValue(item.selectedVariant.optionValue) ? (
+                                <span className="text-xs text-gray-500">
+                                  {item.selectedVariant.variantName}:
+                                </span>
+                                {getColorForValue(
+                                  item.selectedVariant.optionValue
+                                ) ? (
                                   <div className="flex items-center gap-1">
-                                    <div className="w-3.5 h-3.5 rounded-full border border-gray-300" style={{ backgroundColor: getColorForValue(item.selectedVariant.optionValue) || undefined }} />
-                                    <span className="text-xs font-medium">{item.selectedVariant.optionValue}</span>
+                                    <div
+                                      className="w-3.5 h-3.5 rounded-full border border-gray-300"
+                                      style={{
+                                        backgroundColor:
+                                          getColorForValue(
+                                            item.selectedVariant.optionValue
+                                          ) || undefined,
+                                      }}
+                                    />
+                                    <span className="text-xs font-medium">
+                                      {item.selectedVariant.optionValue}
+                                    </span>
                                   </div>
                                 ) : (
-                                  <span className="text-xs font-medium">{item.selectedVariant.optionValue}</span>
+                                  <span className="text-xs font-medium">
+                                    {item.selectedVariant.optionValue}
+                                  </span>
                                 )}
                               </div>
                             )}
                             <div className="text-base font-bold text-gray-900">
-                              {item?.priceInfo?.currencySymbol || "$"}
-                              {getItemPrice(item).toFixed(2)}
+                              <NumericFormat
+                                value={getItemPrice(item).toFixed(2)}
+                                displayType={"text"}
+                                thousandSeparator={true}
+                                prefix={item?.priceInfo?.currencySymbol || "$"}
+                                decimalScale={2}
+                                fixedDecimalScale={true}
+                              />
                             </div>
                           </div>
                         </div>
@@ -273,7 +335,9 @@ export default function CartPage() {
                             variant="outline"
                             size="sm"
                             className="h-8 w-8 p-0 rounded-md"
-                            onClick={() => handleUpdateQuantity(item, item.quantity - 1)}
+                            onClick={() =>
+                              handleUpdateQuantity(item, item.quantity - 1)
+                            }
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </Button>
@@ -287,16 +351,27 @@ export default function CartPage() {
                             disabled={(() => {
                               const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
                               const available = availableQuantities[key];
-                              return available !== undefined && item.quantity >= available;
+                              return (
+                                available !== undefined &&
+                                item.quantity >= available
+                              );
                             })()}
-                            onClick={() => handleUpdateQuantity(item, item.quantity + 1)}
+                            onClick={() =>
+                              handleUpdateQuantity(item, item.quantity + 1)
+                            }
                           >
                             <Plus className="w-3.5 h-3.5" />
                           </Button>
                         </div>
                         <div className="text-base font-bold text-gray-900">
-                          {item?.priceInfo?.currencySymbol || "$"}
-                          {getItemTotal(item).toFixed(2)}
+                          <NumericFormat
+                            value={getItemTotal(item).toFixed(2)}
+                            displayType={"text"}
+                            thousandSeparator={true}
+                            prefix={item?.priceInfo?.currencySymbol || "$"}
+                            decimalScale={2}
+                            fixedDecimalScale={true}
+                          />
                         </div>
                       </div>
                     </div>
@@ -348,14 +423,30 @@ export default function CartPage() {
                       <div className="col-span-2">
                         {item?.selectedVariant && (
                           <div className="flex flex-col gap-1">
-                            <span className="text-xs text-gray-500">{item.selectedVariant.variantName}</span>
-                            {getColorForValue(item.selectedVariant.optionValue) ? (
+                            <span className="text-xs text-gray-500">
+                              {item.selectedVariant.variantName}
+                            </span>
+                            {getColorForValue(
+                              item.selectedVariant.optionValue
+                            ) ? (
                               <div className="flex items-center gap-1">
-                                <div className="w-5 h-5 rounded-full border border-gray-300" style={{ backgroundColor: getColorForValue(item.selectedVariant.optionValue) || undefined }} />
-                                <span className="text-sm font-medium">{item.selectedVariant.optionValue}</span>
+                                <div
+                                  className="w-5 h-5 rounded-full border border-gray-300"
+                                  style={{
+                                    backgroundColor:
+                                      getColorForValue(
+                                        item.selectedVariant.optionValue
+                                      ) || undefined,
+                                  }}
+                                />
+                                <span className="text-sm font-medium">
+                                  {item.selectedVariant.optionValue}
+                                </span>
                               </div>
                             ) : (
-                              <span className="text-sm font-medium">{item.selectedVariant.optionValue}</span>
+                              <span className="text-sm font-medium">
+                                {item.selectedVariant.optionValue}
+                              </span>
                             )}
                           </div>
                         )}
@@ -363,8 +454,14 @@ export default function CartPage() {
                       <div className="col-span-2">
                         <div className="flex items-center space-x-2">
                           <span className="font-bold">
-                            {item?.priceInfo?.currencySymbol || "$"}
-                            {getItemPrice(item).toFixed(2)}
+                            <NumericFormat
+                              value={getItemPrice(item).toFixed(2)}
+                              displayType={"text"}
+                              thousandSeparator={true}
+                              prefix={item?.priceInfo?.currencySymbol || "$"}
+                              decimalScale={2}
+                              fixedDecimalScale={true}
+                            />
                           </span>
                         </div>
                       </div>
@@ -390,7 +487,10 @@ export default function CartPage() {
                             disabled={(() => {
                               const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
                               const available = availableQuantities[key];
-                              return available !== undefined && item.quantity >= available;
+                              return (
+                                available !== undefined &&
+                                item.quantity >= available
+                              );
                             })()}
                             onClick={() =>
                               handleUpdateQuantity(item, item.quantity + 1)
@@ -401,8 +501,14 @@ export default function CartPage() {
                         </div>
                       </div>
                       <div className="col-span-2 font-bold">
-                        {item?.priceInfo?.currencySymbol || "$"}
-                        {getItemTotal(item).toFixed(2)}
+                        <NumericFormat
+                          value={getItemTotal(item).toFixed(2)}
+                          displayType={"text"}
+                          thousandSeparator={true}
+                          prefix={item?.priceInfo?.currencySymbol || "$"}
+                          decimalScale={2}
+                          fixedDecimalScale={true}
+                        />
                       </div>
                     </div>
                   </div>
@@ -413,7 +519,7 @@ export default function CartPage() {
 
           {/* Cart Total Sidebar */}
           <CartSidebar
-            user={user} 
+            user={user}
             setShowValidationModal={setShowValidationModal}
             openModal={openModal}
             setValidationData={setValidationData}
@@ -423,7 +529,7 @@ export default function CartPage() {
     );
   };
 
-   if (!isLoading && buyItems && buyItems.length < 1) {
+  if (!isLoading && buyItems && buyItems.length < 1) {
     return (
       <div className="min-h-screen bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]   md:py-8 lg:py-10 font-roboto  ">
@@ -437,7 +543,9 @@ export default function CartPage() {
           </div>
           <div className="flex flex-col items-center justify-center h-full mt-15">
             <div className="text-center">
-               <h1 className=" text-lg md:text-2xl font-bold mb-2">Your cart is empty</h1>
+              <h1 className=" text-lg md:text-2xl font-bold mb-2">
+                Your cart is empty
+              </h1>
               <p className="text-gray-600 mb-4 text-sm md:text-base">
                 Looks like you haven't added anything to your cart yet.
               </p>
@@ -452,7 +560,7 @@ export default function CartPage() {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   return (

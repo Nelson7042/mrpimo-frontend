@@ -12,7 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { Notification1 } from "iconsax-react";
+import { Notification1, Shop } from "iconsax-react";
+import { useVendorStore } from "@/stores/useVendorStore";
 
 // Define the base path for your user section
 const BASE_PATH = "/home/user";
@@ -24,16 +25,18 @@ const navigation = [
   { name: "Wallet", href: "/wallet", icon: Wallet },
   { name: "Wishlists", href: "/wishlist", icon: Heart },
   { name: "Notifications", href: "/notifications", icon: Notification1 },
-  { name: "Needs Reviews", href: "/reviews", icon: Star },
+  // { name: "Needs Reviews", href: "/reviews", icon: Star },
   { name: "Settings", href: "/settings", icon: Settings },
 ];
 
-export function Sidebar({ 
-  openLogoutModal, 
-  onNavigate 
-}: { 
+export function Sidebar({
+  openLogoutModal,
+  onNavigate,
+  handleSellClick,
+}: {
   openLogoutModal: () => void;
   onNavigate?: () => void;
+  handleSellClick: () => void;
 }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -62,7 +65,12 @@ export function Sidebar({
                 : "text-gray-700 hover:bg-gray-100"
             )}
           >
-            <item.icon size={16} color={isActive ? "#dbeafe" : "#2e2e2e"} variant="Outline" className="mr-3 h-4 w-4" />
+            <item.icon
+              size={16}
+              color={isActive ? "#dbeafe" : "#2e2e2e"}
+              variant="Outline"
+              className="mr-3 h-4 w-4"
+            />
             {item.name}
           </Button>
         );
@@ -70,10 +78,21 @@ export function Sidebar({
       <Button
         variant="ghost"
         onClick={() => {
+          handleSellClick();
+          // onNavigate?.(); // Close mobile sidebar if callback provided
+        }}
+        className="w-full justify-start text-left font-normal text-gray-700 hover:bg-gray-100 mt-8 z-50"
+      >
+        <Shop color="black" className="mr-3 h-4 w-4" />
+        Sell
+      </Button>
+      <Button
+        variant="ghost"
+        onClick={() => {
           openLogoutModal();
           onNavigate?.(); // Close mobile sidebar if callback provided
         }}
-        className="w-full justify-start text-left font-normal text-gray-700 hover:bg-gray-100 mt-8 z-50"
+        className="w-full justify-start text-left font-normal text-gray-700 hover:bg-gray-100  z-50"
       >
         <LogOut className="mr-3 h-4 w-4" />
         Logout{" "}
