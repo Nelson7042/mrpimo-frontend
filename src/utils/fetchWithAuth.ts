@@ -20,10 +20,10 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
           "Content-Type": "application/json",
         };
     
-    // Add Authorization header if token exists
-    if (token) {
-      baseHeaders["Authorization"] = `Bearer ${token}`;
-    }
+    // // Add Authorization header if token exists
+    // if (token) {
+    //   baseHeaders["Authorization"] = `Bearer ${token}`;
+    // }
   
     let response: Response;
     try {
@@ -85,11 +85,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
         const protectedRoutes = ['/vendor', '/home/user', '/home/dashboard'];
         const isProtectedRoute = protectedRoutes.some(route => window.location.pathname.startsWith(route));
         
-        if (isProtectedRoute && !window.location.pathname.includes('/login')) {
-          window.location.href = "/home";
-          softResetAllStores()
+        // if (isProtectedRoute && !window.location.pathname.includes('/login')) {
+        //   window.location.href = "/home";
+        //   softResetAllStores()
 
-        }
+        // }
         return Promise.reject("Authentication error. Please log in again.");
       }
     }
