@@ -1,5 +1,5 @@
 import Modal2 from "@/components/Modal2";
-import { X } from "lucide-react";
+import { ArrowBigRightIcon, X } from "lucide-react";
 import React, { useState, useEffect } from "react";
 import LoginForm from "./(component)/LoginForm";
 import RegisterForm from "./(component)/RegisterForm";
@@ -8,7 +8,7 @@ import OTPModal from "./(component)/Otp";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { API_BASE_URL } from "@/utils/config";
-
+import Link from "next/link";
 
 type ModalProps = {
   isOpen: boolean;
@@ -98,6 +98,13 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
           Provide your registered email address to recover your password
         </p>
         <RecoverPass />
+        <button
+          onClick={() => setAuthState("login")}
+          className=" text-primary flex items-center gap-1 "
+        >
+          <span>Back to Login</span>
+          <ArrowBigRightIcon size={14} />
+        </button>
       </div>
     );
   };
@@ -105,10 +112,12 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
   return (
     <div>
       <Modal2 isOpen={isOpen} onClose={close}>
-      <div className="inline-block overflow-hidden mt-12  bg-white text-left relative align-bottom transition-all transform  rounded-lg shadow-xl sm:my-8 sm:align-middle w-full sm:max-w-[550px] sm:w-full p-4 md:p-6">
+        <div className="inline-block overflow-hidden mt-12  bg-white text-left relative align-bottom transition-all transform  rounded-lg shadow-xl sm:my-8 sm:align-middle w-full sm:max-w-[550px] sm:w-full p-4 md:p-6">
           {authState === "login" && <Login />}
           {authState === "recover" && <Recover />}
-          {authState === "otp" && <OTPModal setAuthState={setAuthState} close={close} />}
+          {authState === "otp" && (
+            <OTPModal setAuthState={setAuthState} close={close} />
+          )}
 
           {(authState === "login" || authState === "recover") && (
             <>
@@ -120,7 +129,9 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
 
               <div className=" mt-5 md:mt-8 flex flex-col gap-4">
                 <button
-                  onClick={() => window.location.href = `${API_BASE_URL}/auth/google`}
+                  onClick={() =>
+                    (window.location.href = `${API_BASE_URL}/auth/google`)
+                  }
                   className={`w-full py-2 md:py-3 text-sm text-center px-4 flex items-center justify-center  bg-[#F6B76F]  text-[#121212] rounded-md hover:bg-[#F5A94E] transition-colors`}
                 >
                   <svg
