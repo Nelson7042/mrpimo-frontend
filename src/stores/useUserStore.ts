@@ -23,16 +23,29 @@ interface UserState {
 type PersistedState = Pick<UserState, "user" | "deviceId" | "wallet" >;
 
 
-// Define persist configuration
+// Define persist configuration with better mobile support
 const persistConfig: PersistOptions<UserState, PersistedState> = {
   name: "user-storage",
-  storage: createJSONStorage(() => localStorage),
+  storage: createJSONStorage(() => {
+    // Ensure localStorage is available (important for mobile)
+    if (typeof window !== 'undefined' && window.localStorage) {
+      return localStorage;
+    }
+    // Fallback to in-memory storage
+    return {
+      getItem: () => null,
+      setItem: () => {},
+      removeItem: () => {},
+    };
+  }),
   partialize: (state) => ({
     user: state.user,
     deviceId: state.deviceId,
     wallet: state.wallet,
   }),
   version: 1,
+  // Add skipHydration to prevent SSR issues
+  skipHydration: false,
 };
 
 export const useUserStore = create<UserState>()(

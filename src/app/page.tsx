@@ -21,39 +21,24 @@ export default function Home() {
       if (socket) socket.emit("authenticate", { userId: user._id });
   }, [socket, user]);
   const router = useRouter();
+
   useEffect(() => {
     router.push("/home");
-  }, []);
+  }, [router]);
 
-  const handleLogoutClicked = () => {
-    logoutUser(undefined, {
-      onSuccess: async (data) => {
-        resetAllStores();
-      },
-      onError: (error) => {
-        toast.error(error.message, toastConfigError);
-      },
-    });
-  };
+  // const handleLogoutClicked = () => {
+  //   logoutUser(undefined, {
+  //     onSuccess: async (data) => {
+  //       resetAllStores();
+  //     },
+  //     onError: (error) => {
+  //       toast.error(error.message, toastConfigError);
+  //     },
+  //   });
+  // };
   return (
     <div>
       <Homepage />
-      {/* <div className="flex flex-col items-center justify-center min-h-screen p-4 gap-y-4 bg-gray-100">
-        {!user ? (
-          <Link href="/sign-up">
-            <button className="bg-blue-500 text-white px-4 py-2 rounded-md cursor-pointer hover:bg-blue-400">
-              Sign Up
-            </button>
-          </Link>
-        ) : (
-          <button
-            onClick={handleLogoutClicked}
-            className="bg-red-500 text-white p-4 py-2 rounded-md cursor-pointer hover:bg-red-400"
-          >
-            Logout
-          </button>
-        )}
-      </div> */}
     </div>
   );
 }

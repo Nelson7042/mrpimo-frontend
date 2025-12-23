@@ -28,7 +28,6 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       setAuthType("vendor");
       setIsSell(!isSell);
     } else {
-      // console.log("vendor", vendor);
       router.push("/vendor/dashboard");
     }
   };
