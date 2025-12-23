@@ -140,12 +140,11 @@ const MarketplaceSection = () => {
     return null;
   }
 
-  const {user} = useUserStore()
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-8 pb-3 md:py-10 lg:py-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* <>{user}</> */}
+        
         {/* Carousel Section */}
         <div className="lg:col-span-2">
           <div 
