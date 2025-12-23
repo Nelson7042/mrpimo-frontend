@@ -72,7 +72,7 @@ const Header = () => {
   const handleProfileClick = () => {
     if (!user) {
       // Store the intended redirect URL before opening modal
-        sessionStorage.setItem("redirectAfterLogin", "/home/user");
+      sessionStorage.setItem("redirectAfterLogin", "/home/user");
       openModal();
     } else {
       // Check if user is a vendor and route accordingly
@@ -152,6 +152,7 @@ const Header = () => {
               />
             </div>
           </Link>
+          {user && <p className="white">Hello</p>}
 
           {/* Desktop navigation */}
           <div className="hidden lg:flex items-center gap-3 font-normal">

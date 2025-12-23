@@ -87,7 +87,11 @@ export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       user: null,
-      setUser: (user: User | null) => set({ user }),
+      setUser: (user: User | null) => {
+        // Store full user in memory for app usage
+        // But partialize will only persist essential data to localStorage
+        set({ user });
+      },
       
       updateUser: (updates: Partial<User>) => {
         const currentUser = get().user;
