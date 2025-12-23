@@ -20,7 +20,22 @@ interface UserState {
   resetStore: () => void;
 }
 
-type PersistedState = Pick<UserState, "user" | "deviceId" | "wallet" >;
+// Only persist essential user data
+type PersistedState = {
+  user: {
+    _id: string;
+    email: string;
+    role: string;
+    profile: {
+      firstName: string;
+      lastName: string;
+      avatar?: string;
+    };
+    isEmailVerified: boolean;
+  } | null;
+  deviceId: string | null;
+  wallet: ICryptoWallet | null;
+};
 
 
 // Define persist configuration with better mobile support
@@ -38,13 +53,33 @@ const persistConfig: PersistOptions<UserState, PersistedState> = {
       removeItem: () => {},
     };
   }),
-  partialize: (state) => ({
-    user: state.user,
-    deviceId: state.deviceId,
-    wallet: state.wallet,
-  }),
+  partialize: (state) => {
+    // Only store essential user data, not addresses or full preferences
+    if (!state.user) {
+      return {
+        user: null,
+        deviceId: state.deviceId,
+        wallet: state.wallet,
+      };
+    }
+    
+    return {
+      user: {
+        _id: state.user._id,
+        email: state.user.email,
+        role: state.user.role,
+        profile: {
+          firstName: state.user.profile.firstName,
+          lastName: state.user.profile.lastName,
+          avatar: state.user.profile.avatar,
+        },
+        isEmailVerified: state.user.isEmailVerified,
+      },
+      deviceId: state.deviceId,
+      wallet: state.wallet,
+    };
+  },
   version: 1,
-  // Add skipHydration to prevent SSR issues
   skipHydration: false,
 };
 
