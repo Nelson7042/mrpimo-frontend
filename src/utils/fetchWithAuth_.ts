@@ -1,99 +1,118 @@
 import { useUserStore } from "@/stores/useUserStore";
 import { API_BASE_URL } from "./config";
-import { softResetAllStores } from "@/stores/resetStore";
-
 
 let isRefreshing = false;
+let failedQueue: Array<{
+  resolve: (value: unknown) => void;
+  reject: (reason?: any) => void;
+}> = [];
 
+const processQueue = (error: any, tokenRefreshed: boolean = false) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(tokenRefreshed);
+    }
+  });
+  failedQueue = [];
+};
 
-export const fetchWithAuth = async (url: string, options: RequestInit = {}) => {
-    const {user} = useUserStore.getState();
-    
-    // Get token from localStorage if available
-    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-    
-    // Don't set Content-Type for FormData (browser will set it with boundary)
-    const baseHeaders: Record<string, string> = options.body instanceof FormData 
-      ? { ...(options.headers as Record<string, string>) }
+export const fetchWithAuth = async (url: string, options: RequestInit = {}): Promise<any> => {
+  const store = useUserStore.getState();
+  const user = store.user;
+
+  // Block requests if no user in state (guest mode)
+  if (!user) {
+    return Promise.reject("Guest mode");
+  }
+
+  const getHeaders = () => {
+    const token = localStorage.getItem('accessToken');
+    const baseHeaders = options.body instanceof FormData
+      ? { ...options.headers }
       : {
-          ...(options.headers as Record<string, string>),
+          ...options.headers,
           "Content-Type": "application/json",
         };
     
-    // // Add Authorization header if token exists
-    // if (token) {
-    //   baseHeaders["Authorization"] = `Bearer ${token}`;
-    // }
-  
-    let response: Response;
-    try {
-      response = await fetch(url, { 
-        ...options, 
-        headers: baseHeaders,
-        credentials: "include"
-      });
-    } catch (error) {
-      // Handle network errors (CORS, connection refused, etc.)
-      console.error("Network error in fetchWithAuth:", error);
-      throw new Error("Network error: Unable to connect to the server. Please check your internet connection.");
-    }
-  
-    // If unauthorized (401) or forbidden (403), try refreshing token
-    if ((response.status === 401 || response.status === 403) && !isRefreshing && user?._id) {
-      isRefreshing = true;
+    // Add Authorization header if token exists
+    return token ? { ...baseHeaders, 'Authorization': `Bearer ${token}` } : baseHeaders;
+  };
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      headers: getHeaders(),
+      credentials: "include",
+    });
+
+    // Handle token expiry
+    if (response.status === 401 || response.status === 403) {
       
+      if (isRefreshing) {
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => fetchWithAuth(url, options))
+          .catch((err) => Promise.reject(err));
+      }
+
+      isRefreshing = true;
+
       try {
+        const refreshToken = localStorage.getItem('refreshToken');
         const refreshResponse = await fetch( `${API_BASE_URL}/auth/refresh`, { 
-          method: "POST", 
-          credentials: "include"
+          method: "POST",
+          credentials: "include",
+          headers: {
+            'Content-Type': 'application/json',
+            ...(refreshToken && { 'Authorization': `Bearer ${refreshToken}` })
+          },
         });
-  
+
         if (refreshResponse.ok) {
-          isRefreshing = false;
-          // Retry the original request with same header logic
-          const retryToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
-          const retryHeaders: Record<string, string> = options.body instanceof FormData 
-            ? { ...(options.headers as Record<string, string>) }
-            : {
-                ...(options.headers as Record<string, string>),
-                "Content-Type": "application/json",
-              };
+          const data = await refreshResponse.json();
           
-          if (retryToken) {
-            retryHeaders["Authorization"] = `Bearer ${retryToken}`;
+          // Store new access token
+          if (data.accessToken) {
+            localStorage.setItem('accessToken', data.accessToken);
           }
           
-          return fetch(url, { 
-            ...options, 
-            headers: retryHeaders,
-            credentials: "include" 
-          });
-        } else {
+          processQueue(null, true);
           isRefreshing = false;
-          // Only redirect if we're on a protected route
-          const protectedRoutes = ['/vendor', '/home/user', '/home/dashboard'];
-          const isProtectedRoute = protectedRoutes.some(route => window.location.pathname.startsWith(route));
-          
-          // if (isProtectedRoute && !window.location.pathname.includes('/login')) {
-          //   window.location.href = "/home";
-          //   softResetAllStores()
-          // }
-          return Promise.reject("Authentication failed. Please log in again.");
+          return fetchWithAuth(url, options);
+        } else {
+          throw new Error("Refresh failed");
         }
-      } catch (error) {
+      } catch (refreshError) {
+        // Graceful degradation: downgrade to guest
+        processQueue(refreshError, false);
         isRefreshing = false;
-        const protectedRoutes = ['/vendor', '/home/user', '/home/dashboard'];
-        const isProtectedRoute = protectedRoutes.some(route => window.location.pathname.startsWith(route));
         
-        // if (isProtectedRoute && !window.location.pathname.includes('/login')) {
-        //   window.location.href = "/home";
-        //   softResetAllStores()
+        // Clear tokens and user state
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
+        store.resetStore();
 
+        // Only redirect if on protected routes
+        const protectedRoutes = ['/vendor', '/home/user', '/home/dashboard', '/account'];
+        const currentPath = window.location.pathname;
+        const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+        
+        // if (isProtectedRoute && !currentPath.includes('/login')) {
+        //   window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        // } else {
+        //   console.log("Session expired. Downgrading to guest mode.");
         // }
-        return Promise.reject("Authentication error. Please log in again.");
+
+        return Promise.reject("Session expired");
       }
     }
-  
+
     return response;
-  };
+  } catch (error) {
+    return Promise.reject(error);
+  }
+};
   
