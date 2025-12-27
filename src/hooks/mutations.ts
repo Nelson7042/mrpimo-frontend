@@ -126,7 +126,22 @@ const loginUser = async (
     throw new Error(errorData.message);
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // Store tokens in localStorage for mobile compatibility
+  if (result.accessToken) {
+    try {
+      localStorage.setItem('accessToken', result.accessToken);
+      if (result.refreshToken) {
+        localStorage.setItem('refreshToken', result.refreshToken);
+      }
+    } catch (e) {
+      console.warn('Failed to store tokens:', e);
+      toast.error('Storage blocked. Try non-private mode', { position: 'top-center' });
+    }
+  }
+
+  return result;
 };
 
 const signUpVendor = async (
