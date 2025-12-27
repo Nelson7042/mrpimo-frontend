@@ -28,12 +28,16 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   }
 
   const getHeaders = () => {
-    return options.body instanceof FormData
+    const token = localStorage.getItem('accessToken');
+    const baseHeaders = options.body instanceof FormData
       ? { ...options.headers }
       : {
           ...options.headers,
           "Content-Type": "application/json",
         };
+    
+    // Add Authorization header if token exists
+    return token ? { ...baseHeaders, 'Authorization': `Bearer ${token}` } : baseHeaders;
   };
 
   try {
@@ -57,12 +61,24 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
       isRefreshing = true;
 
       try {
+        const refreshToken = localStorage.getItem('refreshToken');
         const refreshResponse = await fetch( `${API_BASE_URL}/auth/refresh`, { 
           method: "POST",
           credentials: "include",
+          headers: {
+            'Content-Type': 'application/json',
+            ...(refreshToken && { 'Authorization': `Bearer ${refreshToken}` })
+          },
         });
 
         if (refreshResponse.ok) {
+          const data = await refreshResponse.json();
+          
+          // Store new access token
+          if (data.accessToken) {
+            localStorage.setItem('accessToken', data.accessToken);
+          }
+          
           processQueue(null, true);
           isRefreshing = false;
           return fetchWithAuth(url, options);
@@ -74,7 +90,9 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         processQueue(refreshError, false);
         isRefreshing = false;
         
-        // Clear user state immediately (this stops Header notifications)
+        // Clear tokens and user state
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
         store.resetStore();
 
         // Only redirect if on protected routes
@@ -82,11 +100,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         const currentPath = window.location.pathname;
         const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
         
-        // if (isProtectedRoute && !currentPath.includes('/login')) {
-        //   window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-        // } else {
-        //   console.log("Session expired. Downgrading to guest mode.");
-        // }
+        if (isProtectedRoute && !currentPath.includes('/login')) {
+          window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        } else {
+          console.log("Session expired. Downgrading to guest mode.");
+        }
 
         return Promise.reject("Session expired");
       }
