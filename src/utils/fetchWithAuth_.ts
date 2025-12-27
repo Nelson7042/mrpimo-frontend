@@ -1,5 +1,6 @@
 import { useUserStore } from "@/stores/useUserStore";
 import { API_BASE_URL } from "./config";
+import { toast } from "react-toastify";
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -27,14 +28,20 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     return Promise.reject("Guest mode");
   }
 
-  const getHeaders = () => {
-    let token = null;
+  const getToken = () => {
     try {
-      token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+      if (!token) {
+        toast.error('No token found in storage', { position: 'top-center', autoClose: 2000 });
+      }
+      return token;
     } catch (e) {
-      console.warn('localStorage access failed:', e);
+      toast.error('Storage access blocked', { position: 'top-center', autoClose: 2000 });
+      return null;
     }
-    
+  };
+
+  const getHeaders = (token: string | null) => {
     const baseHeaders = options.body instanceof FormData
       ? { ...options.headers }
       : {
@@ -46,9 +53,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   };
 
   try {
+    const token = getToken();
+    
     const response = await fetch(url, {
       ...options,
-      headers: getHeaders(),
+      headers: getHeaders(token),
       credentials: "include",
     });
 
@@ -66,31 +75,31 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
       isRefreshing = true;
 
       try {
-        let refreshToken = null;
-        try {
-          refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
-        } catch (e) {
-          console.warn('localStorage access failed:', e);
+        const refreshToken = getToken();
+        
+        if (!refreshToken) {
+          toast.error('No refresh token', { position: 'top-center', autoClose: 2000 });
+          throw new Error("No refresh token available");
         }
         
         const refreshResponse = await fetch( `${API_BASE_URL}/auth/refresh`, { 
           method: "POST",
-          credentials: "include",
           headers: {
             'Content-Type': 'application/json',
-            ...(refreshToken && { 'Authorization': `Bearer ${refreshToken}` })
+            'Authorization': `Bearer ${refreshToken}`
           },
+          credentials: "include",
         });
 
         if (refreshResponse.ok) {
           const data = await refreshResponse.json();
           
-          // Store new access token
           if (data.accessToken) {
             try {
               localStorage.setItem('accessToken', data.accessToken);
+              toast.success('Session refreshed', { position: 'top-center', autoClose: 1000 });
             } catch (e) {
-              console.warn('Failed to store token:', e);
+              toast.error('Cannot save token', { position: 'top-center', autoClose: 2000 });
             }
           }
           
@@ -98,9 +107,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           isRefreshing = false;
           return fetchWithAuth(url, options);
         } else {
+          toast.error(`Refresh failed: ${refreshResponse.status}`, { position: 'top-center', autoClose: 2000 });
           throw new Error("Refresh failed");
         }
       } catch (refreshError) {
+        toast.error('Session expired', { position: 'top-center', autoClose: 2000 });
         // Graceful degradation: downgrade to guest
         processQueue(refreshError, false);
         isRefreshing = false;
@@ -131,6 +142,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
 
     return response;
   } catch (error) {
+    toast.error(`Network error: ${error}`, { position: 'top-center', autoClose: 2000 });
     return Promise.reject(error);
   }
 };
