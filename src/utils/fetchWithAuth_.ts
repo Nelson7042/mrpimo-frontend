@@ -28,7 +28,13 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   }
 
   const getHeaders = () => {
-    const token = localStorage.getItem('accessToken');
+    let token = null;
+    try {
+      token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    } catch (e) {
+      console.warn('localStorage access failed:', e);
+    }
+    
     const baseHeaders = options.body instanceof FormData
       ? { ...options.headers }
       : {
@@ -36,7 +42,6 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           "Content-Type": "application/json",
         };
     
-    // Add Authorization header if token exists
     return token ? { ...baseHeaders, 'Authorization': `Bearer ${token}` } : baseHeaders;
   };
 
@@ -61,7 +66,13 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
       isRefreshing = true;
 
       try {
-        const refreshToken = localStorage.getItem('refreshToken');
+        let refreshToken = null;
+        try {
+          refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+        } catch (e) {
+          console.warn('localStorage access failed:', e);
+        }
+        
         const refreshResponse = await fetch( `${API_BASE_URL}/auth/refresh`, { 
           method: "POST",
           credentials: "include",
@@ -76,7 +87,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           
           // Store new access token
           if (data.accessToken) {
-            localStorage.setItem('accessToken', data.accessToken);
+            try {
+              localStorage.setItem('accessToken', data.accessToken);
+            } catch (e) {
+              console.warn('Failed to store token:', e);
+            }
           }
           
           processQueue(null, true);
@@ -91,8 +106,12 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         isRefreshing = false;
         
         // Clear tokens and user state
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        } catch (e) {
+          console.warn('Failed to clear tokens:', e);
+        }
         store.resetStore();
 
         // Only redirect if on protected routes
