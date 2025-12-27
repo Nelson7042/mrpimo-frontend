@@ -100,11 +100,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         const currentPath = window.location.pathname;
         const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
         
-        if (isProtectedRoute && !currentPath.includes('/login')) {
-          window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-        } else {
-          console.log("Session expired. Downgrading to guest mode.");
-        }
+        // if (isProtectedRoute && !currentPath.includes('/login')) {
+        //   window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+        // } else {
+        //   console.log("Session expired. Downgrading to guest mode.");
+        // }
 
         return Promise.reject("Session expired");
       }
