@@ -31,12 +31,9 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   const getToken = () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-      if (!token) {
-        toast.error('No token found in storage', { position: 'top-center', autoClose: 2000 });
-      }
+     
       return token;
     } catch (e) {
-      toast.error('Storage access blocked', { position: 'top-center', autoClose: 2000 });
       return null;
     }
   };
@@ -78,7 +75,6 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         const refreshToken = getToken();
         
         if (!refreshToken) {
-          toast.error('No refresh token', { position: 'top-center', autoClose: 2000 });
           throw new Error("No refresh token available");
         }
         
@@ -97,9 +93,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           if (data.accessToken) {
             try {
               localStorage.setItem('accessToken', data.accessToken);
-              toast.success('Session refreshed', { position: 'top-center', autoClose: 1000 });
             } catch (e) {
-              toast.error('Cannot save token', { position: 'top-center', autoClose: 2000 });
             }
           }
           
@@ -107,11 +101,9 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           isRefreshing = false;
           return fetchWithAuth(url, options);
         } else {
-          toast.error(`Refresh failed: ${refreshResponse.status}`, { position: 'top-center', autoClose: 2000 });
           throw new Error("Refresh failed");
         }
       } catch (refreshError) {
-        toast.error('Session expired', { position: 'top-center', autoClose: 2000 });
         // Graceful degradation: downgrade to guest
         processQueue(refreshError, false);
         isRefreshing = false;
@@ -142,7 +134,6 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
 
     return response;
   } catch (error) {
-    toast.error(`Network error: ${error}`, { position: 'top-center', autoClose: 2000 });
     return Promise.reject(error);
   }
 };

@@ -21,8 +21,12 @@ import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/stores/cartStore";
 import { useCreateOrder, useCreatePaymentIntent, useValidateCart } from "@/hooks/useCheckout";
-import { useAddAddress } from "@/hooks/useAddress";
+import { useAddAddress, useAddresses } from "@/hooks/useAddress";
 import { useCountries } from "@/hooks/useCountries";
+import { useUserCurrency } from "@/hooks/useUserCurrency";
+import { Country, State } from "country-state-city";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { getCountryFromCurrency } from "@/utils/currency";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import StripePaymentForm from "@/components/StripePaymentForm";
@@ -30,6 +34,7 @@ import StripePaymentForm from "@/components/StripePaymentForm";
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY || "");
 import { toast } from "react-hot-toast";
 import { useUserStore } from "@/stores/useUserStore";
+import { API_BASE_URL } from "@/utils/config";
 
 export default function CheckoutPage() {
   const [paymentMethod, setPaymentMethod] = useState("");
@@ -37,6 +42,10 @@ export default function CheckoutPage() {
   const [fiatProvider, setFiatProvider] = useState("");
   const [sameAsShipping, setSameAsShipping] = useState(false);
   const [showShippingModal, setShowShippingModal] = useState(false);
+  const [selectedCountry, setSelectedCountry] = useState("");
+  const [selectedState, setSelectedState] = useState("");
+  const [shippingSelectedCountry, setShippingSelectedCountry] = useState("");
+  const [shippingSelectedState, setShippingSelectedState] = useState("");
   const [shippingAddress, setShippingAddress] = useState({
     type: "shipping" as const,
     street: "",
@@ -49,6 +58,7 @@ export default function CheckoutPage() {
   const [showSuccess, setShowSuccess] = useState(false);
   const { user } = useUserStore();
   const billingAddress = user?.addresses?.find(addr => addr.type === "billing");
+  const { data: userCurrencyData } = useUserCurrency();
   
   const [formData, setFormData] = useState({
     firstName: user?.profile?.firstName || "",
@@ -66,18 +76,64 @@ export default function CheckoutPage() {
     },
   });
 
+  // Auto-populate country from user currency if no address exists
+  useEffect(() => {
+    if (!billingAddress && userCurrencyData?.currency) {
+      const country = getCountryFromCurrency(userCurrencyData.currency);
+      if (country) {
+        setFormData(prev => ({
+          ...prev,
+          address: { ...prev.address, country }
+        }));
+      }
+    }
+  }, [userCurrencyData, billingAddress]);
+
   const { items: cartItems, summary: cartSummary, clearCart } = useCartStore();
   const { refetch: validateCart, data: validationData, isLoading: isValidating } = useValidateCart();
   const createOrderMutation = useCreateOrder();
   const createPaymentIntentMutation = useCreatePaymentIntent();
   const addAddressMutation = useAddAddress();
+  const { data: addressData } = useAddresses();
   const { data: countries = [] } = useCountries();
+  const allCountries = Country.getAllCountries();
+  const states = selectedCountry ? State.getStatesOfCountry(selectedCountry) : [];
+  const shippingStates = shippingSelectedCountry ? State.getStatesOfCountry(shippingSelectedCountry) : [];
 
   useEffect(() => {
     if (cartItems.length > 0) {
       validateCart();
     }
   }, []);
+
+  // Handle same as shipping checkbox
+  useEffect(() => {
+    if (sameAsShipping) {
+      const addresses = addressData?.addresses || user?.addresses || [];
+      const shippingAddr = addresses.find(addr => addr.type === "shipping" && addr.isDefault);
+      if (shippingAddr) {
+        const countryObj = allCountries.find(c => c.name === shippingAddr.country);
+        if (countryObj) {
+          setSelectedCountry(countryObj.isoCode);
+          const stateObj = State.getStatesOfCountry(countryObj.isoCode).find(s => s.name === shippingAddr.state);
+          if (stateObj) {
+            setSelectedState(stateObj.isoCode);
+          }
+        }
+        setFormData(prev => ({
+          ...prev,
+          address: {
+            ...prev.address,
+            street: shippingAddr.street,
+            city: shippingAddr.city,
+            state: shippingAddr.state,
+            country: shippingAddr.country,
+            postalCode: shippingAddr.postalCode,
+          }
+        }));
+      }
+    }
+  }, [sameAsShipping, addressData, user?.addresses]);
 
   const checkout = validationData?.checkout;
   const subtotal = checkout?.pricing?.subtotal || 0;
@@ -97,12 +153,46 @@ export default function CheckoutPage() {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  const handleProceedToPayment = async () => {
-    if (!user) {
-      toast.error("You have to be logged in to proceed to checkout");
-      // router.push('/home/my-cart'); we have to use the sign up modal
+  const handleSaveAddress = async () => {
+    if (!formData.address.street || !formData.address.city || !formData.address.state || 
+        !formData.address.country || !formData.address.postalCode) {
+      toast.error("Please fill in all address fields");
       return;
     }
+
+    try {
+      if (sameAsShipping) {
+        // Save as both billing and shipping
+        await addAddressMutation.mutateAsync({
+          address: { ...formData.address, type: "shipping" },
+          duplicateForShipping: false
+        });
+        await addAddressMutation.mutateAsync({
+          address: formData.address,
+          duplicateForShipping: false
+        });
+      } else {
+        // Save only billing address
+        await addAddressMutation.mutateAsync({
+          address: formData.address,
+          duplicateForShipping: false
+        });
+      }
+      toast.success("Address saved successfully");
+    } catch (error) {
+      // Error already handled by mutation
+    }
+  };
+
+    const handleProceedToPayment = async () => {
+    if (!user) {
+      toast.error("You have to be logged in to proceed to checkout");
+      return;
+    }
+
+    const addresses = addressData?.addresses || user?.addresses || [];
+    const hasShippingAddress = addresses.some(addr => addr.type === "shipping");
+    const hasBillingAddress = addresses.some(addr => addr.type === "billing");
 
     // Validate form
     if (
@@ -115,6 +205,17 @@ export default function CheckoutPage() {
       !formData.address.postalCode
     ) {
       toast.error("Please fill in all required fields");
+      return;
+    }
+
+    // Check if user needs to add addresses
+    if (!hasShippingAddress) {
+      toast.error("Please add a shipping address before proceeding");
+      return;
+    }
+
+    if (!hasBillingAddress && !sameAsShipping) {
+      toast.error("Please add a billing address or mark it as same as shipping");
       return;
     }
 
@@ -131,19 +232,12 @@ export default function CheckoutPage() {
     setIsProcessing(true);
 
     try {
-      // Only add addresses if user has no addresses yet
-      if (!user?.addresses?.length) {
+      // Add billing address if needed
+      if (!hasBillingAddress) {
         await addAddressMutation.mutateAsync({
           address: formData.address,
-          duplicateForShipping: sameAsShipping
+          duplicateForShipping: false
         });
-
-        // Save shipping address if different
-        if (!sameAsShipping && shippingAddress.street) {
-          await addAddressMutation.mutateAsync({
-            address: shippingAddress
-          });
-        }
       }
 
       const items = checkout?.items?.map((item: any) => {
@@ -164,21 +258,56 @@ export default function CheckoutPage() {
       };
 
       if (paymentCategory === 'fiat') {
-        const response: any = await createPaymentIntentMutation.mutateAsync({
-          items,
-          paymentMethod: fiatProvider || 'stripe',
-        });
-        
-        if (response.success) {
-          // Store payment intent data and show payment UI
-          setPaymentIntentData({
-            clientSecret: response.paymentData.clientSecret,
-            paymentIntentId: response.paymentData.paymentIntentId,
-            provider: fiatProvider,
+        if (fiatProvider === 'paystack') {
+          // Handle Paystack payment - dynamic import to avoid SSR issues
+          const { default: PaystackPop } = await import('@paystack/inline-js');
+          
+          const response = await fetchWithAuth(`
+            ${API_BASE_URL}/payments/paystack/initialize`,
+            {
+              method: "POST",
+              body: JSON.stringify({
+                email: user.email,
+                amount: Math.round(total * 100),
+                currency: currency,
+                metadata: {
+                  items: items.map((item: any) => ({
+                    productId: item.productId,
+                    variantId: item.variantId,
+                    optionId: item.optionId,
+                    quantity: item.quantity,
+                  })),
+                },
+              }),
+            }
+          );
+
+          const data = await response.json();
+
+          if (data.success && data.data.access_code) {
+            const popup = new PaystackPop();
+            popup.resumeTransaction(data.data.access_code);
+            // Note: Order creation will be handled by webhook
+          } else {
+            toast.error("Failed to initialize Paystack payment");
+          }
+        } else {
+          // Handle Stripe payment
+          const response: any = await createPaymentIntentMutation.mutateAsync({
             items,
-            pricing: { subtotal, shipping, tax, total, currency },
+            paymentMethod: fiatProvider || 'stripe',
           });
-          setShowPaymentUI(true);
+          
+          if (response.success) {
+            setPaymentIntentData({
+              clientSecret: response.paymentData.clientSecret,
+              paymentIntentId: response.paymentData.paymentIntentId,
+              provider: fiatProvider,
+              items,
+              pricing: { subtotal, shipping, tax, total, currency },
+            });
+            setShowPaymentUI(true);
+          }
         }
       } else if (paymentCategory === 'crypto') {
         const response: any = await createPaymentIntentMutation.mutateAsync({
@@ -314,18 +443,57 @@ export default function CheckoutPage() {
 
   const getProviderByCurrency = (currency: string): string => {
     const curr = currency.toLowerCase();
-    if (['usd', 'eur', 'cad', 'gbp'].includes(curr)) return 'stripe';
-    if (['ngn', 'zar'].includes(curr)) return 'paystack';
-    if (curr === 'cny') return 'airwallex';
-    return 'stripe';
+    
+    // Map currency to payment provider
+    const currencyProviderMap: { [key: string]: string } = {
+      // Paystack currencies
+      'ngn': 'paystack',
+      'ghs': 'paystack',
+      'kes': 'paystack',
+      'zar': 'paystack',
+      'xof': 'paystack',
+      // Stripe currencies (major global currencies)
+      'usd': 'stripe',
+      'eur': 'stripe',
+      'gbp': 'stripe',
+      'cad': 'stripe',
+      'aud': 'stripe',
+      'nzd': 'stripe',
+      'chf': 'stripe',
+      'sek': 'stripe',
+      'nok': 'stripe',
+      'dkk': 'stripe',
+      'jpy': 'stripe',
+      'sgd': 'stripe',
+      'hkd': 'stripe',
+      'inr': 'stripe',
+      'myr': 'stripe',
+      'php': 'stripe',
+      'thb': 'stripe',
+      'brl': 'stripe',
+      'mxn': 'stripe',
+      'pln': 'stripe',
+      'czk': 'stripe',
+      'huf': 'stripe',
+      'ron': 'stripe',
+      'ils': 'stripe',
+      'aed': 'stripe',
+      'sar': 'stripe',
+      // Airwallex for China
+      'cny': 'airwallex',
+    };
+    
+    return currencyProviderMap[curr] || 'stripe';
   };
 
   useEffect(() => {
     if (currency && paymentCategory === 'fiat') {
-      const provider = getProviderByCurrency(currency);
+      // Use detected currency from backend if available, otherwise use checkout currency
+      const detectedCurrency = userCurrencyData?.currency || currency;
+      const provider = getProviderByCurrency(detectedCurrency.toLowerCase());
       setFiatProvider(provider);
     }
-  }, [currency, paymentCategory]);
+  }, [currency, paymentCategory, userCurrencyData]);
 
   return (
     <>
@@ -412,20 +580,23 @@ export default function CheckoutPage() {
                     <div>
                       <Label htmlFor="country">Country</Label>
                       <Select
-                        value={formData.address.country}
-                        onValueChange={(value) =>
+                        value={selectedCountry}
+                        onValueChange={(countryCode) => {
+                          setSelectedCountry(countryCode);
+                          setSelectedState("");
+                          const country = allCountries.find(c => c.isoCode === countryCode);
                           setFormData(prev => ({
                             ...prev,
-                            address: { ...prev.address, country: value }
-                          }))
-                        }
+                            address: { ...prev.address, country: country?.name || "", state: "" }
+                          }));
+                        }}
                       >
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Choose your country" />
                         </SelectTrigger>
                         <SelectContent>
-                          {countries.map((country: any) => (
-                            <SelectItem key={country._id} value={country.name}>
+                          {allCountries.map((country) => (
+                            <SelectItem key={country.isoCode} value={country.isoCode}>
                               {country.name}
                             </SelectItem>
                           ))}
@@ -434,18 +605,29 @@ export default function CheckoutPage() {
                     </div>
                     <div>
                       <Label htmlFor="state">State</Label>
-                      <Input
-                        id="state"
-                        placeholder="Enter your State"
-                        value={formData.address.state}
-                        onChange={(e) =>
+                      <Select
+                        value={selectedState}
+                        onValueChange={(stateCode) => {
+                          setSelectedState(stateCode);
+                          const state = states.find(s => s.isoCode === stateCode);
                           setFormData(prev => ({
                             ...prev,
-                            address: { ...prev.address, state: e.target.value }
-                          }))
-                        }
-                        className="mt-1"
-                      />
+                            address: { ...prev.address, state: state?.name || "" }
+                          }));
+                        }}
+                        disabled={!selectedCountry}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Choose your state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {states.map((state) => (
+                            <SelectItem key={state.isoCode} value={state.isoCode}>
+                              {state.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
                       <Label htmlFor="postalCode">Postal Code</Label>
@@ -498,33 +680,49 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
+                  {/* Save Address Button */}
+                  <Button
+                    type="button"
+                    onClick={handleSaveAddress}
+                    disabled={addAddressMutation.isPending}
+                    className="w-full md:w-auto bg-blue-600 hover:bg-blue-700"
+                  >
+                    {addAddressMutation.isPending ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      "Save Billing Address"
+                    )}
+                  </Button>
+
                   {/* Same as Shipping Checkbox */}
-                  {!user?.addresses?.length && (
-                    <div className="mt-6">
-                      <div className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id="sameAsShipping"
-                          checked={sameAsShipping}
-                          onChange={(e) => setSameAsShipping(e.target.checked)}
-                          className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                        />
-                        <Label htmlFor="sameAsShipping" className="cursor-pointer">
-                          Billing address is the same as shipping address
-                        </Label>
-                      </div>
-                      {!sameAsShipping && (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          onClick={() => setShowShippingModal(true)}
-                          className="mt-4"
-                        >
-                          Add Shipping Address
-                        </Button>
-                      )}
+                  <div className="mt-6">
+                    <div className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        title="Mark billing address as the same"
+                        id="sameAsShipping"
+                        checked={sameAsShipping}
+                        onChange={(e) => setSameAsShipping(e.target.checked)}
+                        className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                      />
+                      <Label htmlFor="sameAsShipping" className="cursor-pointer">
+                        Billing address is the same as shipping address
+                      </Label>
                     </div>
-                  )}
+                    {!sameAsShipping && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => setShowShippingModal(true)}
+                        className="mt-4"
+                      >
+                        Add Shipping Address
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {/* Payment Method */}
@@ -771,8 +969,8 @@ export default function CheckoutPage() {
           {/* Shipping Address Modal */}
           <Dialog open={showShippingModal} onOpenChange={setShowShippingModal}>
             <DialogContent className="sm:max-w-md">
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-4">Add Shipping Address</h3>
+              <div className="p-4 md:p-6">
+                <h3 className="text-base md:text-xl font-bold mb-4">Add Shipping Address</h3>
                 <div className="space-y-4">
                   <div>
                     <Label htmlFor="shipStreet">Street Address</Label>
@@ -794,11 +992,11 @@ export default function CheckoutPage() {
                       />
                     </div>
                     <div>
-                      <Label htmlFor="shipState">State</Label>
+                      <Label htmlFor="shipPostalCode">Postal Code</Label>
                       <Input
-                        id="shipState"
-                        value={shippingAddress.state}
-                        onChange={(e) => setShippingAddress(prev => ({ ...prev, state: e.target.value }))}
+                        id="shipPostalCode"
+                        value={shippingAddress.postalCode}
+                        onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))}
                         className="mt-1"
                       />
                     </div>
@@ -807,15 +1005,20 @@ export default function CheckoutPage() {
                     <div>
                       <Label htmlFor="shipCountry">Country</Label>
                       <Select
-                        value={shippingAddress.country}
-                        onValueChange={(value) => setShippingAddress(prev => ({ ...prev, country: value }))}
+                        value={shippingSelectedCountry}
+                        onValueChange={(countryCode) => {
+                          setShippingSelectedCountry(countryCode);
+                          setShippingSelectedState("");
+                          const country = allCountries.find(c => c.isoCode === countryCode);
+                          setShippingAddress(prev => ({ ...prev, country: country?.name || "", state: "" }));
+                        }}
                       >
                         <SelectTrigger className="mt-1">
                           <SelectValue placeholder="Choose country" />
                         </SelectTrigger>
                         <SelectContent>
-                          {countries.map((country: any) => (
-                            <SelectItem key={country._id} value={country.name}>
+                          {allCountries.map((country) => (
+                            <SelectItem key={country.isoCode} value={country.isoCode}>
                               {country.name}
                             </SelectItem>
                           ))}
@@ -823,13 +1026,27 @@ export default function CheckoutPage() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="shipPostal">Postal Code</Label>
-                      <Input
-                        id="shipPostal"
-                        value={shippingAddress.postalCode}
-                        onChange={(e) => setShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))}
-                        className="mt-1"
-                      />
+                      <Label htmlFor="shipState">State</Label>
+                      <Select
+                        value={shippingSelectedState}
+                        onValueChange={(stateCode) => {
+                          setShippingSelectedState(stateCode);
+                          const state = shippingStates.find(s => s.isoCode === stateCode);
+                          setShippingAddress(prev => ({ ...prev, state: state?.name || "" }));
+                        }}
+                        disabled={!shippingSelectedCountry}
+                      >
+                        <SelectTrigger className="mt-1">
+                          <SelectValue placeholder="Choose state" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {shippingStates.map((state) => (
+                            <SelectItem key={state.isoCode} value={state.isoCode}>
+                              {state.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                     </div>
                   </div>
                   <div className="flex gap-3 mt-6">
@@ -857,7 +1074,7 @@ export default function CheckoutPage() {
            {/* Stripe Payment Modal */}
                     <Dialog open={showPaymentUI} onOpenChange={setShowPaymentUI}>
                       <DialogContent className="sm:max-w-md">
-                        <div className="relative">
+                        <div className="relative p-4 md:p-6">
                           {isProcessing && (
                             <div className="absolute inset-0 bg-white/80 flex items-center justify-center z-50 rounded-lg">
                               <div className="text-center">
@@ -866,7 +1083,7 @@ export default function CheckoutPage() {
                               </div>
                             </div>
                           )}
-                          <h3 className="textsm md:text-lg font-bold mb-4">Complete Payment</h3>
+                          <h3 className="text-sm md:text-lg font-bold mb-4">Complete Payment</h3>
                           {paymentIntentData?.clientSecret && (
                             <Elements stripe={stripePromise}>
                               <StripePaymentForm
@@ -876,7 +1093,7 @@ export default function CheckoutPage() {
                                 onSuccess={(paymentIntentId) => {
                                   handleCreateOrder({
                                     ...paymentIntentData,
-                                    type: 'stripe',
+                                    type: 'fiat',
                                     paymentIntentId,
                                   });
                                 }}
@@ -950,7 +1167,7 @@ export default function CheckoutPage() {
                         <Check className="w-5 h-5 md:w-8 md:h-8 text-blue-600" />
                       </div>
                       <h3 className="text-lg md:text-xl font-bold mb-2 text-blue-600">Order Created!</h3>
-                      <p className="text-gray-600">Your order has been successfully placed</p>
+                      <p className="text-sm md:text-base text-gray-600">Your order has been successfully placed</p>
                       <div className="mt-4 w-full bg-gray-200 rounded-full h-2 overflow-hidden">
                         <div className="bg-blue-600 h-full rounded-full transition-all duration-500" style={{width: '100%'}}></div>
                       </div>
@@ -965,7 +1182,7 @@ export default function CheckoutPage() {
                         </svg>
                       </div>
                       <h3 className="text-lg md:text-xl font-bold mb-2 text-red-600">Order Failed</h3>
-                      <p className="text-gray-600">Something went wrong. Please try again.</p>
+                      <p className="text-sm md:text-base text-gray-600">Something went wrong. Please try again.</p>
                     </>
                   )}
                 </div>

@@ -1,3 +1,41 @@
+export const getCountryFromCurrency = (currency: string): string => {
+  const currencyCountryMap: Record<string, string> = {
+    // Americas
+    USD: 'United States', CAD: 'Canada', MXN: 'Mexico', BRL: 'Brazil', ARS: 'Argentina',
+    CLP: 'Chile', COP: 'Colombia', PEN: 'Peru', UYU: 'Uruguay', PYG: 'Paraguay',
+    BOB: 'Bolivia', VES: 'Venezuela', GTQ: 'Guatemala', HNL: 'Honduras', NIO: 'Nicaragua',
+    CRC: 'Costa Rica', PAB: 'Panama', DOP: 'Dominican Republic', JMD: 'Jamaica', TTD: 'Trinidad and Tobago',
+    BBD: 'Barbados', BZD: 'Belize', HTG: 'Haiti', CUP: 'Cuba', XCD: 'Eastern Caribbean',
+    // Europe
+    EUR: 'Germany', GBP: 'United Kingdom', CHF: 'Switzerland', SEK: 'Sweden', NOK: 'Norway',
+    DKK: 'Denmark', PLN: 'Poland', CZK: 'Czech Republic', HUF: 'Hungary', RON: 'Romania',
+    BGN: 'Bulgaria', HRK: 'Croatia', TRY: 'Turkey', RUB: 'Russia', UAH: 'Ukraine',
+    ISK: 'Iceland', ALL: 'Albania', MKD: 'North Macedonia', RSD: 'Serbia', BAM: 'Bosnia and Herzegovina',
+    MDL: 'Moldova', BYN: 'Belarus', GEL: 'Georgia', AMD: 'Armenia', AZN: 'Azerbaijan',
+    // Asia
+    JPY: 'Japan', CNY: 'China', KRW: 'South Korea', INR: 'India', SGD: 'Singapore',
+    HKD: 'Hong Kong', TWD: 'Taiwan', THB: 'Thailand', MYR: 'Malaysia', IDR: 'Indonesia',
+    PHP: 'Philippines', VND: 'Vietnam', PKR: 'Pakistan', BDT: 'Bangladesh', LKR: 'Sri Lanka',
+    NPR: 'Nepal', MMK: 'Myanmar', KHR: 'Cambodia', LAK: 'Laos', MNT: 'Mongolia',
+    KZT: 'Kazakhstan', UZS: 'Uzbekistan', KGS: 'Kyrgyzstan', TJS: 'Tajikistan', TMT: 'Turkmenistan',
+    AFN: 'Afghanistan', IRR: 'Iran', IQD: 'Iraq', SYP: 'Syria', YER: 'Yemen',
+    // Africa
+    NGN: 'Nigeria', GHS: 'Ghana', KES: 'Kenya', ZAR: 'South Africa', EGP: 'Egypt',
+    MAD: 'Morocco', TND: 'Tunisia', DZD: 'Algeria', LYD: 'Libya', SDG: 'Sudan',
+    ETB: 'Ethiopia', UGX: 'Uganda', TZS: 'Tanzania', RWF: 'Rwanda', XOF: 'Ivory Coast',
+    XAF: 'Cameroon', MGA: 'Madagascar', MUR: 'Mauritius', SCR: 'Seychelles', BWP: 'Botswana',
+    NAD: 'Namibia', ZMW: 'Zambia', AOA: 'Angola', MZN: 'Mozambique', MWK: 'Malawi',
+    ZWL: 'Zimbabwe', SLL: 'Sierra Leone', LRD: 'Liberia', GMD: 'Gambia', GNF: 'Guinea',
+    // Middle East
+    AED: 'United Arab Emirates', SAR: 'Saudi Arabia', QAR: 'Qatar', KWD: 'Kuwait',
+    BHD: 'Bahrain', OMR: 'Oman', JOD: 'Jordan', LBP: 'Lebanon', ILS: 'Israel',
+    // Oceania
+    AUD: 'Australia', NZD: 'New Zealand', FJD: 'Fiji', PGK: 'Papua New Guinea',
+    SBD: 'Solomon Islands', VUV: 'Vanuatu', WST: 'Samoa', TOP: 'Tonga',
+  };
+  return currencyCountryMap[currency.toUpperCase()] || '';
+};
+
 export const getCurrencySymbol = (currencyCode: string): string => {
   const currencyMap: Record<string, string> = {
     USD: '$',
@@ -157,5 +195,5 @@ export const getCurrencySymbol = (currencyCode: string): string => {
     BMD: '$'
   };
   
-  return currencyMap[currencyCode.toUpperCase()] || currencyCode;
+  return currencyMap[currencyCode.toUpperCase()] || currencyCode || '$';
 };

@@ -152,7 +152,6 @@ const Header = () => {
               />
             </div>
           </Link>
-          {user && <p className="white">Hello</p>}
 
           {/* Desktop navigation */}
           <div className="hidden lg:flex items-center gap-3 font-normal">
