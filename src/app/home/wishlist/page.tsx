@@ -7,13 +7,16 @@ import { Button } from "@/components/ui/button"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs"
 import { useRouter } from "next/navigation"
 import { useWishlist } from "@/hooks/useWishlist"
-import { useCartStore } from "@/stores/cartStore_"
+import { useCartStore } from "@/stores/cartStore"
 import { useWishlistSync } from "@/hooks/useWishlistSync"
 import { Wishlist } from "@/types/wishlist.type"
 import { Heart } from "iconsax-react"
+import { useUserStore } from "@/stores/useUserStore"
+import { useEffect } from "react"
 
   export default function WishlistPage() {
     const router = useRouter()
+    const { user } = useUserStore()
     
     useWishlistSync()
     
@@ -21,32 +24,89 @@ import { Heart } from "iconsax-react"
       wishlist, 
       wishlistCount, 
       isLoading, 
-      removeFromWishlist, 
+      removeFromWishlist,
+      clearWishlist, 
       isRemovingFromWishlist 
     } = useWishlist()
+
+    const { addToCart, isLoading: isAddingToCart } = useCartStore()
+
+    // Log wishlist data for debugging
+    console.log('Wishlist in component:', wishlist);
+    console.log('Wishlist count:', wishlistCount);
+
+    // Don't render anything if user is not authenticated
+    if (!user) {
+      return (
+        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-6 md:py-10 lg:py-10">
+          <div className="p-8 text-center text-gray-500">
+            <Heart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
+            <h3 className="text-lg font-medium mb-2">Please log in to view your wishlist</h3>
+            <Button 
+              onClick={() => router.push('/login?redirect=/home/wishlist')}
+              className="bg-blue-600 hover:bg-blue-700"
+            >
+              Log In
+            </Button>
+          </div>
+        </div>
+      )
+    }
   
-    const handleRemoveItem = (productId: string) => {
-      removeFromWishlist(productId)
+    const handleRemoveItem = (item: Wishlist) => {
+      console.log('Full item object:', item);
+      console.log('Removing item:', { productId: item.productId, variantId: item.variantId, optionId: item.optionId });
+      if (item.productId && item.variantId && item.optionId) {
+        removeFromWishlist({ productId: item.productId, variantId: item.variantId, optionId: item.optionId })
+      }
     }
   
     const handleRemoveAll = () => {
-      wishlist.forEach(item => {
-        removeFromWishlist(item.productId)
-      })
+      clearWishlist()
+    }
+
+    const handleAddToCart = async (item: Wishlist) => {
+      if (!item.productId || !item.variantId || !item.optionId) return
+      
+      const product = {
+        _id: item.productId,
+        name: item.name,
+        images: item.images,
+        price: item.price.toString()
+      }
+      
+      const selectedVariant = {
+        variantId: item.variantId,
+        optionId: item.optionId,
+        variantName: '',
+        optionValue: '',
+        price: item.priceInfo?.originalPrice || item.price
+      }
+      
+      try {
+        await addToCart(product, 1, selectedVariant)
+        removeFromWishlist({ productId: item.productId, variantId: item.variantId, optionId: item.optionId })
+      } catch (error) {
+        console.error('Failed to add to cart:', error)
+      }
     }
   
     const getProductPrice = (item: Wishlist) => {
-      return item.price 
+      return item.priceInfo?.displayPrice || 0
     }
   
     const getSalePrice = (item: any) => {
-      return item.price
+      return item.priceInfo?.displayPrice || 0
+    }
+
+    const getCurrencySymbol = (item: Wishlist) => {
+      return item.priceInfo?.currencySymbol || '$'
     }
   
     const getDiscount = (item: any) => {
       const price = getProductPrice(item)
       const salePrice = getSalePrice(item)
-      if (salePrice && salePrice < price) {
+      if (salePrice && salePrice < price && price > 0) {
         const discount = Math.round(((price - salePrice) / price) * 100)
         return `-${discount}%`
       }
@@ -142,7 +202,7 @@ import { Heart } from "iconsax-react"
   
             {/* Items */}
             <div className="divide-y">
-              {wishlist.map((item, index) => (
+              {wishlist.filter(wishlistItem => wishlistItem && wishlistItem.productId).map((wishlistItem, index) => (
                 <div key={index} className=" p-2 md:p-4">
                   {/* Mobile Layout */}
                   <div className="md:hidden space-y-3">
@@ -150,106 +210,128 @@ import { Heart } from "iconsax-react"
                       href={{
                         pathname: "/home/product-details/[id]",
                         query: {
-                          id: item.productId,
-                          productData: JSON.stringify({ _id: item.productId, name: item.name, images: item.images, price: item.price }),
+                          id: wishlistItem.productId,
+                          productData: JSON.stringify({ 
+                            _id: wishlistItem.productId, 
+                            name: wishlistItem.name || '', 
+                            images: wishlistItem.images || [], 
+                            price: wishlistItem.price || 0 
+                          }),
                         },
                       }}
-                      as={`/home/product-details/${item.productId}`}
+                      as={`/home/product-details/${wishlistItem.productId}`}
                       className="flex space-x-3"
                     >
                       <div className="relative">
                         <Image
-                          src={item.images?.[0] || "/placeholder.svg"}
-                          alt={item.name}
+                          src={wishlistItem.images?.[0] || "/placeholder.svg"}
+                          alt={wishlistItem.name || "Product"}
                           width={60}
                           height={60}
                           className="rounded-lg object-cover"
+                          unoptimized
                         />
-                        {getDiscount(item) && (
+                        {getDiscount(wishlistItem) && (
                           <Badge className="absolute -bottom-1 -right-1 text-xs px-1 py-0 h-5 bg-red-100 text-red-800 hover:bg-red-100">
-                            {getDiscount(item)}
+                            {getDiscount(wishlistItem)}
                           </Badge>
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm leading-tight">{item.name}</h3>
-                        <p className="text-xs text-gray-500 mt-1">Added {new Date(item.addedAt).toLocaleDateString()}</p>
+                        <h3 className="font-medium text-sm leading-tight">{wishlistItem.name || "Unknown Product"}</h3>
+                        <p className="text-xs text-gray-500 mt-1">Added {wishlistItem.addedAt ? new Date(wishlistItem.addedAt).toLocaleDateString() : "Unknown date"}</p>
                       </div>
                     </Link>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        {getSalePrice(item) ? (
-                          <>
-                            <span className="font-bold text-red-600">₦ {getSalePrice(item).toLocaleString()}</span>
-                            <span className="text-sm text-gray-500 line-through">₦ {getProductPrice(item).toLocaleString()}</span>
-                          </>
-                        ) : (
-                          <span className="font-bold">₦ {getProductPrice(item).toLocaleString()}</span>
-                        )}
+                        <span className="font-bold">{getCurrencySymbol(wishlistItem)} {(getProductPrice(wishlistItem) || 0).toLocaleString()}</span>
                       </div>
                     </div>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="w-full bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200"
-                      onClick={() => handleRemoveItem(item.productId)}
-                      disabled={isRemovingFromWishlist}
-                    >
-                      Remove
-                    </Button>
+                    <div className="flex space-x-2">
+                      <Button
+                        size="sm"
+                        className="flex-1 bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => handleAddToCart(wishlistItem)}
+                        disabled={isAddingToCart || !wishlistItem.variantId || !wishlistItem.optionId}
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-1" />
+                        Add to Cart
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200"
+                        onClick={() => handleRemoveItem(wishlistItem)}
+                        disabled={isRemovingFromWishlist}
+                      >
+                        Remove
+                      </Button>
+                    </div>
                   </div>
   
                   {/* Desktop Layout */}
                   <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
-                    <Link
-                      href={{
-                        pathname: "/home/product-details/[id]",
-                        query: {
-                          id: item.productId,
-                          productData: JSON.stringify({ _id: item.productId, name: item.name, images: item.images, price: item.price }),
-                        },
-                      }}
-                      as={`/home/product-details/${item.productId}`}
-                      className="col-span-6 flex items-center space-x-3"
-                    >
-                      <div className="relative">
-                        <Image
-                          src={item.images?.[0] || "/placeholder.svg"}
-                          alt={item.name}
-                          width={80}
-                          height={80}
-                          className="rounded-lg object-cover"
-                        />
-                        {getDiscount(item) && (
-                          <Badge className="absolute -bottom-1 -right-1 text-xs px-2 py-1 bg-red-100 text-red-800 hover:bg-red-100">
-                            {getDiscount(item)}
-                          </Badge>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="font-medium">{item.name}</h3>
-                        <p className="text-sm text-gray-500">Added {new Date(item.addedAt).toLocaleDateString()}</p>
-                      </div>
-                    </Link>
-                    <div className="col-span-3">
-                      <div className="flex items-center space-x-2 whitespace-nowrap">
-                        {getSalePrice(item) ? (
-                          <>
-                            <span className="font-bold text-red-600">₦ {getSalePrice(item).toLocaleString()}</span>
-                          </>
-                        ) : (
-                          <span className="font-bold">₦ {getProductPrice(item).toLocaleString()}</span>
-                        )}
-                        {getDiscount(item) && (
-                          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">{getDiscount(item)}</Badge>
-                        )}
-                      </div>
+                    {/* Product Info */}
+                    <div className="col-span-6">
+                      <Link
+                        href={{
+                          pathname: "/home/product-details/[id]",
+                          query: {
+                            id: wishlistItem.productId,
+                            productData: JSON.stringify({ 
+                              _id: wishlistItem.productId, 
+                              name: wishlistItem.name || '', 
+                              images: wishlistItem.images || [], 
+                              price: wishlistItem.price || 0 
+                            }),
+                          },
+                        }}
+                        as={`/home/product-details/${wishlistItem.productId}`}
+                        className="flex items-center space-x-4"
+                      >
+                        <div className="relative">
+                          <Image
+                            src={wishlistItem.images?.[0] || "/placeholder.svg"}
+                            alt={wishlistItem.name || "Product"}
+                            width={80}
+                            height={80}
+                            className="rounded-lg object-cover"
+                            unoptimized
+                          />
+                          {getDiscount(wishlistItem) && (
+                            <Badge className="absolute -bottom-1 -right-1 text-xs px-1 py-0 h-5 bg-red-100 text-red-800 hover:bg-red-100">
+                              {getDiscount(wishlistItem)}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex-1">
+                          <h3 className="font-medium text-base">{wishlistItem.name || "Unknown Product"}</h3>
+                          <p className="text-sm text-gray-500 mt-1">Added {wishlistItem.addedAt ? new Date(wishlistItem.addedAt).toLocaleDateString() : "Unknown date"}</p>
+                        </div>
+                      </Link>
                     </div>
+
+                    {/* Price */}
                     <div className="col-span-3">
+                      <span className="font-bold text-lg">{getCurrencySymbol(wishlistItem)} {(getProductPrice(wishlistItem) || 0).toLocaleString()}</span>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="col-span-3 flex space-x-2">
                       <Button
                         size="sm"
+                        className="bg-blue-600 hover:bg-blue-700 text-white"
+                        onClick={() => handleAddToCart(wishlistItem)}
+                        disabled={isAddingToCart || !wishlistItem.variantId || !wishlistItem.optionId}
+                      >
+                        <ShoppingCart className="w-4 h-4 mr-1" />
+                        Add to Cart
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
                         className="bg-orange-100 text-orange-800 border-orange-200 hover:bg-orange-200"
-                        onClick={() => handleRemoveItem(item.productId)}
+                        onClick={() => handleRemoveItem(wishlistItem)}
                         disabled={isRemovingFromWishlist}
                       >
                         Remove

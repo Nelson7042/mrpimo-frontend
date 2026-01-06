@@ -71,13 +71,7 @@ export const useWalletBalance = () => {
 };
 
 // Fetch wallet transactions
-interface TransactionFilters {
-  page?: number;
-  limit?: number;
-  type?: string;
-  status?: string;
-  dateRange?: string;
-}
+
 
 const fetchWalletTransactions = async (filters: TransactionFilters = {}): Promise<{ data: { transactions: IWalletTransaction[], pagination: { page: number, limit: number, total: number, pages: number } } }> => {
   const params = new URLSearchParams();
@@ -91,7 +85,8 @@ const fetchWalletTransactions = async (filters: TransactionFilters = {}): Promis
   if (!response.ok) {
     throw new Error('Failed to fetch wallet transactions');
   }
-  return response.json();
+  const data = await response.json();
+  return data;
 };
 
 export const useWalletTransactions = (filters: TransactionFilters = {}) => {
@@ -120,4 +115,37 @@ export const usePaymentMethods = () => {
     refetchOnWindowFocus: false,
     retry: 1,
   });
+};
+
+// Initialize Paystack payment
+const initializePayment = async (paymentData: {
+  email: string;
+  amount: number;
+  currency?: string;
+  metadata?: Record<string, any>;
+}) => {
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/paystack/initialize`, {
+    method: 'POST',
+    body: JSON.stringify(paymentData),
+  });
+  if (!response.ok) {
+    throw new Error('Failed to initialize payment');
+  }
+  return response.json();
+};
+
+// Verify Paystack payment
+const verifyPayment = async (reference: string) => {
+  const response = await fetchWithAuth(`${API_BASE_URL}/wallets/paystack/verify/${reference}`);
+  if (!response.ok) {
+    throw new Error('Failed to verify payment');
+  }
+  return response.json();
+};
+
+export const useInitializePayment = () => {
+  return {
+    initializePayment,
+    verifyPayment
+  };
 };

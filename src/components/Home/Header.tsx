@@ -108,7 +108,7 @@ const Header = () => {
 
   const handleSearchSubmit = () => {
     if (searchQuery.trim()) {
-      window.location.href = `/home/search?q=${encodeURIComponent(
+      window.location.href = `/search?q=${encodeURIComponent(
         searchQuery
       )}`;
     }

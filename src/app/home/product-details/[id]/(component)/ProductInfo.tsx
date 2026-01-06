@@ -30,6 +30,7 @@ import OfferModal from "./OfferModal";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { API_BASE_URL } from "@/utils/config";
 import { usePriceInfo } from "@/hooks/usePriceInfo";
+import { useProductBids, useProductOffers } from '@/hooks/useProductBidsOffers';
 
 export const AuctionCountdown = ({ auction }: { auction: any }) => {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -192,6 +193,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   };
   // Use the custom hook for price calculations
   const priceInfo = usePriceInfo(productData, selectedOptions, quantity);
+  
+  // Fetch bids and offers using separate hooks
+  const { data: bids } = useProductBids(productData?._id || '', !!productData?._id);
+  const { data: offers } = useProductOffers(productData?._id || '', !!productData?._id);
 
   const getSelectedOptionPrice = () => {
     return priceInfo.unitPrice;
@@ -226,11 +231,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
 
   const totalQuantity = calculateTotalQuantity(productData);
 
-  let totalUserOffers;
-  if (productData?.offers && productData.offers?.length > 0) {
-    totalUserOffers = productData.offers.reduce((count, offerGroup) => {
-      return count + offerGroup.userOffers.length;
-    }, 0);
+  let totalUserOffers = 0;
+  if (offers && offers.length > 0) {
+    totalUserOffers = offers.length;
   }
 
   const saleType = productData?.inventory?.listing?.type;
@@ -381,10 +384,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       };
 
       const buyNowData = await buyNowMutation.mutateAsync(orderData);
-      console.log(
-        "=== BUY NOW RESPONSE ===",
-        JSON.stringify(buyNowData, null, 2)
-      );
 
       if (!buyNowData.success) {
         toast.error(buyNowData.message || "Failed to process buy now");
@@ -750,12 +749,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                 <div className="flex justify-between sm:flex-col">
                   <span className="text-gray-600">Total Bids:</span>
                   <span className="font-medium">
-                    {productData.bids ? productData.bids.length : 0}
+                    {bids ? bids.length : 0}
                   </span>
                 </div>
               ) : acceptOffer &&
-                productData.offers &&
-                productData.offers.length > 0 ? (
+                offers &&
+                offers.length > 0 ? (
                 <div className="flex justify-between sm:flex-col">
                   <span className="text-gray-600">Total Offers:</span>
                   <span className="font-medium">{totalUserOffers}</span>
@@ -911,7 +910,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                   })()
                 ) : saleType === "auction" ? (
                   (() => {
-                    const winningBid = productData?.bids?.find(
+                    const winningBid = bids?.find(
                       (bid: any) => bid.isWinning
                     );
                     const highestBid =

@@ -86,20 +86,28 @@ export const useWishlist = () => {
     isInWishlist: storeIsInWishlist,
   } = useWishlistStore();
 
-  const { data: wishlistData, isLoading } = useQuery({
+  const { data: wishlistData, isLoading, error } = useQuery({
     queryKey: ["wishlist"],
     queryFn: wishlistApi.getWishlist,
     enabled: !!user?._id, // Only fetch when user is logged in
     refetchOnWindowFocus: false,
+    retry: (failureCount, error) => {
+      // Don't retry if it's a guest mode or session expired error
+      if (error === "Guest mode" || error === "Session expired") {
+        return false;
+      }
+      return failureCount < 3;
+    },
   });
 
   useEffect(() => {
     if (wishlistData?.success) {
       setItems(Array.isArray(wishlistData.data) ? wishlistData.data : []);
-    } else {
+    } else if (!user) {
+      // Clear wishlist when user is not logged in
       setItems([]);
     }
-  }, [wishlistData]);
+  }, [wishlistData, user, setItems]);
 
   const addToWishlistMutation = useMutation({
     mutationFn: wishlistApi.addToWishlist,

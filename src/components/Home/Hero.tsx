@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Package, Shield, ShoppingCart, MapPin, Users } from 'lucide-react';
 import Link from 'next/link';
-import { useFetchActiveBanners } from '@/hooks/mutations';
-import { useUserStore } from '@/stores/useUserStore';
+import { useBanners } from '@/hooks/useBanner';
 
 interface Product {
   _id: string;
@@ -11,48 +10,27 @@ interface Product {
   slug: string;
   variants?: any[];
   inventory?: any;
-}
-
-interface Banner {
-  _id: string;
-  title: string;
-  content?: string;
-  imageUrl?: string;
-  backgroundColor?: string;
-  location: 'big-banner' | 'small-banner-1' | 'small-banner-2';
-  products: Product[];
+  priceInfo?: {
+    originalPrice: number;
+    originalCurrency: string;
+    displayPrice: number;
+    displayCurrency: string;
+    currencySymbol: string;
+    exchangeRate: number;
+  };
 }
 
 const MarketplaceSection = () => {
   const [currentSlide, setCurrentSlide] = useState<number>(0);
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
-  const [banners, setBanners] = useState<{
-    bigBanner?: Banner;
-    smallBanner1?: Banner;
-    smallBanner2?: Banner;
-  }>({});
-
-  const fetchBannersMutation = useFetchActiveBanners();
-
-  useEffect(() => {
-    fetchBannersMutation.mutate(undefined, {
-      onSuccess: (response) => {
-        if (response.success) {
-          const bannersData = response.data;
-          const organized = {
-            bigBanner: bannersData.find((b: Banner) => b.location === 'big-banner'),
-            smallBanner1: bannersData.find((b: Banner) => b.location === 'small-banner-1'),
-            smallBanner2: bannersData.find((b: Banner) => b.location === 'small-banner-2'),
-          };
-          setBanners(organized);
-        }
-      },
-      onError: (error) => {
-        console.error('Error fetching banners:', error);
-      }
-    });
-    
-  }, []);
+  
+  const { data: bannersData, isLoading, error } = useBanners();
+  
+  const banners = {
+    bigBanner: bannersData?.find(b => b.location === 'big-banner'),
+    smallBanner1: bannersData?.find(b => b.location === 'small-banner-1'),
+    smallBanner2: bannersData?.find(b => b.location === 'small-banner-2'),
+  };
 
   const carouselItems = banners.bigBanner?.products?.slice(0, 3).map((product) => ({
     title: banners.bigBanner?.title || 'Featured Product',
@@ -65,14 +43,20 @@ const MarketplaceSection = () => {
   })) || [];
 
   function getProductPrice(product: Product) {
+    if (product.priceInfo) {
+      return `${product.priceInfo.currencySymbol}${product.priceInfo.displayPrice}`;
+    }
+    
+    const currencySymbol = '$'; // Default fallback
+    
     if (product.inventory?.listing?.type === 'auction') {
-      return `Starting ₦${product.inventory.listing.auction?.reservePrice || 0}`;
+      return `Starting ${currencySymbol}${product.inventory.listing.auction?.reservePrice || 0}`;
     }
     const firstVariant = product.variants?.[0];
     const firstOption = firstVariant?.options?.[0];
     return firstOption?.salePrice 
-      ? `₦${firstOption.salePrice}` 
-      : `₦${firstOption?.price || 0}`;
+      ? `${currencySymbol}${firstOption.salePrice}` 
+      : `${currencySymbol}${firstOption?.price || 0}`;
   }
 
   useEffect(() => {
@@ -136,7 +120,55 @@ const MarketplaceSection = () => {
     }
   ];
 
-  if (carouselItems.length === 0) {
+  if (isLoading) {
+    return (
+      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-8 pb-3 md:py-10 lg:py-10">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
+          {/* Main banner skeleton */}
+          <div className="lg:col-span-2">
+            <div className="bg-gray-200 animate-pulse rounded-md p-4 sm:p-6 lg:p-8 sm:min-h-[320px]">
+              <div className="flex flex-row h-full">
+                <div className="w-[55%] flex flex-col justify-center space-y-4">
+                  <div className="h-4 bg-gray-300 rounded w-1/3"></div>
+                  <div className="h-6 bg-gray-300 rounded w-2/3"></div>
+                  <div className="h-4 bg-gray-300 rounded w-full"></div>
+                  <div className="h-10 bg-gray-300 rounded w-24"></div>
+                </div>
+                <div className="w-[45%] flex items-center justify-center">
+                  <div className="w-32 h-48 bg-gray-300 rounded-lg"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+          {/* Side banners skeleton */}
+          <div className="lg:col-span-1 space-y-4 hidden md:block">
+            <div className="bg-gray-200 animate-pulse rounded-lg p-4 h-32">
+              <div className="flex items-center space-x-4">
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                  <div className="h-4 bg-gray-300 rounded w-full"></div>
+                  <div className="h-8 bg-gray-300 rounded w-20"></div>
+                </div>
+                <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
+              </div>
+            </div>
+            <div className="bg-gray-200 animate-pulse rounded-lg p-4 h-32">
+              <div className="flex items-center space-x-4">
+                <div className="w-12 h-12 bg-gray-300 rounded-lg"></div>
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 bg-gray-300 rounded w-2/3"></div>
+                  <div className="h-4 bg-gray-300 rounded w-full"></div>
+                  <div className="h-8 bg-gray-300 rounded w-20"></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || carouselItems.length === 0) {
     return null;
   }
 

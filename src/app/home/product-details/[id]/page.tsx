@@ -21,22 +21,7 @@ const ProductPage: React.FC = () => {
   // Console log product details
   useEffect(() => {
     if (productData?.product) {
-      console.log("=== PRODUCT DETAILS ===");
-      console.log("Full Product Data:", productData.product);
-      console.log("Product ID:", productData.product._id);
-      console.log("Product Name:", productData.product.name);
-      console.log("Product Slug:", productData.product.slug);
-      console.log("Product Variants:", productData.product.variants);
-      console.log("Product Images:", productData.product.images);
-      console.log("Product Price Info:", productData.product.priceInfo);
-      console.log("Product Inventory:", productData.product.inventory);
-      console.log("Product Category:", productData.product.category);
-      console.log("Product Description:", productData.product.description);
-      console.log("Product Condition:", productData.product.condition);
-      console.log("Product Rating:", productData.product.rating);
-      console.log("Product Reviews:", productData.product.reviews);
-      console.log("All Product Properties:", Object.keys(productData.product));
-      console.log("========================");
+      // Product data loaded successfully
     }
   }, [productData]);
 

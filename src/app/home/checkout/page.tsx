@@ -268,7 +268,7 @@ export default function CheckoutPage() {
               method: "POST",
               body: JSON.stringify({
                 email: user.email,
-                amount: Math.round(total * 100),
+                amount: total, // Send amount in major units (NGN)
                 currency: currency,
                 metadata: {
                   items: items.map((item: any) => ({

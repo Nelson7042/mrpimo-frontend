@@ -278,15 +278,13 @@ export default function DashboardPage() {
                 CREDIT BALANCE
               </h3>
             </div>
-            <div className="space-y-2 p-2">
+            <div className="space-y-2 p-4 pb-16">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <span className="text-sm text-gray-600">Balance:</span>
-                  <p className="font-bold text-lg">
+                  <span className="text-xs sm:text-sm text-gray-600">Balance:</span>
+                  <p className="font-bold text-sm sm:text-lg break-all">
                     {showBalance
-                      ? `${
-                          profileData?.fiatWallet?.balances?.available || "0"
-                        } ${profileData?.fiatWallet?.currency || ""}`
+                      ? `$${parseFloat(profileData?.fiatWallet?.balances?.available || "0").toFixed(2)} ${profileData?.fiatWallet?.currency || ""}`
                       : `******`}
                   </p>
                 </div>
@@ -296,16 +294,15 @@ export default function DashboardPage() {
                   onClick={() => setShowBalance(!showBalance)}
                 >
                   {showBalance ? (
-                    <EyeOff className="w-4 h-4" />
+                    <EyeOff className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
-                    <Eye className="w-4 h-4" />
+                    <Eye className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
                 </Button>
               </div>
               <Link href={"/home/user/wallet"}>
                 <Button
-                  className="cursor-pointer w-[95%] bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded absolute bottom-2 left-1/2 transform -translate-x-1/2"
-                  // onClick={() => (true)}
+                  className="cursor-pointer w-[95%] bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs sm:text-sm"
                 >
                   Add Funds
                 </Button>
@@ -360,7 +357,7 @@ export default function DashboardPage() {
                 ) : activitiesData?.activities?.length > 0 ? (
                   activitiesData.activities.map(
                     (activity: any, index: number) => {
-                      const activityDate = new Date(activity.createdAt);
+                      const activityDate = new Date(activity.timestamp);
                       const activityTime = activityDate.toLocaleTimeString(
                         "en-US",
                         {
@@ -372,7 +369,7 @@ export default function DashboardPage() {
                         "en-US",
                         {
                           day: "numeric",
-                          month: "long",
+                          month: "short",
                           year: "numeric",
                         }
                       );
@@ -383,7 +380,7 @@ export default function DashboardPage() {
                           className="border-b"
                         >
                           <td className="py-3">
-                            <input type="checkbox" className="rounded" />
+                            <span className="text-sm font-medium">{index + 1}</span>
                           </td>
                           <td className="py-3">
                             <div className="flex items-center space-x-3">

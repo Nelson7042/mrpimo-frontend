@@ -34,6 +34,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
      
       return token;
     } catch (e) {
+      console.warn('Failed to get token from localStorage:', e);
       return null;
     }
   };
@@ -92,8 +93,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           
           if (data.accessToken) {
             try {
-              localStorage.setItem('accessToken', data.accessToken);
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('accessToken', data.accessToken);
+              }
             } catch (e) {
+              console.warn('Failed to save new token:', e);
             }
           }
           
@@ -110,23 +114,27 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         
         // Clear tokens and user state
         try {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
+          if (typeof window !== 'undefined') {
+            localStorage.removeItem('accessToken');
+            localStorage.removeItem('refreshToken');
+          }
         } catch (e) {
           console.warn('Failed to clear tokens:', e);
         }
         store.resetStore();
 
         // Only redirect if on protected routes
-        const protectedRoutes = ['/vendor', '/home/user', '/home/dashboard', '/account'];
-        const currentPath = window.location.pathname;
-        const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
-        
-        // if (isProtectedRoute && !currentPath.includes('/login')) {
-        //   window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-        // } else {
-        //   console.log("Session expired. Downgrading to guest mode.");
-        // }
+        if (typeof window !== 'undefined') {
+          const protectedRoutes = ['/vendor', '/home/user', '/home/dashboard', '/account'];
+          const currentPath = window.location.pathname;
+          const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
+          
+          // if (isProtectedRoute && !currentPath.includes('/login')) {
+          //   window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
+          // } else {
+          //   console.log("Session expired. Downgrading to guest mode.");
+          // }
+        }
 
         return Promise.reject("Session expired");
       }
@@ -134,6 +142,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
 
     return response;
   } catch (error) {
+    // Add more context to network errors
+    if (error instanceof TypeError && error.message.includes('fetch')) {
+      console.warn('Network error when fetching:', url, error.message);
+      return Promise.reject(`Network error: ${error.message}`);
+    }
     return Promise.reject(error);
   }
 };

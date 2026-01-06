@@ -111,9 +111,10 @@ const userApi = {
   },
 
   getRecomendations: async (limit = 10) => {
-    const response = await fetchWithAuth(`${API_BASE}/products/user/recommendations` + `?limit=${limit}`);
+    const response = await fetchWithAuth(`${API_BASE}/users/recommendations` + `?limit=${limit}`);
     if (!response.ok) throw new Error('Failed to fetch recent views');
     const data = await response.json();
+    console.log('Recommendations API Response:', data);
     return data;
   },
 
@@ -195,6 +196,8 @@ export const useRecentViews = (limit = 10, enabled: boolean = true) => {
     queryFn: () => userApi.getRecentViews(limit),
     enabled: enabled,
     staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 
@@ -204,6 +207,8 @@ export const useRecomendations = (limit = 10, enabled: boolean = false) => {
     queryFn: () => userApi.getRecomendations(limit),
     enabled: enabled,
     staleTime: 2 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
   });
 };
 

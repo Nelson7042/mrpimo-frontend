@@ -61,7 +61,7 @@ interface CartState {
 
 const calculateCartSummary = (items: CartItem[]): CartSummary => {
   const subtotal = items.reduce((total, item) => {
-    const price = item.priceInfo?.displayPrice || item.selectedVariant?.price || 0;
+    const price = item.selectedVariant?.price * (item.priceInfo?.exchangeRate || 1) || 0;
     return total + price * item.quantity;
   }, 0);
 

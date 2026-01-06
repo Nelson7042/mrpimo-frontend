@@ -14,6 +14,10 @@ type Props = {
   setShowValidationModal: (show: boolean) => void;
 };
 
+const getItemPrice = (item: any) => {
+  return item.selectedVariant?.price * item?.priceInfo?.exchangeRate || 0;
+};
+
 const CartSidebar = (props: Props) => {
   const {
     refetch: validateCart,
@@ -26,8 +30,6 @@ const CartSidebar = (props: Props) => {
   const hasValidatedRef = React.useRef(false);
   const prevItemsCountRef = React.useRef(summary.totalItems);
   const isLoggedIn = !!props.user;
-
-  console.log("CartSidebar data:", data);
 
   useEffect(() => {
     if (!isLoggedIn) return;

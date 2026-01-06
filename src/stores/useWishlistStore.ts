@@ -81,12 +81,31 @@ export const useWishlistStore = create<WishlistState>()(
       name: "mprimo-wishlist",
       storage: {
         getItem: (name) => {
-          const value = localStorage.getItem(name);
-          return value ? JSON.parse(value) : null;
+          if (typeof window === 'undefined') return null;
+          try {
+            const value = localStorage.getItem(name);
+            return value ? JSON.parse(value) : null;
+          } catch (error) {
+            console.warn('Failed to get item from localStorage:', error);
+            return null;
+          }
         },
-        setItem: (name, value) =>
-          localStorage.setItem(name, JSON.stringify(value)),
-        removeItem: (name) => localStorage.removeItem(name),
+        setItem: (name, value) => {
+          if (typeof window === 'undefined') return;
+          try {
+            localStorage.setItem(name, JSON.stringify(value));
+          } catch (error) {
+            console.warn('Failed to set item in localStorage:', error);
+          }
+        },
+        removeItem: (name) => {
+          if (typeof window === 'undefined') return;
+          try {
+            localStorage.removeItem(name);
+          } catch (error) {
+            console.warn('Failed to remove item from localStorage:', error);
+          }
+        },
       },
     }
   )

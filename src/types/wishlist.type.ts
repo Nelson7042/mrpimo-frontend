@@ -23,7 +23,6 @@ export interface WishlistResponse {
 export interface Wishlist {
   productId: string;
   _id?: string;
-
   name: string;
   images: string[];
   price: number;
@@ -31,5 +30,12 @@ export interface Wishlist {
   optionId?: string;
   addedAt: string;
   priceWhenAdded?: number;
-  priceInfo: any;
+  priceInfo: {
+    displayPrice: number;
+    currencySymbol: string;
+    displayCurrency: string;
+    originalPrice: number;
+    originalCurrency: string;
+    exchangeRate: number;
+  };
 }

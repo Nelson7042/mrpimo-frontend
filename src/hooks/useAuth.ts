@@ -20,12 +20,15 @@ export const useAuth = () => {
           if (data.vendor) setVendor(data.vendor);
         }
       } catch (error) {
-        console.error('Failed to fetch user:', error);
+        // Only log error if it's not a guest mode rejection
+        if (error !== "Guest mode" && error !== "Session expired") {
+          console.error('Failed to fetch user:', error);
+        }
       }
     };
 
     fetchUser();
-  }, []);
+  }, [user, setUser, setVendor]);
 
   return { user };
 };
