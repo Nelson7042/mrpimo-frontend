@@ -177,4 +177,24 @@ export const useAddReview = () => {
   });
 };
 
-export { updateProduct, placeBid, getBids, addReview };
+const fetchCategoryPriceRanges = async (categoryId: string) => {
+  const response = await fetch(`${API_BASE_URL}/products/categories/${categoryId}/price-ranges`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch price ranges');
+  }
+  const data = await response.json();
+  console.log('Price Ranges API Response:', data);
+  console.log('Price Ranges Array:', data.priceRanges);
+  console.log('Price Ranges Count:', data.priceRanges?.length || 0);
+  return data;
+};
+
+export const useCategoryPriceRanges = (categoryId: string) => {
+  return useQuery({
+    queryKey: ['categoryPriceRanges', categoryId],
+    queryFn: () => fetchCategoryPriceRanges(categoryId),
+    enabled: !!categoryId,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+};

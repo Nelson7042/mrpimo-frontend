@@ -41,4 +41,4 @@ const Homepage = ({ children }: HomepageProps) => {
   );
 };
 
-export default Homepage
+export default Homepage 

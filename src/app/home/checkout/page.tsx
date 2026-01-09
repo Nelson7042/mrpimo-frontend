@@ -498,8 +498,8 @@ export default function CheckoutPage() {
   return (
     <>
      
-      <div className="min-h-screen font-roboto bg-gray-50  ">
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10 font-roboto  ">
+      <div className="min-h-screen font-roboto bg-gray-50">
+        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-8 lg:py-10 font-roboto">
           {/* Breadcrumb */}
           <Breadcrumbs
             items={manualBreadcrumbs}
@@ -859,7 +859,7 @@ export default function CheckoutPage() {
                       <div className="space-y-4 mb-6 max-h-[300px] overflow-y-auto">
                         {checkout?.items?.map((item: any) => (
                           <div
-                            key={item.productId + (item.variantId || "")}
+                            key={`${item.productId}-${item.variantId || 'no-variant'}-${item.optionId || 'no-option'}`}
                             className="flex items-center space-x-3"
                           >
                             <Image

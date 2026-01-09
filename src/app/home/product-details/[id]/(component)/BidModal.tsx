@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { SelectInput } from "@/components/SelectInput";
 import FullButton from "@/components/FullButton";
-import { getBids } from "@/hooks/useProducts";
+import { useProductBids } from '@/hooks/useProductBidsOffers';
 import { useUserStore } from "@/stores/useUserStore";
 import Modal2 from "@/components/Modal2";
 
@@ -41,8 +41,10 @@ export const BidModal1 = ({
     minutes: 0,
     seconds: 0,
   });
-  const [bids, setBids] = useState<any[]>([]);
-  const [loadingBids, setLoadingBids] = useState(false);
+  // Remove unused loadingBids state
+  // Use the new bids hook
+  const { data: bidsData, isLoading: bidsLoading } = useProductBids(productData?._id || '', !!productData?._id && isBid);
+  
   const [shippingData, setShippingData] = useState({
     country: "",
     state: "",
@@ -53,6 +55,7 @@ export const BidModal1 = ({
 
   const auction = productData?.inventory?.listing?.auction;
   const startBidPrice = auction?.startBidPrice || 0;
+  const bids = bidsData || [];
   const currentHighestBid =
     bids.length > 0
       ? Math.max(...bids.map((b: any) => b.currentAmount))
@@ -83,17 +86,7 @@ export const BidModal1 = ({
   }, [auction, isBid]);
 
   useEffect(() => {
-    if (isBid && productData?._id) {
-      setLoadingBids(true);
-      getBids(productData._id)
-        .then((response) => setBids(response.bids || []))
-        .catch(() => setBids([]))
-        .finally(() => setLoadingBids(false));
-    }
-  }, [isBid, productData?._id]);
-
-  useEffect(() => {
-    if (isBid && user?.addresses?.length > 0) {
+    if (isBid && user?.addresses && user.addresses.length > 0) {
       const defaultAddress = user.addresses.find((addr: any) => addr.isDefault) || user.addresses[0];
       if (defaultAddress) {
         setShippingData(prev => ({
@@ -139,7 +132,7 @@ export const BidModal1 = ({
   const formatTime = (time: typeof timeLeft) =>
     `${time.days}d : ${time.hours}h : ${time.minutes}m : ${time.seconds}s`;
 
-  const userBid = bids.find((b: any) => b.userId?._id === user?._id);
+  const userBid = bids.find((b: any) => b.userId === user?._id);
 
   return (
     <Modal2 isOpen={isBid} onClose={handleClose}>
@@ -341,7 +334,7 @@ export const BidModal1 = ({
             </span>
           </div>
           <div className="space-y-3 mb-4 md:mb-6 max-h-20 overflow-y-auto ">
-            {loadingBids ? (
+            {bidsLoading ? (
               <p className="text-center text-gray-500">Loading bids...</p>
             ) : (
               <>
@@ -366,10 +359,10 @@ export const BidModal1 = ({
                   </div>
                 )}
                 {bids
-                  .filter((b: any) => b.userId?._id !== user?._id)
-                  .map((bid: any) => (
+                  .filter((b: any) => b.userId !== user?._id)
+                  .map((bid: any, index: number) => (
                     <div
-                      key={bid.userId?._id}
+                      key={index}
                       className="flex items-center space-x-3 p-3 bg-gray-50 rounded-lg"
                     >
                       <div className="w-5 h-5 text-green-500">✓</div>

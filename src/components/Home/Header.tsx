@@ -1,3 +1,6 @@
+
+"use client";
+
 import {
   Search,
   ShoppingCart,
@@ -141,7 +144,7 @@ const Header = () => {
     <header className="text-white ">
       {/* Top banner - responsive */}
       <div className="w-full bg-primary h-[56px] sm:h-[60px] md:h-auto">
-        <div className="max-w-7xl mx-auto px-[12px] md:px-[42px] lg:px-20 text-center py-2 text-xs sm:text-sm lg:text-base font-medium flex justify-between items-center">
+        <div className="w-full px-4 md:px-6 lg:px-8 text-center py-2 text-xs sm:text-sm lg:text-base font-medium flex justify-between items-center">
           {/* Logo */}
           <Link href="/home" className="shrink-0 ">
             <div className="flex items-center">
@@ -192,7 +195,7 @@ const Header = () => {
 
       {/* Main header */}
       <div className="w-full bg-primary">
-        <div className="max-w-7xl mx-auto px-[12px] md:px-[42px] lg:px-[80px] py-3 sm:py-4">
+        <div className="w-full px-4 md:px-6 lg:px-8 py-3 sm:py-4">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Mobile menu button */}
             {/* <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>

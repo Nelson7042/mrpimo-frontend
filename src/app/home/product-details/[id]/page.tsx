@@ -27,7 +27,7 @@ const ProductPage: React.FC = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8  md:py-8 lg:py-10">
         <div className="animate-pulse">
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
             <div className="lg:col-span-2 space-y-4">
@@ -64,7 +64,7 @@ const ProductPage: React.FC = () => {
 
 
   return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-4 md:py-10 lg:py-10">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-4 md:py-10 lg:py-10">
       <ProductInfo productData={productData?.product}/>
       <ProductDetailsTabs productData={productData?.product}/>
       <ReviewsPage product={productData?.product}/>

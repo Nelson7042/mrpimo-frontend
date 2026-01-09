@@ -15,7 +15,7 @@ const ShopCategoriesComponent = () => {
   const categoriesSwiperRef = useRef<any>(null);
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-5 pb-3 md:py-10 lg:py-10">
+    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-5 pb-3 md:py-10 lg:py-10">
       {/* Header Section */}
       <div className="flex flex-row items-center justify-between mb-8">
         <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">

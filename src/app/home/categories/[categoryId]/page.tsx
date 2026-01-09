@@ -22,6 +22,7 @@ import {
   useCategoryBySlug,
   useCategoryTree,
   useProductsByCategory,
+  useCategoryPriceRanges,
 } from "@/hooks/useProducts";
 import { ProductType } from "@/types/product.type.ts_";
 import { ProductCard } from "@/components/Home/ProductCard";
@@ -44,14 +45,7 @@ const SORT_OPTIONS = [
   { value: '{"rating": -1}', label: "Customer Rating" },
 ];
 
-const PRICE_RANGES = [
-  { label: "All Prices", value: "" },
-  { label: "Under ₦1,000", value: "0-1000" },
-  { label: "₦1k to ₦10k", value: "1000-10000" },
-  { label: "₦10k to ₦100k", value: "10000-100000" },
-  { label: "₦100k to ₦1M", value: "100000-1000000" },
-  { label: "₦1M and Above", value: "1000000-10000000" },
-];
+
 
 export default function CategoryPage() {
   const params = useParams();
@@ -77,6 +71,63 @@ export default function CategoryPage() {
   // Fetch category tree for subcategories
   const { data: categoryTree } = useCategoryTree(categoryData?.category?._id);
 
+  // Fetch price ranges for this category
+  const { data: priceRangesData } = useCategoryPriceRanges(categoryData?.category?._id || "");
+
+  // Get min and max values from price ranges data
+  const priceRangeLimits = useMemo(() => {
+    if (!priceRangesData?.priceRanges?.length) {
+      return { min: 0, max: 10000000 };
+    }
+    const ranges = priceRangesData.priceRanges;
+    return {
+      min: Math.min(...ranges.map((r: any) => r.min)),
+      max: Math.max(...ranges.map((r: any) => r.max))
+    };
+  }, [priceRangesData]);
+
+  // Update filters when price ranges data loads
+  useEffect(() => {
+    if (priceRangeLimits) {
+      setFilters(prev => ({
+        ...prev,
+        priceRange: [priceRangeLimits.min, priceRangeLimits.max]
+      }));
+    }
+  }, [priceRangeLimits]);
+
+  // Format currency
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-NG', {
+      style: 'currency',
+      currency: priceRangesData?.currency || 'NGN',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(amount);
+  };
+
+  // Handle slider price range change
+  const handleSliderChange = (value: number[]) => {
+    setFilters(prev => ({
+      ...prev,
+      priceRange: value as [number, number]
+    }));
+    setSelectedPriceRange("All Prices"); // Reset radio selection when slider is used
+  };
+
+
+  // Build price ranges array with API data
+  const PRICE_RANGES = useMemo(() => {
+    const ranges = [{ label: "All Prices", value: "" }];
+    if (priceRangesData?.priceRanges) {
+      ranges.push(...priceRangesData.priceRanges.map((range: any) => ({
+        label: range.label,
+        value: range.value
+      })));
+    }
+    return ranges;
+  }, [priceRangesData]);
+
   // Build product filters
   const productFilters = useMemo(() => {
     const filterParams: any = {
@@ -99,7 +150,10 @@ export default function CategoryPage() {
       filterParams.brand = filters.brands.join(",");
     }
 
-    if (selectedPriceRange !== "All Prices") {
+    // Check if custom slider range is being used
+    if (filters.priceRange[0] !== priceRangeLimits.min || filters.priceRange[1] !== priceRangeLimits.max) {
+      filterParams.priceRange = `${filters.priceRange[0]}-${filters.priceRange[1]}`;
+    } else if (selectedPriceRange !== "All Prices") {
       const range = PRICE_RANGES.find((r) => r.label === selectedPriceRange);
       if (range?.value) {
         filterParams.priceRange = range.value;
@@ -110,8 +164,9 @@ export default function CategoryPage() {
       filterParams.sort = filters.sort;
     }
 
+    console.log('Frontend Request Params:', filterParams);
     return filterParams;
-  }, [categoryData, filters, selectedPriceRange, page]);
+  }, [categoryData, filters, selectedPriceRange, page, priceRangeLimits, PRICE_RANGES]);
 
   // Fetch products with filters
   const { data: productsData, isLoading } =
@@ -148,6 +203,13 @@ export default function CategoryPage() {
 
   const handlePriceRangeChange = (range: string) => {
     setSelectedPriceRange(range);
+    // Reset slider to full range when radio button is selected
+    if (range === "All Prices") {
+      setFilters(prev => ({
+        ...prev,
+        priceRange: [priceRangeLimits.min, priceRangeLimits.max]
+      }));
+    }
   };
 
   const clearFilters = () => {
@@ -155,7 +217,7 @@ export default function CategoryPage() {
       category: categoryId,
       subCategories: [],
       brands: [],
-      priceRange: [0, 10000000],
+      priceRange: [priceRangeLimits.min, priceRangeLimits.max],
       sort: '{"createdAt": -1}',
       search: "",
     });
@@ -205,22 +267,18 @@ export default function CategoryPage() {
       <div>
         <h3 className="font-bold text-sm  lg:text-lg mb-4">PRICE RANGE</h3>
         <div className="space-y-4 bg-white p-3">
-          <div className="">
+          <div className="space-y-3">
             <Slider
               value={filters.priceRange}
-              onValueChange={(value) =>
-                setFilters((prev) => ({
-                  ...prev,
-                  priceRange: value as [number, number],
-                }))
-              }
-              max={1000000}
-              step={10000}
+              onValueChange={handleSliderChange}
+              min={priceRangeLimits.min}
+              max={priceRangeLimits.max}
+              step={Math.max(1, Math.floor((priceRangeLimits.max - priceRangeLimits.min) / 100))}
               className="w-full"
             />
-            <div className="flex justify-between text-sm text-gray-600 mt-2">
-              <span>Min</span>
-              <span>Max</span>
+            <div className="flex justify-between text-sm text-gray-800 font-medium">
+              <span>{formatCurrency(filters.priceRange[0])}</span>
+              <span>{formatCurrency(filters.priceRange[1])}</span>
             </div>
           </div>
           <RadioGroup
@@ -259,7 +317,7 @@ export default function CategoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50   mx-auto">
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10 font-roboto  ">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8  md:py-8 lg:py-10 font-roboto  ">
         {/* Header */}
         <nav className="mt-3">
           <Breadcrumbs
@@ -384,7 +442,9 @@ export default function CategoryPage() {
                       </Badge>
                     )}
                     {(filters.brands.length > 0 ||
-                      selectedPriceRange !== "All Prices") && (
+                      selectedPriceRange !== "All Prices" ||
+                      filters.priceRange[0] !== priceRangeLimits.min ||
+                      filters.priceRange[1] !== priceRangeLimits.max) && (
                       <Button
                         variant="ghost"
                         size="sm"
@@ -418,7 +478,7 @@ export default function CategoryPage() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 lg:gap-6 mb-8">
-                    {filterAvailableProducts(products).map(
+                    {products.map(
                       (product: ProductType) => (
                         <ProductCard key={product._id} product={product} />
                       )

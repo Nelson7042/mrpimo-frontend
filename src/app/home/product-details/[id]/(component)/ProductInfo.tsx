@@ -15,7 +15,7 @@ import SocketService from "@/utils/socketService";
 import { useRouter } from "next/navigation";
 import { ClipLoader } from "react-spinners";
 import { BidModal1 } from "./BidModal";
-import { placeBid } from "@/hooks/useProducts";
+import { useMakeBid } from "@/hooks/mutations";
 import { toast } from "react-hot-toast";
 import VariantDisplay from "@/components/VariantDisplay";
 import {
@@ -153,6 +153,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   const buyNowMutation = useBuyNow();
   const createPaymentIntentMutation = useCreateBuyNowPaymentIntent();
   const createOrderMutation = useCreateBuyNowOrder();
+  const makeBidMutation = useMakeBid();
 
   useEffect(() => {
     if (productData?.variants) {
@@ -560,9 +561,18 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       return;
     }
 
+    if (!user?._id) {
+      toast.error("User not found");
+      return;
+    }
+
     setIsPlacingBid(true);
     try {
-      await placeBid(productData._id, bidAmount);
+      await makeBidMutation.mutateAsync({
+        productId: productData._id,
+        userId: user._id,
+        maxBid: bidAmount
+      });
       toast.success("Bid placed successfully!");
       setIsBidModalOpen(false);
     } catch (error: any) {

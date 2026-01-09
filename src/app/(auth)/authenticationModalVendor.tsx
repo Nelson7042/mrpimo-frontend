@@ -1,3 +1,5 @@
+"use client";
+
 import Modal2 from "@/components/Modal2";
 import { X } from "lucide-react";
 import React, { useState } from "react";

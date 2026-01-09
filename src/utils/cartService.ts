@@ -79,6 +79,14 @@ export interface UpdateCartRequest {
 export interface CartResponse {
   success: boolean;
   cart?: any[];
+  totals?: {
+    subtotal: number;
+    shipping: number;
+    tax: number;
+    total: number;
+    currency: string;
+    currencySymbol: string;
+  };
   data?: {
     items: any[];
     summary: {

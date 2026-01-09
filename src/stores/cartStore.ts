@@ -11,6 +11,14 @@ const KEY_SEPARATOR = "::";
 interface CartState {
   items: CartItem[];
   summary: CartSummary;
+  totals: {
+    subtotal: number;
+    tax: number;
+    shipping: number;
+    total: number;
+    currency: string;
+    currencySymbol: string;
+  } | null;
   isLoading: boolean;
   error: string | null;
 
@@ -60,16 +68,36 @@ interface CartState {
 }
 
 const calculateCartSummary = (items: CartItem[]): CartSummary => {
+  console.log('Calculating cart summary for items:', items.map(item => ({
+    productId: item.product._id,
+    variantId: item.selectedVariant?.variantId,
+    optionId: item.selectedVariant?.optionId,
+    quantity: item.quantity,
+    variantPrice: item.selectedVariant?.price,
+    exchangeRate: item.priceInfo?.exchangeRate,
+    displayPrice: item.priceInfo?.displayPrice
+  })));
+
   const subtotal = items.reduce((total, item) => {
-    const price = item.selectedVariant?.price * (item.priceInfo?.exchangeRate || 1) || 0;
-    return total + price * item.quantity;
+    // Use the same logic as the cart page: variant price * exchange rate
+    const price = (item.selectedVariant?.price || 0) * (item.priceInfo?.exchangeRate || 1);
+    const itemTotal = Math.round((price * item.quantity) * 100) / 100;
+    console.log(`Item: ${item.product.name}, Variant Price: ${item.selectedVariant?.price}, Exchange Rate: ${item.priceInfo?.exchangeRate}, Final Price: ${price}, Qty: ${item.quantity}, Total: ${itemTotal}`);
+    return total + itemTotal;
   }, 0);
 
+  // Count unique items (not quantities)
+  const totalItems = items.length;
+  // Sum all quantities
+  const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
+
+  console.log('Cart Summary:', { subtotal, totalItems, totalQuantity });
+
   return {
-    subtotal,
-    total: subtotal, 
-    totalItems: items.length,
-    totalQuantity: items.reduce((total, item) => total + item.quantity, 0),
+    subtotal: Math.round(subtotal * 100) / 100,
+    total: Math.round(subtotal * 100) / 100, 
+    totalItems,
+    totalQuantity,
   };
 };
 
@@ -83,6 +111,7 @@ export const useCartStore = create<CartState>()(
         totalItems: 0,
         totalQuantity: 0,
       },
+      totals: null,
       isLoading: false,
       error: null,
 
@@ -139,7 +168,6 @@ export const useCartStore = create<CartState>()(
             });
             toast.success("Product Added to Cart Successfully", toastConfigSuccess);
             
-            // Reload cart from backend to get updated state
             await get().loadCart();
           } else {
             // Check available quantity from backend for offline users
@@ -311,7 +339,30 @@ export const useCartStore = create<CartState>()(
               throw new Error('Item not found in cart');
             }
             
-            // Use addToCart with the new quantity (backend will update existing item)
+            // Update state immediately for better UX
+            const { items, generateCartItemKey } = get();
+            const parts = variantKey ? variantKey.split(KEY_SEPARATOR) : [];
+            const [variantId, optionId] = parts.length >= 2 ? [parts[0], parts[1]] : [undefined, undefined];
+            const itemKey = generateCartItemKey(productId, variantId, optionId);
+
+            const updatedItems = items.map((item) => {
+              if (
+                generateCartItemKey(
+                  item.product._id ?? "",
+                  item.selectedVariant?.variantId,
+                  item.selectedVariant?.optionId
+                ) === itemKey
+              ) {
+                return { ...item, quantity };
+              }
+              return item;
+            });
+
+            set({ items: updatedItems });
+            get().calculateSummary();
+            
+            // Then sync with backend
+            console.log('🔍 [UPDATE QUANTITY] calling backend addToCart');
             await cartService.addToCart({
               productId,
               quantity,
@@ -324,6 +375,9 @@ export const useCartStore = create<CartState>()(
               optionValue: currentItem.selectedVariant.optionValue,
               priceInfo: currentItem.priceInfo
             });
+            
+            // Reload cart to get updated totals/currency but don't trigger re-renders
+            console.log('🔍 [UPDATE QUANTITY] reloading cart for updated totals');
             await get().loadCart();
           } else {
             const { items, calculateSummary, generateCartItemKey } = get();
@@ -348,6 +402,10 @@ export const useCartStore = create<CartState>()(
             calculateSummary();
           }
         } catch (error: any) {
+          // If backend call fails, reload cart to revert optimistic update
+          if (isLoggedIn) {
+            await get().loadCart();
+          }
           set({ error: error instanceof Error ? error.message : 'Failed to update quantity' });
           if (!error.message?.includes('items available')) {
             toast.error('Failed to update quantity', toastConfigError);
@@ -396,47 +454,56 @@ export const useCartStore = create<CartState>()(
 
       loadCart: async () => {
         const isLoggedIn = !!useUserStore.getState().user;
+        
         if (!isLoggedIn) {
-          // For logged-out users, recalculate summary from persisted items
           const { items } = get();
           const summary = calculateCartSummary(items);
-          set({ summary });
+          set({ summary, totals: null });
           return;
         }
 
-        set({ isLoading: true, error: null });
-
         try {
           const response = await cartService.getCart();
-          const cartItems = response.cart || [];
+          console.log('🔍 [CART RESPONSE]:', JSON.stringify(response, null, 2));
           
-          const items: CartItem[] = cartItems.map((item: any) => ({
-            product: {
-              _id: item.productId,
-              name: item.name,
-              images: item.images || [],
-              price: item.price,
-              variants: item.variants
-            },
-            quantity: item.quantity,
-            selectedVariant: item.variantId ? {
-              variantId: item.variantId,
-              optionId: item.optionId,
-              variantName: item.variantDetails?.variantName || '',
-              optionValue: item.variantDetails?.optionValue || '',
-              price: item.price
-            } : undefined,
-            addedAt: item.addedAt || new Date().toISOString(),
-            priceInfo: item.priceInfo
-          }));
-
-          const summary = calculateCartSummary(items);
-          set({ items, summary });
+          if (response.success && response.cart) {
+            const cartItems: CartItem[] = response.cart.map((item: any) => ({
+              product: {
+                _id: item.productId,
+                name: item.name,
+                images: item.images,
+              },
+              quantity: item.quantity,
+              selectedVariant: item.variantId && item.optionId ? {
+                variantId: item.variantId,
+                optionId: item.optionId,
+                variantName: item.variantDetails?.variantName || item.variantName || '',
+                optionValue: item.variantDetails?.optionValue || item.optionValue || '',
+                price: item.price
+              } : undefined,
+              addedAt: item.addedAt,
+              priceInfo: item.priceInfo
+            }));
+            
+            set({ items: cartItems });
+            get().calculateSummary();
+            
+            // Store totals from backend if available
+            if (response.totals) {
+              set({
+                totals: {
+                  subtotal: response.totals.subtotal,
+                  tax: 0,
+                  shipping: 0,
+                  total: response.totals.subtotal,
+                  currency: response.totals.currency,
+                  currencySymbol: response.totals.currencySymbol
+                }
+              });
+            }
+          }
         } catch (error) {
-          console.error('Failed to load cart:', error);
           set({ error: error instanceof Error ? error.message : 'Failed to load cart' });
-        } finally {
-          set({ isLoading: false });
         }
       },
 

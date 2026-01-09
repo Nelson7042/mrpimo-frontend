@@ -5,7 +5,6 @@ import { useValidateCart } from "@/hooks/useCheckout";
 import React, { useEffect } from "react";
 import CartTotalSkeleton from "./CartTotalSkeleton";
 import { useCartStore } from "@/stores/cartStore";
-import { NumericFormat } from "react-number-format";
 
 type Props = {
   openModal: () => void;
@@ -14,68 +13,25 @@ type Props = {
   setShowValidationModal: (show: boolean) => void;
 };
 
-const getItemPrice = (item: any) => {
-  return item.selectedVariant?.price * item?.priceInfo?.exchangeRate || 0;
-};
-
 const CartSidebar = (props: Props) => {
   const {
     refetch: validateCart,
     isLoading: isValidating,
     data,
-    error,
   } = useValidateCart();
-  // Just rely on store's derived state
-  const { summary, items } = useCartStore();
-  const hasValidatedRef = React.useRef(false);
-  const prevItemsCountRef = React.useRef(summary.totalItems);
+  const { summary, items, totals } = useCartStore();
   const isLoggedIn = !!props.user;
 
-  useEffect(() => {
-    if (!isLoggedIn) return;
+  // Get currency from totals (backend) or first item's priceInfo (fallback)
+  const currencySymbol = totals?.currencySymbol || items[0]?.priceInfo?.currencySymbol || "$";
+  const displayCurrency = totals?.currency || items[0]?.priceInfo?.displayCurrency || "USD";
 
-    // Reset validation flag when items count changes
-    if (prevItemsCountRef.current !== summary.totalItems) {
-      hasValidatedRef.current = false;
-      prevItemsCountRef.current = summary.totalItems;
-    }
-
-    if (summary.totalItems === 0 || hasValidatedRef.current) return;
-
-    const runValidation = async () => {
-      try {
-        const result = await validateCart();
-        hasValidatedRef.current = true;
-      } catch (err) {
-        console.error("Validation failed:", err);
-      }
-    };
-
-    runValidation();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [summary.totalItems, isLoggedIn, validateCart]);
-
-  if (isValidating && isLoggedIn) {
-    return <CartTotalSkeleton />;
-  }
-
-  // Get currency from first item's priceInfo
-  const currencySymbol = items[0]?.priceInfo?.currencySymbol || "$";
-  const displayCurrency = items[0]?.priceInfo?.displayCurrency || "USD";
-
-  // Use validated data if available (online), otherwise use local summary (offline)
-  const subtotal = data?.checkout?.pricing?.subtotal || summary.subtotal;
-  // console.log("subtotal", subtotal)
-  const shipping = data?.checkout?.pricing?.shipping || 0;
-  // console.log("shipping", shipping)
-
-  const tax = data?.checkout?.pricing?.tax || 0;
-  // console.log("tax", tax)
-  
-  const total = data?.checkout?.pricing?.total || summary.total;
-  // console.log("total", total)
-
-  const currency = data?.checkout?.pricing?.currency || displayCurrency;
+  // Use backend totals if available (online), otherwise use local summary (offline)
+  const subtotal = totals?.subtotal ?? summary.subtotal;
+  const shipping = data?.checkout?.pricing?.shipping || totals?.shipping || 0;
+  const tax = data?.checkout?.pricing?.tax || totals?.tax || 0;
+  const total = data?.checkout?.pricing?.total || (totals ? subtotal + shipping + tax : summary.total);
+  const currency = data?.checkout?.pricing?.currency || totals?.currency || displayCurrency;
 
   return (
     <div className="lg:col-span-1">
@@ -86,54 +42,26 @@ const CartSidebar = (props: Props) => {
             <div className="flex justify-between">
               <span>Sub Total:</span>
               <span>
-                <NumericFormat
-                  value={subtotal.toFixed(2)}
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={currency || "$"}
-                  decimalScale={2}
-                  fixedDecimalScale={true}
-                />
+                {currencySymbol} {subtotal.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Shipping:</span>
               <span>
-                <NumericFormat
-                  value={shipping.toFixed(2)}
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={currency || "$"}
-                  decimalScale={2}
-                  fixedDecimalScale={true}
-                />
+                {currencySymbol} {shipping.toFixed(2)}
               </span>
             </div>
             <div className="flex justify-between">
               <span>Tax:</span>
               <span>
-                <NumericFormat
-                  value={tax.toFixed(2)}
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={currency || "$"}
-                  decimalScale={2}
-                  fixedDecimalScale={true}
-                />
+                {currencySymbol} {tax.toFixed(2)}
               </span>
             </div>
             <hr />
             <div className="flex justify-between font-bold text-lg">
               <span>TOTAL:</span>
               <span>
-                <NumericFormat
-                  value={total.toFixed(2)}
-                  displayType={"text"}
-                  thousandSeparator={true}
-                  prefix={currency || "$"}
-                  decimalScale={2}
-                  fixedDecimalScale={true}
-                />
+                {currencySymbol} {total.toFixed(2)}
               </span>
             </div>
             {!isLoggedIn && (

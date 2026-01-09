@@ -71,6 +71,7 @@ export const checkoutService = {
       body: JSON.stringify({}),
     });
     const data = await response.json()
+    console.log("validateCart response:", data);
     return data;
   },
 

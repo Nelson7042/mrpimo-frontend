@@ -1,3 +1,5 @@
+"use client";
+
 import Modal2 from "@/components/Modal2";
 import { ArrowBigRightIcon, X } from "lucide-react";
 import React, { useState, useEffect } from "react";

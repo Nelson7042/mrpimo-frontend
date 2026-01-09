@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Facebook, Twitter, Instagram } from 'lucide-react';
 
@@ -12,7 +14,7 @@ const Footer: React.FC = () => {
 
   return ( 
     <footer className="w-full bg-gradient-to-t from-[#B4CCFF] to-[#EDF2FB]">
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-10 md:py-16">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-10 md:py-16">
         {/* Newsletter Section */}
         <div className="mb-16">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">

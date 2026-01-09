@@ -1,3 +1,6 @@
+
+
+
 import React, { useEffect, useRef, useState } from "react";
 import MessageBubble from "./MessageBubble";
 import { useMessages } from "@/hooks/queries";
@@ -5,57 +8,66 @@ import { useUserStore } from "@/stores/useUserStore";
 import MessageSkeletonList from "./MessageListSkeleton";
 import { useMessageRead } from "@/hooks/useMessageRead";
 
-
 interface MessagesProps {
   selectedChat: any;
   newMessages?: any[];
 }
 
 const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
-  const [shouldScroll, setShouldScroll] = useState(false);
   const [messagesPage, setMessagesPage] = useState(1);
-  const {user} = useUserStore();
+  const { user } = useUserStore();
   const { observeMessage } = useMessageRead(selectedChat?.chatId, user?._id);
 
   const { data: messagesData, isLoading: messagesLoading } = useMessages(
     selectedChat?.chatId,
     messagesPage
   );
-  
+
+  // Refs for scrolling logic
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isInitialLoad = useRef(true);
+
+  const scrollToBottom = (behavior: "smooth" | "auto" = "smooth") => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+  };
+
+  // Handle auto-scroll logic
+  useEffect(() => {
+    if (messagesData?.messages || newMessages.length > 0) {
+      if (isInitialLoad.current) {
+        scrollToBottom("auto"); // Instant jump on first load
+        isInitialLoad.current = false;
+      } else {
+        scrollToBottom("smooth"); // Smooth slide for new incoming/outgoing messages
+      }
+    }
+  }, [messagesData?.messages, newMessages]);
+
+  // Reset initial load tracker if the chat changes
+  useEffect(() => {
+    isInitialLoad.current = true;
+    setMessagesPage(1);
+  }, [selectedChat?.chatId]);
+
   const loadOlderMessages = () => {
     if (messagesData?.hasMore) {
       setMessagesPage((prev) => prev + 1);
     }
   };
 
-  const messagesRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    // Check if content height exceeds container height
-    if (messagesRef.current) {
-      const container = messagesRef.current;
-      setShouldScroll(container.scrollHeight > container.clientHeight);
-    }
-  }, [messagesData?.messages]);
-
-  if (messagesLoading) {
-    return (
-      <MessageSkeletonList />
-    );
+  if (messagesLoading && messagesPage === 1) {
+    return <MessageSkeletonList />;
   }
 
   return (
     <div
-      ref={messagesRef}
-      className={`flex-1 p-4 ${
-        shouldScroll ? "overflow-y-auto" : "overflow-y-hidden"
-      }`}
+      className="flex-1 p-4 overflow-y-auto"
       style={{
-        minHeight: "200px", // Minimum height to prevent tiny chat area
-        maxHeight: "calc(100vh - 180px)", // Maximum height to prevent overflow
+        minHeight: "200px",
+        maxHeight: "calc(100vh - 180px)",
       }}
     >
-      {!messagesData?.messages || messagesData.messages.length === 0 ? (
+      {!messagesData?.messages || (messagesData.messages.length === 0 && newMessages.length === 0) ? (
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -64,7 +76,6 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
               </svg>
             </div>
             <p className="text-gray-500">No messages yet</p>
-            <p className="text-gray-400 text-sm mt-1">Start the conversation!</p>
           </div>
         </div>
       ) : (
@@ -77,14 +88,22 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
               Load older messages
             </button>
           )}
-          {[...messagesData.messages, ...newMessages].map((message: any) => (
-            <MessageBubble
-              key={message._id || message.id}
-              message={message}
-              isSent={message.receiverId?._id !== user?._id || message.senderId === user?._id}
-              onMessageVisible={observeMessage}
-            />
-          ))}
+
+          {[...(messagesData?.messages || []), ...newMessages].map((message: any) => {
+            // Robust check for sender identity (handles both string ID and populated object)
+
+            return (
+              <MessageBubble
+                key={message._id || message.id || `temp-${message.createdAt}`}
+                message={message}
+                isSent={message.receiverId?._id !== user?._id || message.senderId === user?._id}
+                onMessageVisible={observeMessage}
+              />
+            );
+          })}
+          
+          {/* Dummy div to anchor the scroll */}
+          <div ref={messagesEndRef} className="h-0 w-0" />
         </div>
       )}
     </div>

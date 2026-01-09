@@ -142,7 +142,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto ">
+      <div className="w-full ">
         <Breadcrumbs
           items={manualBreadcrumbs}
           onItemClick={handleBreadcrumbClick}

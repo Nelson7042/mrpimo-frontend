@@ -316,7 +316,7 @@
 //   if (!isLoading && buyItems && buyItems.length < 1) {
 //     return (
 //       <div className="min-h-screen bg-gray-50">
-//         <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]   md:py-8 lg:py-10 font-roboto  ">
+//         <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12   md:py-8 lg:py-10 font-roboto  ">
 //           <div className="pt-4">
 //             {/* Breadcrumb */}
 //             <Breadcrumbs
@@ -346,7 +346,7 @@
 //   }
 
 //   return (
-//       <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]  md:py-10 lg:py-10">
+//       <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12  md:py-10 lg:py-10">
 //         <div className="pt-4">
 //           {/* Breadcrumb */}
 //           <Breadcrumbs

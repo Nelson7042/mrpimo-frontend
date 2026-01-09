@@ -1,3 +1,5 @@
+"use client";
+
 import FullButton from "@/components/FullButton";
 import { X } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";

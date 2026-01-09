@@ -61,10 +61,17 @@ const Page = () => {
       // Listen for persisted messages
       socket.on('persisted-message', (message: any) => {
         console.log('Received persisted-message:', message);
-        setNewMessages(prev => ({
-          ...prev,
-          [message.chatId]: [...(prev[message.chatId] || []), message]
-        }));
+        setNewMessages(prev => {
+          const currentMessages = prev[message.chatId] || [];
+          // Remove optimistic message with same content and add real message
+          const filteredMessages = currentMessages.filter(msg => 
+            !(msg.isOptimistic && msg.message === message.message && msg.senderId?._id === message.senderId)
+          );
+          return {
+            ...prev,
+            [message.chatId]: [...filteredMessages, message]
+          };
+        });
       });
 
       socket.on('error', (message: any) => {
@@ -122,6 +129,22 @@ const Page = () => {
         chatId: selectedChat.chatId,
       };
 
+      // Add optimistic message immediately with proper structure
+      const optimisticMessage = {
+        _id: `temp-${Date.now()}`,
+        senderId: { _id: user._id, name: user.profile?.firstName || 'You' },
+        receiverId: { _id: currentGroup._id },
+        message: messageText,
+        chatId: selectedChat.chatId,
+        createdAt: new Date().toISOString(),
+        isOptimistic: true
+      };
+      
+      setNewMessages(prev => ({
+        ...prev,
+        [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
+      }));
+
       socket.emit('send_message', messageData);
     }
   };
@@ -145,7 +168,7 @@ const Page = () => {
             </div>
           </div>
         </div>
-        <div className="flex gap-x-2 h-[80vh]">
+        <div className="flex gap-x-2 h-[calc(100vh-200px)]">
           <div
             className={`${
               isChatOpen ? "hidden lg:block" : "block"
@@ -283,7 +306,7 @@ const Page = () => {
           </div>
         </div>
         {isChatOpen && (
-          <div className="lg:hidden h-[80vh] p-2">
+          <div className="lg:hidden h-full p-2">
             <div className="bg-white border rounded-2xl border-blue-300 w-full h-full flex flex-col">
               {/* Chat container header */}
               {selectedChat && (

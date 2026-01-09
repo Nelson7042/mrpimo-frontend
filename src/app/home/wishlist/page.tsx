@@ -38,7 +38,7 @@ import { useEffect } from "react"
     // Don't render anything if user is not authenticated
     if (!user) {
       return (
-        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-6 md:py-10 lg:py-10">
+        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-6 md:py-10 lg:py-10">
           <div className="p-8 text-center text-gray-500">
             <Heart className="w-12 h-12 mx-auto mb-4 text-gray-300" />
             <h3 className="text-lg font-medium mb-2">Please log in to view your wishlist</h3>
@@ -143,7 +143,7 @@ import { useEffect } from "react"
      <>
   
   
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] pt-6 md:py-10 lg:py-10">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-6 md:py-10 lg:py-10">
           <div className=" ">
             {/* Breadcrumb */}
             <Breadcrumbs

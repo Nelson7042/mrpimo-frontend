@@ -1,3 +1,5 @@
+"use client";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import {
@@ -91,9 +93,9 @@ export const useWishlist = () => {
     queryFn: wishlistApi.getWishlist,
     enabled: !!user?._id, // Only fetch when user is logged in
     refetchOnWindowFocus: false,
-    retry: (failureCount, error) => {
+    retry: (failureCount, error:any) => {
       // Don't retry if it's a guest mode or session expired error
-      if (error === "Guest mode" || error === "Session expired") {
+      if (error.message === "Guest mode" || error.message === "Session expired") {
         return false;
       }
       return failureCount < 3;

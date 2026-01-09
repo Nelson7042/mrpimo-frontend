@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 export default function Cta() {
   return (
     <section className="w-full bg-gradient-to-r from-blue-600 to-blue-500 overflow-hidden">
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-7 lg:gap-12 items-center">
           {/* Left Content */}
           <div className="text-white py-8  md:py-8 lg:py-10">

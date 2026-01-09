@@ -51,9 +51,6 @@ const Page = () => {
 
   const groupedChats = chatsData?.groupedChats || [];
 
-  console.log("Chats data:", chatsData);
-  console.log("Grouped Chats:", groupedChats);
-
   // Handle focused chat from product page
   useEffect(() => {
     const focusedChatId = localStorage.getItem('focusedChatId');
@@ -81,11 +78,17 @@ const Page = () => {
       
       // Listen for persisted messages
       socket.on('persisted-message', (message: any) => {
-        console.log('Received persisted-message:', message);
-        setNewMessages(prev => ({
-          ...prev,
-          [message.chatId]: [...(prev[message.chatId] || []), message]
-        }));
+        setNewMessages(prev => {
+          const currentMessages = prev[message.chatId] || [];
+          // Remove optimistic message with same content and add real message
+          const filteredMessages = currentMessages.filter(msg => 
+            !(msg.isOptimistic && msg.message === message.message && msg.senderId?._id === message.senderId)
+          );
+          return {
+            ...prev,
+            [message.chatId]: [...filteredMessages, message]
+          };
+        });
       });
 
       socket.on('error', (message: any) => {
@@ -115,8 +118,6 @@ const Page = () => {
   }, [selectedChat?.chatId]);
 
   const handleChatSelect = (chat: any, product: any, group?: any) => {
-    console.log("Selected chat:", chat);
-    console.log("Selected product:", product);
     setSelectedChat(chat);
     setSelectedProduct(product);
     if (group) {
@@ -132,20 +133,37 @@ const Page = () => {
   };
 
   const handleSendMessage = (messageText: string) => {
-    if (!selectedChat || !user || !currentGroup) return;
-    
-    const socket = SocketService.getSocket();
-    if (socket) {
-      const messageData = {
-        senderId: user._id,
-        receiverId: currentGroup._id,
-        message: messageText,
-        chatId: selectedChat.chatId,
-      };
+  if (!selectedChat || !user || !currentGroup) return;
+  
+  const socket = SocketService.getSocket();
+  if (socket) {
+    // 1. Match the backend payload
+    const messageData = {
+      senderId: user._id,
+      receiverId: currentGroup._id,
+      message: messageText, // Keep this if your backend expects "message"
+      chatId: selectedChat.chatId,
+    };
 
-      socket.emit('send_message', messageData);
-    }
-  };
+    // 2. Match the MessageBubble interface exactly
+    const optimisticMessage = {
+      _id: `temp-${Date.now()}`,
+      senderId: { _id: user._id }, 
+      text: messageText, // CHANGED FROM 'message' TO 'text'
+      chatId: selectedChat.chatId,
+      createdAt: new Date().toISOString(),
+      read: false,
+      isOptimistic: true
+    };
+    
+    setNewMessages(prev => ({
+      ...prev,
+      [selectedChat.chatId]: [...(prev[selectedChat.chatId] || []), optimisticMessage]
+    }));
+
+    socket.emit('send_message', messageData);
+  }
+};
 
   return (
     <div className="">
@@ -166,7 +184,7 @@ const Page = () => {
             </div> */}
           </div>
         </div>
-        <div className="flex gap-x-2 h-[calc(100vh-400px)]" style={{ minHeight: '500px' }}>
+        <div className="flex gap-x-2 h-[calc(100vh-200px)]" style={{ minHeight: '600px' }}>
           <div
             className={`${
               isChatOpen ? "hidden lg:block" : "block"
@@ -250,7 +268,7 @@ const Page = () => {
           </div>
           <div className="hidden lg:block lg:w-[55%] xl:w-[60%] border border-blue-300 bg-white">
             {selectedChat ? (
-              <div className="w-full h-[calc(100vh-400px)] flex flex-col">
+              <div className="w-full h-full flex flex-col">
                 <ChatContainerHeader
                   chat={selectedChat}
                   product={selectedProduct}
@@ -262,7 +280,7 @@ const Page = () => {
                 />
                 {/* Messages */}
                 <div className="flex-1 overflow-hidden flex flex-col">
-                  <div className="flex-1 overflow-y-auto">
+                  <div className="flex-1">
                     <Messages 
                       selectedChat={selectedChat} 
                       newMessages={newMessages[selectedChat?.chatId] || []}
@@ -321,7 +339,7 @@ const Page = () => {
               <div className="flex-1 overflow-hidden flex flex-col">
                 {selectedChat ? (
                   <>
-                    <div className="flex-1 overflow-y-auto">
+                    <div className="flex-1 ">
                       <Messages 
                         selectedChat={selectedChat} 
                         newMessages={newMessages[selectedChat?.chatId] || []}

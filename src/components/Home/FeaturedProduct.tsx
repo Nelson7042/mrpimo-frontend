@@ -40,6 +40,9 @@ export default function FeaturedProducts() {
       const response = await fetch(`${AllProduct}/featured?${params}`);
       if (!response.ok) throw new Error("Failed to fetch featured products");
       const data = await response.json();
+      console.log('Featured Products API Response:', data);
+      console.log('Featured Products Array:', data.products);
+      console.log('Featured Products Count:', data.products?.length || 0);
       return data.products || [];
     },
     refetchOnWindowFocus: false,
@@ -92,7 +95,7 @@ export default function FeaturedProducts() {
 
   if (isLoading) {
     return (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
         {/* Header Skeleton */}
         <div className="flex flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
           <div className="h-8 bg-gray-200 rounded w-56 animate-pulse"></div>
@@ -125,7 +128,7 @@ export default function FeaturedProducts() {
 
   // if (isError) {
   //   return (
-  //     <div className="max-w-7xl mx-auto px-4">
+  //     <div className="w-full px-4">
   //       <div className="flex items-center justify-center min-h-[400px]">
   //         <div className="text-center">
   //           <p className="text-red-600 mb-4">
@@ -142,7 +145,7 @@ export default function FeaturedProducts() {
 
   return (
     featuredProducts.length > 0 ? (
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
         {/* Header */}
         <div className="flex flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
             <h1 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
@@ -208,7 +211,7 @@ export default function FeaturedProducts() {
       </div>
     ) : (
       <></>
-      // <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
+      // <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
       //   <div className="flex items-center justify-center min-h-[400px]">
       //     <div className="text-center">
       //       <p className="text-gray-600 mb-4">No featured products found</p>

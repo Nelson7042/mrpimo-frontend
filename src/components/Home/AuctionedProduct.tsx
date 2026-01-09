@@ -248,7 +248,7 @@ const AuctionedProduct = () => {
 
   // if (isLoading) {
   //   return (
-  //     <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
+  //     <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
   //       <div className="flex items-center justify-center min-h-[400px]">
   //         <div className="flex flex-col items-center gap-4">
   //           <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
@@ -260,7 +260,7 @@ const AuctionedProduct = () => {
   // }
 
   return (
-    <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8 md:py-10 lg:py-10">
+    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
       <div className="flex flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
           <h1 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
             Auction Products

@@ -29,6 +29,23 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
   };
 
   const messagesRef = useRef<HTMLDivElement>(null);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messagesData?.messages, newMessages]);
+
+  // Auto-scroll when chat changes
+  useEffect(() => {
+    if (selectedChat?.chatId && messagesEndRef.current) {
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+      }, 100);
+    }
+  }, [selectedChat?.chatId]);
 
   useEffect(() => {
     // Check if content height exceeds container height
@@ -44,6 +61,8 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
     );
   }
 
+  const allMessages = [...(messagesData?.messages || []), ...newMessages];
+
   return (
     <div
       ref={messagesRef}
@@ -55,7 +74,7 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
         maxHeight: "calc(100vh - 180px)", // Maximum height to prevent overflow
       }}
     >
-      {!messagesData?.messages || messagesData.messages.length === 0 ? (
+      {allMessages.length === 0 ? (
         <div className="h-full flex items-center justify-center">
           <div className="text-center">
             <div className=" w-10 h-10 md:w-16 md:h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -77,7 +96,7 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
               Load older messages
             </button>
           )}
-          {[...messagesData.messages, ...newMessages].map((message: any) => (
+          {allMessages.map((message: any) => (
             <MessageBubble
               key={message._id || message.id}
               message={message}
@@ -85,6 +104,7 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
               onMessageVisible={observeMessage}
             />
           ))}
+          <div ref={messagesEndRef} />
         </div>
       )}
     </div>

@@ -97,11 +97,11 @@ export default function CartPage() {
   const isLoggedIn = !!user;
   const { openModal } = useAuthModalStore();
 
+  const hasLoadedRef = useRef(false);
+
   useCartSync();
 
-  useEffect(() => {
-    loadCart();
-  }, [isLoggedIn, loadCart]);
+  // Remove this effect since useCartSync already handles loading
 
   const [showBidModal, setShowBidModal] = useState(false);
   const [selectedAuctionItem, setSelectedAuctionItem] = useState<any>(null);
@@ -159,8 +159,11 @@ export default function CartPage() {
     }
   }, []);
 
-  const handleUpdateQuantity = useCallback(
-    async (item: any, newQuantity: number) => {
+  const [pendingUpdates, setPendingUpdates] = useState<{ [key: string]: number }>({});
+  const updateTimers = useRef<{ [key: string]: NodeJS.Timeout }>({});
+
+  const handleQuantityChange = useCallback(
+    (item: any, newQuantity: number) => {
       if (newQuantity < 1) return;
 
       const productId = item?.product?._id;
@@ -169,19 +172,45 @@ export default function CartPage() {
         : undefined;
       const key = `${productId}-${item?.selectedVariant?.optionId}`;
 
+      // Update UI immediately for better UX
+      setPendingUpdates(prev => ({ ...prev, [key]: newQuantity }));
+
       // Clear existing timer
-      if (debounceTimers.current[key]) {
-        clearTimeout(debounceTimers.current[key]);
+      if (updateTimers.current[key]) {
+        clearTimeout(updateTimers.current[key]);
       }
 
-      // Set new timer
-      debounceTimers.current[key] = setTimeout(async () => {
-        await updateQuantity(productId, newQuantity, variantKey);
-        await checkAvailableQuantity(item);
-      }, 300);
+      // Debounce the actual update
+      updateTimers.current[key] = setTimeout(async () => {
+        try {
+          await updateQuantity(productId, newQuantity, variantKey);
+          setPendingUpdates(prev => {
+            const updated = { ...prev };
+            delete updated[key];
+            return updated;
+          });
+        } catch (error) {
+          // Revert UI on error
+          setPendingUpdates(prev => {
+            const updated = { ...prev };
+            delete updated[key];
+            return updated;
+          });
+        }
+      }, 500);
     },
-    [updateQuantity, checkAvailableQuantity]
+    [updateQuantity]
   );
+
+  const getDisplayQuantity = (item: any) => {
+    const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
+    return pendingUpdates[key] ?? item.quantity;
+  };
+
+  const isQuantityPending = (item: any) => {
+    const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
+    return key in pendingUpdates;
+  };
 
   useEffect(() => {
     // Check quantities only once on mount or when cart items change
@@ -244,9 +273,7 @@ export default function CartPage() {
               <div className="divide-y overflow-x-auto">
                 {buyItems.map((item) => (
                   <div
-                    key={
-                      item.product?._id + (item.selectedVariant?.optionId || "")
-                    }
+                    key={`${item.product?._id}::${item.selectedVariant?.variantId || ''}::${item.selectedVariant?.optionId || ''}`}
                     className="p-4"
                   >
                     {/* Mobile Layout */}
@@ -336,13 +363,14 @@ export default function CartPage() {
                             size="sm"
                             className="h-8 w-8 p-0 rounded-md"
                             onClick={() =>
-                              handleUpdateQuantity(item, item.quantity - 1)
+                              handleQuantityChange(item, getDisplayQuantity(item) - 1)
                             }
+                            disabled={isQuantityPending(item)}
                           >
                             <Minus className="w-3.5 h-3.5" />
                           </Button>
                           <span className="w-10 text-center text-sm font-medium">
-                            {item.quantity}
+                            {getDisplayQuantity(item)}
                           </span>
                           <Button
                             variant="outline"
@@ -352,12 +380,13 @@ export default function CartPage() {
                               const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
                               const available = availableQuantities[key];
                               return (
-                                available !== undefined &&
-                                item.quantity >= available
+                                isQuantityPending(item) ||
+                                (available !== undefined &&
+                                getDisplayQuantity(item) >= available)
                               );
                             })()}
                             onClick={() =>
-                              handleUpdateQuantity(item, item.quantity + 1)
+                              handleQuantityChange(item, getDisplayQuantity(item) + 1)
                             }
                           >
                             <Plus className="w-3.5 h-3.5" />
@@ -472,13 +501,14 @@ export default function CartPage() {
                             size="sm"
                             className="h-8 w-8 p-0"
                             onClick={() =>
-                              handleUpdateQuantity(item, item.quantity - 1)
+                              handleQuantityChange(item, getDisplayQuantity(item) - 1)
                             }
+                            disabled={isQuantityPending(item)}
                           >
                             <Minus className="w-4 h-4" />
                           </Button>
                           <span className="w-8 text-center">
-                            {item.quantity.toString().padStart(2, "0")}
+                            {getDisplayQuantity(item).toString().padStart(2, "0")}
                           </span>
                           <Button
                             variant="outline"
@@ -488,12 +518,13 @@ export default function CartPage() {
                               const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
                               const available = availableQuantities[key];
                               return (
-                                available !== undefined &&
-                                item.quantity >= available
+                                isQuantityPending(item) ||
+                                (available !== undefined &&
+                                getDisplayQuantity(item) >= available)
                               );
                             })()}
                             onClick={() =>
-                              handleUpdateQuantity(item, item.quantity + 1)
+                              handleQuantityChange(item, getDisplayQuantity(item) + 1)
                             }
                           >
                             <Plus className="w-4 h-4" />
@@ -532,7 +563,7 @@ export default function CartPage() {
   if (!isLoading && buyItems && buyItems.length < 1) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px]   md:py-8 lg:py-10 font-roboto  ">
+        <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 md:py-8 lg:py-10 font-roboto">
           <div className="pt-4">
             {/* Breadcrumb */}
             <Breadcrumbs
@@ -565,7 +596,7 @@ export default function CartPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="max-w-7xl mx-auto px-4 md:px-[42px] lg:px-[80px] py-8  md:py-8 lg:py-10 font-roboto  ">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-8 lg:py-10 font-roboto">
         <div className="pt-4">
           {/* Breadcrumb */}
           <Breadcrumbs
