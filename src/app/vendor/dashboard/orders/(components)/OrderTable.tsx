@@ -197,10 +197,12 @@ const OrderTable = (props: Props) => {
                       className="text-blue-600 hover:text-blue-900 flex items-center gap-1 cursor-pointer"
                       onClick={() => {
                         router.push(`/vendor/dashboard/orders/${order._id}`);
+
                       }}
                     >
                       <Eye size={16} />
                       <span>View</span>
+                      {order._id}
                     </button>
                   </td>
                 </tr>

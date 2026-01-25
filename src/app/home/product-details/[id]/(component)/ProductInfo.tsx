@@ -325,6 +325,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     }
   };
 
+
+      console.log("Shipping address", user )
+
   const handleBuyNow = async () => {
     if (!user) {
       openModal();
@@ -340,6 +343,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     const shippingAddress = user?.addresses?.find(
       (addr) => addr.type === "shipping" && addr.isDefault
     );
+
 
     console.log("Shipping address", shippingAddress);
     if (!shippingAddress) {

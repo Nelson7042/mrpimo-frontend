@@ -136,6 +136,10 @@ export default function CategoryPage() {
       limit: 12,
     };
 
+    if (filters.search) {
+      filterParams.search = filters.search;
+    }
+
     if (filters.subCategories.length > 0) {
       filterParams.subCategory1 = filters.subCategories[0];
       if (filters.subCategories[1])

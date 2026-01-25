@@ -100,7 +100,7 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
             <MessageBubble
               key={message._id || message.id}
               message={message}
-              isSent={message.receiverId?._id !== user?._id || message.senderId === user?._id}
+              isSent={message.senderId?._id === user?._id}
               onMessageVisible={observeMessage}
             />
           ))}

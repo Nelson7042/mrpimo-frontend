@@ -5,7 +5,7 @@ import { Check, CheckCheck } from "lucide-react";
 interface MessageProps {
   message: {
     _id: string;
-    text: string;
+    message: string;
     createdAt: string;
     read: boolean;
     senderId: any;

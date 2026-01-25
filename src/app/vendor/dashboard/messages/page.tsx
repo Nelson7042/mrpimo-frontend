@@ -55,12 +55,9 @@ const Page = () => {
     if (user?._id) {
       const socket = SocketService.connect(user._id);
       
-      // Authenticate user
-      socket.emit('authenticate', { userId: user._id });
-      
       // Listen for persisted messages
       socket.on('persisted-message', (message: any) => {
-        console.log('Received persisted-message:', message);
+        // console.log('Received persisted-message:', message);
         setNewMessages(prev => {
           const currentMessages = prev[message.chatId] || [];
           // Remove optimistic message with same content and add real message

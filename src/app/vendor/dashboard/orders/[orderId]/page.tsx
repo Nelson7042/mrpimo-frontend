@@ -52,7 +52,7 @@ export default function OrderDetailsPage() {
   const getDisplayStatus = (status?: string): string => {
     if (!status) return "Preparing Shipment";
     const statusLower = status.toLowerCase();
-    if (statusLower.includes("shipped") || statusLower === "delivered") {
+    if (statusLower === "senttowarehouse" || statusLower === "shipped" || statusLower === "delivered") {
       return "Shipped";
     }
     return "Preparing Shipment";
@@ -61,9 +61,9 @@ export default function OrderDetailsPage() {
   // Map display status to API status
   const getApiStatus = (displayStatus: string): string => {
     if (displayStatus === "Shipped") {
-      return "shipped";
+      return "sentToWarehouse";
     }
-    return "preparing_shipment";
+    return "preparingOrder";
   };
 
   const [vendorShippingState, setVendorShippingState] =
@@ -193,7 +193,7 @@ export default function OrderDetailsPage() {
                 />
               )}
               {showDropdown && (
-                <div className="border border-gray-500 rounded-lg bg-white mt-2 shadow-lg absolute z-10 top-7 lg:right-0 right-[-22] w-40 text-gray-800">
+                <div className="border border-gray-500 rounded-lg bg-white mt-2 shadow-lg absolute z-10 top-7 lg:right-0 right-[-22] w-48 text-gray-800">
                   <h3 className="text-[#2563EB] pt-3 px-2 pb-1 border-b border-b-black">
                     Order Status
                   </h3>
@@ -203,13 +203,13 @@ export default function OrderDetailsPage() {
                     }
                     className="text-xs hover:bg-gray-100 cursor-pointer px-2 py-1 border-b border-gray-200"
                   >
-                    Preparing Shipment
+                    Preparing Order
                   </div>
                   <div
                     onClick={() => handleShippingStateChange("Shipped")}
                     className="text-xs hover:bg-gray-100 hover:rounded-b-lg cursor-pointer px-2 py-1"
                   >
-                    Shipped
+                    Sent to Warehouse
                   </div>
                 </div>
               )}
@@ -224,18 +224,18 @@ export default function OrderDetailsPage() {
             <p>
               Delivering to{" "}
               <span className="font-medium">
-                {order?.shipping?.address?.street},{" "}
-                {order?.shipping?.address?.city},{" "}
-                {order?.shipping?.address?.state},{" "}
-                {order?.shipping?.address?.country}
+                {order?.items?.[0]?.deliveryAddress?.street},{" "}
+                {order?.items?.[0]?.deliveryAddress?.city},{" "}
+                {order?.items?.[0]?.deliveryAddress?.state},{" "}
+                {order?.items?.[0]?.deliveryAddress?.country}
               </span>
             </p>
             <p className="text-gray-500">
               Estimated arrival on:{" "}
               <span className="font-medium text-black">
-                {new Date(
-                  order?.shipping?.estimatedDelivery
-                ).toLocaleDateString()}
+                {order?.shipments?.[0]?.shipping?.estimatedDelivery
+                  ? new Date(order.shipments[0].shipping.estimatedDelivery).toLocaleDateString()
+                  : "N/A"}
               </span>
             </p>
           </div>
@@ -250,13 +250,13 @@ export default function OrderDetailsPage() {
                   {vendorShippingState === "Shipped" && (
                     <CheckCircle className="inline-block size-4 mr-1 text-green-500" />
                   )}
-                  Preparing Shipment
+                  Preparing Order
                 </span>
                 <span className="text-xs text-gray-600">
                   {vendorShippingState === "Shipped" && (
                     <CheckCircle className="inline-block size-4 mr-1 text-green-500" />
                   )}
-                  Shipped
+                  Sent to Warehouse
                 </span>
               </div>
               {/* Progress Bars */}
@@ -341,7 +341,7 @@ export default function OrderDetailsPage() {
                 </div>
               </div>
               <span className="text-sm font-semibold text-gray-800">
-                {getCurrencySymbol(order?.payment?.currency || "USD")}
+                {getCurrencySymbol(order?.paymentId?.currency || "USD")}
                 {item.price.toFixed(2)}
               </span>
             </div>
@@ -359,26 +359,26 @@ export default function OrderDetailsPage() {
           {[
             {
               label: "Payment Method",
-              value: order?.payment?.method?.toUpperCase() || "N/A",
+              value: order?.paymentId?.method?.toUpperCase() || "N/A",
             },
             {
               label: "Payment Status",
               value: (
                 <span
                   className={`px-2 py-1 text-xs font-medium rounded-full ${getPaymentStatusColor(
-                    order?.payment?.status
+                    order?.paymentId?.status
                   )}`}
                 >
-                  {order?.payment?.status || "N/A"}
+                  {order?.paymentId?.status || "N/A"}
                 </span>
               ),
             },
             {
               label: "Subtotal",
-              value: order?.payment?.amount
-                ? order.payment.amount.toLocaleString("en-US", {
+              value: order?.paymentId?.amount
+                ? order.paymentId.amount.toLocaleString("en-US", {
                     style: "currency",
-                    currency: order?.payment?.currency || "USD",
+                    currency: order?.paymentId?.currency || "USD",
                   })
                 : "N/A",
             },
