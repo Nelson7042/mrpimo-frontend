@@ -26,6 +26,16 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
   const [authState, setAuthState] = useState<"login" | "recover" | "otp">(
     "login"
   );
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    try {
+      window.location.href = `${API_BASE_URL}/auth/google`;
+    } catch (error) {
+      setIsGoogleLoading(false);
+    }
+  };
 
   // Close modal if user is logged in
   useEffect(() => {
@@ -131,10 +141,9 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
 
               <div className=" mt-5 md:mt-8 flex flex-col gap-4">
                 <button
-                  onClick={() =>
-                    (window.location.href = `${API_BASE_URL}/auth/google`)
-                  }
-                  className={`w-full py-2 md:py-3 text-sm text-center px-4 flex items-center justify-center  bg-[#F6B76F]  text-[#121212] rounded-md hover:bg-[#F5A94E] transition-colors`}
+                  onClick={handleGoogleLogin}
+                  disabled={isGoogleLoading}
+                  className={`w-full py-2 md:py-3 text-sm text-center px-4 flex items-center justify-center  bg-[#F6B76F]  text-[#121212] rounded-md hover:bg-[#F5A94E] transition-colors disabled:opacity-50 disabled:cursor-not-allowed`}
                 >
                   <svg
                     width="25"
@@ -161,7 +170,9 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
                     />
                   </svg>
 
-                  <span className="ml-2">Sign in with Google</span>
+                  <span className="ml-2">
+                    {isGoogleLoading ? "Redirecting..." : "Sign in with Google"}
+                  </span>
                 </button>
 
                 <button

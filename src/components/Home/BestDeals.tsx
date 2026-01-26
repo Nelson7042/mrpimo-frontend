@@ -11,7 +11,6 @@ import "swiper/css/navigation";
 import { Button } from "@/components/ui/button";
 import Wishlist from "@/components/client-component/Wishlist";
 
-
 const CountdownTimer = () => {
   const [timeLeft, setTimeLeft] = useState({
     days: 16,
@@ -79,8 +78,8 @@ const StarRating = ({
             index < Math.floor(rating)
               ? "fill-yellow-400 text-yellow-400"
               : index < rating
-              ? "fill-yellow-200 text-yellow-400"
-              : "text-gray-300"
+                ? "fill-yellow-200 text-yellow-400"
+                : "text-gray-300"
           }`}
         />
       ))}
@@ -108,6 +107,8 @@ const ProductCard = ({
         },
       }}
       as={`/home/product-details/${product?._id}`}
+            className="min-h-[266px]"
+
     >
       <div
         className={`group bg-gradient-to-br from-gray-100 to-gray-200 rounded-md shadow-sm hover:shadow-xl transition-all duration-300 transform hover:-translate-y-1 ${
@@ -131,13 +132,17 @@ const ProductCard = ({
           </div>
 
           {/* Wishlist */}
-          <div 
+          <div
             className="absolute top-1 right-1 sm:top-3 sm:right-3 rounded-full shadow-md hover:shadow-lg transition-all duration-200 flex items-center justify-center z-10"
             onClick={(e) => e.preventDefault()}
           >
             <Wishlist
               productData={product}
-              price={product.priceInfo?.displayPrice || product.priceInfo?.originalPrice || 0}
+              price={
+                product.priceInfo?.displayPrice ||
+                product.priceInfo?.originalPrice ||
+                0
+              }
             />
           </div>
         </div>
@@ -198,7 +203,7 @@ const ProductCard = ({
             <div className="flex flex-col">
               <span
                 className={`font-bold text-gray-900 ${
-                  isLarge ? "text-xl sm:text-2xl" : "text-base sm:text-lg"
+                  isLarge ? "text-sm md:text-2xl" : "text-sm sm:text-lg"
                 }`}
               >
                 {`${product?.priceInfo?.currencySymbol || "₦"} ${
@@ -210,7 +215,7 @@ const ProductCard = ({
 
             <div className="flex items-center gap-2">
               <span
-                className={`text-xs px-2 sm:px-3 py-1 rounded-full bg-gray-300 text-gray-600`}
+                className={`text-[8px] md:text-xs px-2 sm:px-3 py-1 rounded-full bg-gray-300 text-gray-600`}
               >
                 {product?.inventory?.listing.type === "instant"
                   ? "Buy Now"
@@ -308,7 +313,10 @@ export default function BestDeals() {
           <div className="lg:w-2/3">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 h-full">
               {Array.from({ length: 4 }).map((_, index) => (
-                <div key={index} className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 animate-pulse">
+                <div
+                  key={index}
+                  className="bg-white rounded-lg border border-gray-200 p-3 sm:p-4 animate-pulse"
+                >
                   <div className="h-24 md:h-34 bg-gray-200 rounded-lg mb-3"></div>
                   <div className="space-y-2">
                     <div className="h-3 bg-gray-200 rounded w-1/2"></div>
@@ -360,28 +368,23 @@ export default function BestDeals() {
             <h1 className="text-responsive-xl font-semibold text-gray-900">
               Our Best Deals
             </h1>
-            <CountdownTimer />
+            {/* <CountdownTimer /> */}
           </div>
-          <button className="btn-mobile flex items-center gap-2 text-blue-600 hover:text-blue-700 font-normal transition-colors group self-start sm:self-auto underline">
-            <span className="text-sm">See All Deals</span>
-            <ArrowRight
-              size={16}
-              className="group-hover:translate-x-1 transition-transform"
-            />
-          </button>
+          <Link href="/home/best-deals">
+            <button className="btn-mobile flex items-center gap-2 text-blue-600 hover:text-blue-700 font-normal transition-colors group self-start sm:self-auto underline">
+              <span className="text-sm">See All Deals</span>
+              <ArrowRight
+                size={16}
+                className="group-hover:translate-x-1 transition-transform"
+              />
+            </button>
+          </Link>
         </div>
 
         {/* Products Layout */}
-        <div className="flex flex-col lg:flex-row gap-4 sm:gap-6">
-          {/* Main Featured Product */}
-          <div className="lg:w-1/3">
-            <div className="h-full">
-              <ProductCard product={products[0]} isLarge={true} />
-            </div>
-          </div>
-
+        <div className="lg:hidden gap-4 sm:gap-6">
           {/* Other Products Swiper */}
-          <div className="lg:w-2/3">
+          <div className="">
             <MobileSwiper
               items={otherProducts}
               renderItem={(product: any) => <ProductCard product={product} />}
@@ -389,6 +392,19 @@ export default function BestDeals() {
               prevClass="other-products-prev"
               nextClass="other-products-next"
             />
+          </div>
+        </div>
+        <div className="lg:flex flex-col hidden lg:flex-row gap-4 sm:gap-6">
+          {/* Main Featured Product */}
+          <div className="lg:w-1/3">
+            <div className="h-full">
+              <ProductCard product={products[0]} isLarge={true} />
+            </div>
+          </div>
+          <div className="lg:w-2/3 grid grid-cols-3 gap-4">
+            {otherProducts.slice(0, 6)?.map((product: any) => (
+              <ProductCard product={product} />
+            ))}
           </div>
         </div>
       </div>

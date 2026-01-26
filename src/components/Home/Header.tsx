@@ -118,10 +118,10 @@ const Header = () => {
   };
 
   const pages = [
-    {
-      name: "Shop",
-      // link: "/home",
-    },
+    // {
+    //   name: "Shop",
+    //   // link: "/home",
+    // },
     {
       name: "Best Deals",
       link: "/about",
@@ -134,10 +134,10 @@ const Header = () => {
       name: "Track Order ",
       link: "/contact",
     },
-    {
-      name: "Customer Care",
-      link: "/contact",
-    },
+    // {
+    //   name: "Customer Care",
+    //   link: "/contact",
+    // },
   ];
   
   return (

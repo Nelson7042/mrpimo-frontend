@@ -121,7 +121,7 @@ export const ProductCard = ({
             <div className="flex flex-col">
               <span
                 className={`font-bold text-gray-900 ${
-                  isLarge ? "text-xl sm:text-2xl" : "text-base sm:text-lg"
+                  isLarge ? "text-xl sm:text-2xl" : "text-sm sm:text-lg"
                 }`}
               >
                 {`${product?.priceInfo?.currencySymbol || "₦"} ${
@@ -133,7 +133,7 @@ export const ProductCard = ({
 
             <div className="flex items-center gap-2">
               <span
-                className={`text-xs px-2 sm:px-3 py-1 rounded-full bg-gray-300 text-gray-600`}
+                className={`text-[8px] md:text-xs px-2 sm:px-3 py-1 rounded-full bg-gray-300 text-gray-600`}
               >
                 {product?.inventory?.listing.type === "instant"
                   ? "Buy Now"

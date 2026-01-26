@@ -262,13 +262,17 @@ export default function CheckoutPage() {
           // Handle Paystack payment - dynamic import to avoid SSR issues
           const { default: PaystackPop } = await import('@paystack/inline-js');
           
+          // Get shipping and billing addresses
+          const shippingAddr = addresses.find(addr => addr.type === 'shipping');
+          const billingAddr = sameAsShipping ? shippingAddr : addresses.find(addr => addr.type === 'billing');
+          
           const response = await fetchWithAuth(`
             ${API_BASE_URL}/payments/paystack/initialize`,
             {
               method: "POST",
               body: JSON.stringify({
                 email: user.email,
-                amount: total, // Send amount in major units (NGN)
+                amount: total,
                 currency: currency,
                 metadata: {
                   items: items.map((item: any) => ({
@@ -277,6 +281,21 @@ export default function CheckoutPage() {
                     optionId: item.optionId,
                     quantity: item.quantity,
                   })),
+                  shippingAddress: {
+                    street: shippingAddr?.street,
+                    city: shippingAddr?.city,
+                    state: shippingAddr?.state,
+                    country: shippingAddr?.country,
+                    postalCode: shippingAddr?.postalCode,
+                  },
+                  billingAddress: {
+                    street: billingAddr?.street,
+                    city: billingAddr?.city,
+                    state: billingAddr?.state,
+                    country: billingAddr?.country,
+                    postalCode: billingAddr?.postalCode,
+                  },
+                  pricing: { subtotal, shipping, tax, total, currency },
                 },
               }),
             }
