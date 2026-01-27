@@ -17,6 +17,59 @@ import OrderDetailsSkeleton from "../(components)/OrderDetailsSkeleton";
 import { getCurrencySymbol } from "@/utils/currency";
 import { useUpdateOrderStatus } from "@/hooks/useVendor";
 import { useEffect } from "react";
+import { useVendorStore } from "@/stores/useVendorStore";
+
+// Helper function to calculate vendor-specific totals
+const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
+  const vendorItems = orderItems.filter(item => 
+    item.metadata?.vendorId === vendorId
+  );
+
+  if (vendorItems.length === 0) {
+    return { totalAmount: 0, totalItems: 0, currency: 'USD' };
+  }
+
+  const totalAmount = vendorItems.reduce((sum, item) => {
+    // Use amountInVendorCurrency if available (it's already the total for this item)
+    // Otherwise fallback to vendorPrice * quantity
+    const itemTotal = item.metadata?.amountInVendorCurrency || (item.vendorPrice || item.price) * item.quantity;
+    return sum + itemTotal;
+  }, 0);
+
+  const totalItems = vendorItems.reduce((sum, item) => sum + item.quantity, 0);
+  const currency = vendorItems[0]?.metadata?.vendorCurrency || vendorItems[0]?.metadata?.userCurrency || 'USD';
+
+  return { totalAmount, totalItems, currency };
+};
+
+// Helper function to get currency symbol (matching OrderTable)
+const getVendorCurrencySymbol = (currency: string): string => {
+  const currencySymbols: { [key: string]: string } = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'NGN': '₦',
+    'GHS': '₵',
+    'ZAR': 'R',
+    'KES': 'KSh',
+    'UGX': 'USh',
+    'TZS': 'TSh',
+    'RWF': 'RF',
+    'XOF': 'CFA',
+    'CNY': '¥',
+    'HKD': 'HK$',
+    'TWD': 'NT$',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    'CHF': 'CHF',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+  };
+
+  return currencySymbols[currency.toUpperCase()] || currency;
+};
 
 const Card = ({
   children,
@@ -47,6 +100,10 @@ export default function OrderDetailsPage() {
   const { data: order, isLoading } = useOrderById(orderId);
   const { listedProducts } = useProductStore();
   const updateOrderStatusMutation = useUpdateOrderStatus();
+  const { vendor } = useVendorStore();
+  
+  // Calculate vendor-specific totals
+  const vendorTotals = order?.items ? calculateVendorTotals(order.items, vendor?._id || "") : { totalAmount: 0, totalItems: 0, currency: 'USD' };
   
   // Map order status to display status
   const getDisplayStatus = (status?: string): string => {
@@ -307,46 +364,57 @@ export default function OrderDetailsPage() {
           Order Items
         </h2>
 
-        {order?.items?.map((item: any, index: number) => (
-          <div className="border-b border-gray-200" key={index}>
-            <div className="flex items-center justify-between py-3">
-              <div className="flex items-center gap-5">
-                <div className="bg-[#f1f4f9] w-40 h-30 flex items-center rounded-md justify-center p-2">
-                  <img
-                    src={item.productId?.images[0] || "/placeholder.png"}
-                    alt={item.productId?.name}
-                    className="w-full h-full object-cover rounded-md"
-                    // style={{ width: 'auto', height: 'auto' }}
-                  />
+        {order?.items?.map((item: any, index: number) => {
+          // Calculate vendor-specific price for this item
+          const isVendorItem = item.metadata?.vendorId === vendor?._id;
+          // For individual item display, use vendorPrice (unit price) not amountInVendorCurrency (total)
+          const itemPrice = isVendorItem ? (item.vendorPrice || item.price) : item.price;
+          const itemCurrency = isVendorItem ? (item.metadata?.vendorCurrency || item.metadata?.userCurrency || 'USD') : 'USD';
+
+          // Only show items that belong to this vendor
+          if (!isVendorItem) return null;
+
+          return (
+            <div className="border-b border-gray-200" key={index}>
+              <div className="flex items-center justify-between py-3">
+                <div className="flex items-center gap-5">
+                  <div className="bg-[#f1f4f9] w-40 h-30 flex items-center rounded-md justify-center p-2">
+                    <img
+                      src={item.productId?.images[0] || "/placeholder.png"}
+                      alt={item.productId?.name}
+                      className="w-full h-full object-cover rounded-md"
+                      // style={{ width: 'auto', height: 'auto' }}
+                    />
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <h3 className="text-sm font-medium text-gray-800">
+                      {item.productId?.name}
+                    </h3>
+                    <p className="text-xs text-gray-500">
+                      SKU: {item.variantId || "N/A"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {listedProducts
+                        ?.find(
+                          (product: any) => product._id === item.productId?._id
+                        )
+                        ?.variants?.flatMap((v) => v.options)
+                        ?.find((option) => option.sku === item.variantId)
+                        ?.value || "Unknown Option"}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      Quantity: {item.quantity}
+                    </p>
+                  </div>
                 </div>
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-sm font-medium text-gray-800">
-                    {item.productId?.name}
-                  </h3>
-                  <p className="text-xs text-gray-500">
-                    SKU: {item.variantId || "N/A"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {listedProducts
-                      ?.find(
-                        (product: any) => product._id === item.productId?._id
-                      )
-                      ?.variants?.flatMap((v) => v.options)
-                      ?.find((option) => option.sku === item.variantId)
-                      ?.value || "Unknown Option"}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    Quantity: {item.quantity}
-                  </p>
-                </div>
+                <span className="text-sm font-semibold text-gray-800">
+                  {getVendorCurrencySymbol(itemCurrency)}
+                  {itemPrice.toFixed(2)}
+                </span>
               </div>
-              <span className="text-sm font-semibold text-gray-800">
-                {getCurrencySymbol(order?.paymentId?.currency || "USD")}
-                {item.price.toFixed(2)}
-              </span>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </section>
 
       <section className="space-y-4 w-full">
@@ -374,13 +442,17 @@ export default function OrderDetailsPage() {
               ),
             },
             {
-              label: "Subtotal",
-              value: order?.paymentId?.amount
-                ? order.paymentId.amount.toLocaleString("en-US", {
+              label: "Vendor Subtotal",
+              value: vendorTotals.totalAmount > 0
+                ? vendorTotals.totalAmount.toLocaleString("en-US", {
                     style: "currency",
-                    currency: order?.paymentId?.currency || "USD",
+                    currency: vendorTotals.currency,
                   })
                 : "N/A",
+            },
+            {
+              label: "Vendor Items",
+              value: `${vendorTotals.totalItems} item(s)`,
             },
             {
               label: "Order Status",

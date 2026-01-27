@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { io, Socket } from 'socket.io-client';
 import { useUserStore } from '@/stores/useUserStore';
 import { toast } from 'react-hot-toast';
+import { SOCKET_URL } from '@/utils/config';
 
 export const useSocket = () => {
   const [socket, setSocket] = useState<Socket | null>(null);
@@ -10,7 +11,7 @@ export const useSocket = () => {
   useEffect(() => {
     if (!user) return;
 
-    const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+    const newSocket = io(SOCKET_URL, {
       auth: {
         userId: user._id,
       },
@@ -32,12 +33,16 @@ export const useSocket = () => {
 
     // Listen for order updates
     newSocket.on('orderUpdate', (data) => {
-      toast.info(`Order ${data.orderId} status updated to ${data.status}`);
+      toast(`Order ${data.orderId} status updated to ${data.status}`, {
+        icon: 'ℹ️',
+      });
     });
 
     // Listen for new messages
     newSocket.on('newMessage', (data) => {
-      toast.info(`New message from ${data.senderName}`);
+      toast(`New message from ${data.senderName}`, {
+        icon: '💬',
+      });
     });
 
     setSocket(newSocket);
@@ -57,7 +62,7 @@ export const useVendorSocket = () => {
   useEffect(() => {
     if (!user) return;
 
-    const newSocket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000', {
+    const newSocket = io(SOCKET_URL, {
       auth: {
         userId: user._id,
         role: 'vendor',

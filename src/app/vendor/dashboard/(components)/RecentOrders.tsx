@@ -20,6 +20,58 @@ type Order = {
   createdAt?: string;
 };
 
+// Helper function to calculate vendor-specific totals
+const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
+  const vendorItems = orderItems.filter(item => 
+    item.metadata?.vendorId === vendorId
+  );
+
+  if (vendorItems.length === 0) {
+    return { totalAmount: 0, totalItems: 0, currency: 'USD' };
+  }
+
+  const totalAmount = vendorItems.reduce((sum, item) => {
+    // Use amountInVendorCurrency if available (it's already the total for this item)
+    // Otherwise fallback to vendorPrice * quantity
+    const itemTotal = item.metadata?.amountInVendorCurrency || (item.vendorPrice || item.price) * item.quantity;
+    return sum + itemTotal;
+  }, 0);
+
+  const totalItems = vendorItems.reduce((sum, item) => sum + item.quantity, 0);
+  const currency = vendorItems[0]?.metadata?.vendorCurrency || vendorItems[0]?.metadata?.userCurrency || 'USD';
+
+  return { totalAmount, totalItems, currency };
+};
+
+// Helper function to get currency symbol
+const getVendorCurrencySymbol = (currency: string): string => {
+  const currencySymbols: { [key: string]: string } = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'NGN': '₦',
+    'GHS': '₵',
+    'ZAR': 'R',
+    'KES': 'KSh',
+    'UGX': 'USh',
+    'TZS': 'TSh',
+    'RWF': 'RF',
+    'XOF': 'CFA',
+    'CNY': '¥',
+    'HKD': 'HK$',
+    'TWD': 'NT$',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    'CHF': 'CHF',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+  };
+
+  return currencySymbols[currency.toUpperCase()] || currency;
+};
+
 const RecentOrders = ({ currency }: { currency: string}) => {
   const { vendor } = useVendorStore();
   const { data: products } = useVendorProducts(vendor?._id!);
@@ -86,67 +138,71 @@ const RecentOrders = ({ currency }: { currency: string}) => {
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {data &&
-                  data.orders?.map((order: any) => (
-                    <tr key={order?._id}>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {order?._id.length > 15
-                          ? `${order._id.slice(0, 15)}...`
-                          : order._id}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order?.user?.profile?.firstName}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order?.payment?.amount.toLocaleString("en-US", {
-                          minimumFractionDigits: 1,
-                          maximumFractionDigits: 1,
-                        })}{" "}
-                        {currency}
-                      </td>
+                  data.orders?.map((order: any) => {
+                    const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+                    
+                    return (
+                      <tr key={order?._id}>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {order?._id.length > 15
+                            ? `${order._id.slice(0, 15)}...`
+                            : order._id}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {order?.user?.profile?.firstName}
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {vendorTotals.totalAmount.toLocaleString("en-US", {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                          })}{" "}
+                          {vendorTotals.currency}
+                        </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(order?.createdAt).toLocaleString("en-US", {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                          hour: "numeric",
-                          minute: "2-digit",
-                          hour12: true,
-                        })}
-                      </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {new Date(order?.createdAt).toLocaleString("en-US", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "numeric",
+                            minute: "2-digit",
+                            hour12: true,
+                          })}
+                        </td>
 
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                    ${
-                      order?.status === "delivered"
-                        ? "bg-green-100 text-green-800"
-                        : order?.status === "processing"
-                        ? "bg-blue-100 text-blue-800"
-                        : order?.status === "pending"
-                        ? "bg-yellow-100 text-yellow-800"
-                        : "bg-red-100 text-red-800"
-                    }`}
-                        >
-                          {order?.status.charAt(0).toUpperCase() +
-                            order?.status.slice(1)}
-                        </span>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {order?.items?.length || 0} item(s)
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <button
-                          onClick={() =>
-                            router.push(`/vendor/dashboard/orders/${order._id}`)
-                          }
-                          className="text-blue-600 hover:text-blue-900 cursor-pointer"
-                        >
-                          <FaEye />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <span
+                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                      ${
+                        order?.status === "delivered"
+                          ? "bg-green-100 text-green-800"
+                          : order?.status === "processing"
+                          ? "bg-blue-100 text-blue-800"
+                          : order?.status === "pending"
+                          ? "bg-yellow-100 text-yellow-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                          >
+                            {order?.status.charAt(0).toUpperCase() +
+                              order?.status.slice(1)}
+                          </span>
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {vendorTotals.totalItems} item(s)
+                        </td>
+                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <button
+                            onClick={() =>
+                              router.push(`/vendor/dashboard/orders/${order._id}`)
+                            }
+                            className="text-blue-600 hover:text-blue-900 cursor-pointer"
+                          >
+                            <FaEye />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
               </tbody>
             </table>
           </div>
@@ -154,60 +210,66 @@ const RecentOrders = ({ currency }: { currency: string}) => {
           {/* Mobile Cards */}
           <div className="md:hidden space-y-4">
             {data &&
-              data.orders?.map((order: any) => (
-                <div
-                  key={order._id}
-                  className="bg-white border rounded-lg p-4 shadow-sm"
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="font-medium">{order.id}</span>
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
-                ${
-                  order.status === "delivered"
-                    ? "bg-green-100 text-green-800"
-                    : order.status === "processing"
-                    ? "bg-blue-100 text-blue-800"
-                    : order.status === "pending"
-                    ? "bg-yellow-100 text-yellow-800"
-                    : "bg-red-100 text-red-800"
-                }`}
-                    >
-                      {order.status.charAt(0).toUpperCase() +
-                        order.status.slice(1)}
-                    </span>
-                  </div>
-                  <div className="text-sm text-gray-500 mb-1">
-                    <span className="font-medium">Customer:</span>{" "}
-                    {order?.user?.profile?.firstName}
-                  </div>
-                  {order?.amount && (
-                    <div className="text-sm text-gray-500 mb-1">
-                      <span className="font-medium">Amount:</span> $
-                      {order.amount.toFixed(2)}
+              data.orders?.map((order: any) => {
+                const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+                
+                return (
+                  <div
+                    key={order._id}
+                    className="bg-white border rounded-lg p-4 shadow-sm"
+                  >
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-medium">{order.id}</span>
+                      <span
+                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                  ${
+                    order.status === "delivered"
+                      ? "bg-green-100 text-green-800"
+                      : order.status === "processing"
+                      ? "bg-blue-100 text-blue-800"
+                      : order.status === "pending"
+                      ? "bg-yellow-100 text-yellow-800"
+                      : "bg-red-100 text-red-800"
+                  }`}
+                      >
+                        {order.status.charAt(0).toUpperCase() +
+                          order.status.slice(1)}
+                      </span>
                     </div>
-                  )}
-                  <div className="text-sm text-gray-500 mb-1">
-                    <span className="font-medium">Address:</span>{" "}
-                    {order.address}
+                    <div className="text-sm text-gray-500 mb-1">
+                      <span className="font-medium">Customer:</span>{" "}
+                      {order?.user?.profile?.firstName}
+                    </div>
+                    <div className="text-sm text-gray-500 mb-1">
+                      <span className="font-medium">Vendor Amount:</span>{" "}
+                      {vendorTotals.totalAmount.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      {vendorTotals.currency}
+                    </div>
+                    <div className="text-sm text-gray-500 mb-1">
+                      <span className="font-medium">Address:</span>{" "}
+                      {order.address}
+                    </div>
+                    <div className="text-sm text-gray-500 mb-1">
+                      <span className="font-medium">
+                        {vendorTotals.totalItems} items
+                      </span>
+                    </div>
+                    <div className="mt-2 flex justify-end">
+                      <button
+                        onClick={() =>
+                          router.push(`/vendor/dashboard/orders/${order._id}`)
+                        }
+                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1 text-sm"
+                      >
+                        <FaEye size={14} /> View Details
+                      </button>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500 mb-1">
-                    <span className="font-medium">
-                      {order?.items?.length || 0} items
-                    </span>
-                  </div>
-                  <div className="mt-2 flex justify-end">
-                    <button
-                      onClick={() =>
-                        router.push(`/vendor/dashboard/orders/${order._id}`)
-                      }
-                      className="text-blue-600 hover:text-blue-900 flex items-center gap-1 text-sm"
-                    >
-                      <FaEye size={14} /> View Details
-                    </button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
           </div>
         </>
       )}

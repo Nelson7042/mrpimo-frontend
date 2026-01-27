@@ -96,8 +96,6 @@ export interface CartResponse {
   };
 }
 
-// const BASE_URL = 'http://localhost:5800/api/v1';
-
 export const cartService = {
   async getCart(): Promise<CartResponse> {
     const response = await fetchWithAuth(`${API_BASE_URL}/products/cart/user`);

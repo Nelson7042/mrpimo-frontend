@@ -28,6 +28,58 @@ const getStatusColor = (status: string) => {
   }
 };
 
+// Helper function to calculate vendor-specific totals
+const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
+  const vendorItems = orderItems.filter(item => 
+    item.metadata?.vendorId === vendorId
+  );
+
+  if (vendorItems.length === 0) {
+    return { totalAmount: 0, totalItems: 0, currency: 'USD' };
+  }
+
+  const totalAmount = vendorItems.reduce((sum, item) => {
+    // Use amountInVendorCurrency if available (it's already the total for this item)
+    // Otherwise fallback to vendorPrice * quantity
+    const itemTotal = item.metadata?.amountInVendorCurrency || (item.vendorPrice || item.price) * item.quantity;
+    return sum + itemTotal;
+  }, 0);
+
+  const totalItems = vendorItems.reduce((sum, item) => sum + item.quantity, 0);
+  const currency = vendorItems[0]?.metadata?.vendorCurrency || vendorItems[0]?.metadata?.userCurrency || 'USD';
+
+  return { totalAmount, totalItems, currency };
+};
+
+// Helper function to get currency symbol
+const getVendorCurrencySymbol = (currency: string): string => {
+  const currencySymbols: { [key: string]: string } = {
+    'USD': '$',
+    'EUR': '€',
+    'GBP': '£',
+    'JPY': '¥',
+    'NGN': '₦',
+    'GHS': '₵',
+    'ZAR': 'R',
+    'KES': 'KSh',
+    'UGX': 'USh',
+    'TZS': 'TSh',
+    'RWF': 'RF',
+    'XOF': 'CFA',
+    'CNY': '¥',
+    'HKD': 'HK$',
+    'TWD': 'NT$',
+    'CAD': 'C$',
+    'AUD': 'A$',
+    'CHF': 'CHF',
+    'SEK': 'kr',
+    'NOK': 'kr',
+    'DKK': 'kr',
+  };
+
+  return currencySymbols[currency.toUpperCase()] || currency;
+};
+
 const OrderTable = (props: Props) => {
   const [date, setDate] = useState(new Date().toISOString().split("T")[0]);
   const [orders, setOrders] = useState<any[]>([]);
@@ -154,59 +206,63 @@ const OrderTable = (props: Props) => {
           <tbody className="bg-white divide-y divide-gray-200">
             {orders &&
               orders.length > 0 &&
-              orders.map((order) => (
-                <tr key={order?._id} className="hover:bg-gray-50">
-                  <td className="px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
-                    {`${order._id.slice(0, 15)}...`}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
-                    {order?.user?.profile?.firstName}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-900">
-                    {order.payment.amount.toLocaleString("en-US", {
-                      minimumFractionDigits: 1,
-                      maximumFractionDigits: 1,
-                    })}{" "}
-                    {order.payment.currency}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
-                    {new Date(order?.createdAt).toLocaleString("en-US", {
-                      year: "numeric",
-                      month: "short",
-                      day: "numeric",
-                      hour: "numeric",
-                      minute: "2-digit",
-                      hour12: true,
-                    })}
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
-                        order?.status
-                      )}`}
-                    >
-                      {order?.status?.charAt(0).toUpperCase() +
-                        order?.status?.slice(1)}
-                    </span>
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
-                    {order?.items?.length} item(s)
-                  </td>
-                  <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
-                    <button
-                      className="text-blue-600 hover:text-blue-900 flex items-center gap-1 cursor-pointer"
-                      onClick={() => {
-                        router.push(`/vendor/dashboard/orders/${order._id}`);
+              orders.map((order) => {
+                const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+                
+                return (
+                  <tr key={order?._id} className="hover:bg-gray-50">
+                    <td className="px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
+                      {`${order._id.slice(0, 15)}...`}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
+                      {order?.user?.profile?.firstName}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-900">
+                      {vendorTotals.totalAmount.toLocaleString("en-US", {
+                        minimumFractionDigits: 2,
+                        maximumFractionDigits: 2,
+                      })}{" "}
+                      {vendorTotals.currency}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
+                      {new Date(order?.createdAt).toLocaleString("en-US", {
+                        year: "numeric",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                        hour12: true,
+                      })}
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap">
+                      <span
+                        className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
+                          order?.status
+                        )}`}
+                      >
+                        {order?.status?.charAt(0).toUpperCase() +
+                          order?.status?.slice(1)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
+                      {vendorTotals.totalItems} item(s)
+                    </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
+                      <button
+                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1 cursor-pointer"
+                        onClick={() => {
+                          router.push(`/vendor/dashboard/orders/${order._id}`);
 
-                      }}
-                    >
-                      <Eye size={16} />
-                      <span>View</span>
-                      {order._id}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+                        }}
+                      >
+                        <Eye size={16} />
+                        <span>View</span>
+                        {order._id}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
           </tbody>
         </table>
         {orders && orders.length === 0 && (
@@ -218,61 +274,65 @@ const OrderTable = (props: Props) => {
 
       {/* Mobile Cards */}
       <div className="md:hidden space-y-4 p-4">
-        {orders && orders.length > 0 && orders.map((order) => (
-          <div
-            key={order?._id}
-            className="bg-white border rounded-lg p-4 shadow-sm"
-          >
-            <div className="flex justify-between items-center mb-2">
-              <span className="font-medium">{order?._id}</span>
-              <span
-                className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
-                  order?.status
-                )}`}
-              >
-                {order?.status.charAt(0).toUpperCase() + order?.status.slice(1)}
-              </span>
+        {orders && orders.length > 0 && orders.map((order) => {
+          const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+          
+          return (
+            <div
+              key={order?._id}
+              className="bg-white border rounded-lg p-4 shadow-sm"
+            >
+              <div className="flex justify-between items-center mb-2">
+                <span className="font-medium">{order?._id}</span>
+                <span
+                  className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
+                    order?.status
+                  )}`}
+                >
+                  {order?.status.charAt(0).toUpperCase() + order?.status.slice(1)}
+                </span>
+              </div>
+              <div className="text-xs text-gray-500 mb-1">
+                <span className="font-medium">Customer:</span>{" "}
+                {order?.user?.profile?.firstName}
+              </div>
+              <div className="text-xs text-gray-500 mb-1">
+                <span className="font-medium">Vendor Amount:</span>{" "}
+                {vendorTotals.totalAmount.toLocaleString("en-US", {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2,
+                })}{" "}
+                {vendorTotals.currency}
+              </div>
+              <div className="text-xs text-gray-500 mb-1">
+                <span className="font-medium">Date:</span>{" "}
+                {new Date(order?.createdAt).toLocaleString("en-US", {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                  hour: "numeric",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </div>
+              <div className="text-xs text-gray-500 mb-1">
+                <span className="font-medium">Your Items:</span>{" "}
+                {vendorTotals.totalItems} item(s)
+              </div>
+              <div className="mt-3 flex justify-end">
+                <button
+                  className="text-blue-600 hover:text-blue-900 flex items-center gap-1 text-underline"
+                  onClick={() =>
+                    router.push(`/vendor/dashboard/orders/${order._id}`)
+                  }
+                >
+                  <Eye size={16} />
+                  <span className="text-xs">View Details</span>
+                </button>
+              </div>
             </div>
-            <div className="text-xs text-gray-500 mb-1">
-              <span className="font-medium">Customer:</span>{" "}
-              {order?.user?.profile?.firstName}
-            </div>
-            <div className="text-xs text-gray-500 mb-1">
-              <span className="font-medium">Amount:</span>
-              {order.payment.amount.toLocaleString("en-US", {
-                minimumFractionDigits: 1,
-                maximumFractionDigits: 1,
-              })}{" "}
-              {order.payment.currency}
-            </div>
-            <div className="text-xs text-gray-500 mb-1">
-              <span className="font-medium">Date:</span>{" "}
-              {new Date(order?.createdAt).toLocaleString("en-US", {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-                hour: "numeric",
-                minute: "2-digit",
-                hour12: true,
-              })}
-            </div>
-            <div className="text-xs text-gray-500 mb-1">
-              <span className="font-medium">Items:</span>{" "}
-              {order?.items?.length || 0} item(s)
-            </div>
-            <div className="mt-3 flex justify-end">
-              <button
-                className="text-blue-600 hover:text-blue-900 flex items-center gap-1 text-underline"
-                onClick={() =>
-                  router.push(`/vendor/dashboard/orders/${order._id}`)
-                }
-              >
-                <Eye size={16} />
-                <span className="text-xs">View Details</span>
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
         {orders && orders.length === 0 && (
           <div className="text-center py-8">
             <p className="text-lg font-medium text-gray-900">No orders found!</p>

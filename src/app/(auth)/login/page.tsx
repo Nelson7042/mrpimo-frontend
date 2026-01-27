@@ -22,7 +22,7 @@ const LoginPage = () => {
 
   const { data, isFetching: isCallingGoogle, error, refetch, isFetched } = useGoogleLogin();
 
-  if (user && user.role==="personal" && !user.isEmailVerified) {
+  if (user && user.role==="user" && !user.isEmailVerified) {
     router.push("/email-verification");
     toast.info("Please verify your email", toastConfigInfo);
     return null;
