@@ -184,6 +184,7 @@ export default function CheckoutPage() {
     }
   };
 
+  
     const handleProceedToPayment = async () => {
     if (!user) {
       toast.error("You have to be logged in to proceed to checkout");
