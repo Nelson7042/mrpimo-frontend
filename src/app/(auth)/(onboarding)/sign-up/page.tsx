@@ -8,6 +8,7 @@ import BusinessRegistration from "@/components/BusinessRegistration";
 import PersonalRegistrationForm from "@/components/PersonalRegistrationForm";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/stores/useUserStore";
+import { API_BASE_URL } from "@/utils/config";
 
 type Props = {};
 
@@ -37,7 +38,7 @@ const SignUpPage = (props: Props) => {
 
   const handleGoogleLogin = async () => {
     setIsCallingGoogle(true)
-    window.location.href = "http://localhost:5800/api/v1/auth/google";
+    window.location.href = `${API_BASE_URL}/auth/google`;
     setTimeout(() => {
       setIsCallingGoogle(false)
     }, 2000)

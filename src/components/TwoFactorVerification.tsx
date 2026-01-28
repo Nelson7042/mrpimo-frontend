@@ -8,6 +8,7 @@ import {
   toastConfigSuccess,
 } from "@/app/config/toast.config";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
 interface TwoFactorVerificationProps {
   userId: string;
@@ -38,8 +39,8 @@ const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
     try {
       setIsLoading(true);
       const endpoint = isUsingBackupCode
-        ? "http://localhost:5800/api/v1/two-factor/verify-backup"
-        : "http://localhost:5800/api/v1/two-factor/verify";
+        ? `${API_BASE_URL}/two-factor/verify-backup`
+        : `${API_BASE_URL}/two-factor/verify`;
 
       const response = await fetchWithAuth(endpoint, {
         method: "POST",

@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  // Get the path the user is trying to access
   const path = request.nextUrl.pathname;
   
   // Define public paths that don't need authentication
@@ -17,15 +16,18 @@ export function middleware(request: NextRequest) {
   
   // Get the token from cookies
   const token = request.cookies.get('auth-token')?.value;
-  console.log(token)
+  const accessToken = request.cookies.get('accessToken')?.value;
+  const refreshToken = request.cookies.get('refreshToken')?.value;
+  
+  const hasToken = token || accessToken || refreshToken;
   
   // If user is not logged in and trying to access a protected route
-  if (!token && !isPublicPath) {
+  if (!hasToken && !isPublicPath) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
   
   // If user is logged in and trying to access login page
-  if (token && isPublicPath) {
+  if (hasToken && isPublicPath) {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
   

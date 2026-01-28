@@ -19,12 +19,14 @@ export default function TwoFactorPage() {
 
   const handle2FASubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!code.trim()) {
       toast.error('Please enter the 2FA code', toastConfigError);
       return;
     }
 
     setIsLoading(true);
+    
     try {
       const response = await fetch(`${API_BASE_URL}/auth/2fa/verify`, {
         method: 'POST',
@@ -43,8 +45,11 @@ export default function TwoFactorPage() {
 
         if (profileResponse.ok) {
           const { user, vendor } = await profileResponse.json();
+          
           setUser(user);
-          if (vendor) setVendor(vendor);
+          if (vendor) {
+            setVendor(vendor);
+          }
           
           toast.success('Authentication successful!', toastConfigSuccess);
           router.push('/dashboard');

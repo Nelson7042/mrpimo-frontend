@@ -116,7 +116,7 @@ const loginUser = async (
 }> => {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
-    credentials: "include", // ✅ Critical for cookies
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });

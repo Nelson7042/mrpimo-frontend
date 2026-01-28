@@ -199,7 +199,7 @@ export default function OrderDetailsPage() {
         issueImages.forEach(image => formData.append("images", image));
 
         const uploadRes = await axios.post(
-          "http://localhost:5800/api/v1/issues/upload",
+          `${API_BASE_URL}/issues/upload`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -210,7 +210,7 @@ export default function OrderDetailsPage() {
       }
 
       await axios.post(
-        "http://localhost:5800/api/v1/issues",
+        `${API_BASE_URL}/issues`,
         {
           orderId,
           reason: issueType,

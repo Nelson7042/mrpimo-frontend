@@ -10,6 +10,7 @@ import {
   toastConfigSuccess,
 } from "@/app/config/toast.config";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
+import { API_BASE_URL } from "@/utils/config";
 
 interface ImageUploaderProps {
   src: string;
@@ -110,7 +111,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
         // Start with initial progress
         setUploadProgress(5);
         const response = await axios.post(
-          "http://localhost:5800/api/v1/products/upload",
+          `${API_BASE_URL}/products/upload`,
           formData,
           {
             onUploadProgress: (progressEvent) => {
@@ -204,7 +205,7 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
         formData.append("productImage", file);
 
         const response = await axios.post(
-          "http://localhost:5800/api/v1/products/upload",
+          `${API_BASE_URL}/products/upload`,
           formData
         );
 

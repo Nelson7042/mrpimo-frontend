@@ -33,6 +33,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { API_BASE_URL } from "@/utils/config";
 
 const getStatusColor = (status: string) => {
   if (!status) return "bg-gray-100 text-gray-800";
@@ -207,7 +208,7 @@ export default function OrderDetailsPage() {
         issueImages.forEach(image => formData.append("images", image));
 
         const uploadRes = await axios.post(
-          "http://localhost:5800/api/v1/issues/upload",
+          `${API_BASE_URL}/issues/upload`,
           formData,
           {
             headers: { "Content-Type": "multipart/form-data" },
@@ -218,7 +219,7 @@ export default function OrderDetailsPage() {
       }
 
       await axios.post(
-        "http://localhost:5800/api/v1/issues",
+        `${API_BASE_URL}/issues`,
         {
           orderId,
           reason: issueType,

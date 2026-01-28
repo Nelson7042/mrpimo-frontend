@@ -88,7 +88,9 @@ const LoginForm = ({ setAuthState, close, onLoginSuccess }: LoginProps) => {
             // ✅ No 2FA - complete login
             if (data.user) {
               setUser(data.user);
-              if (data.vendor) setVendor(data.vendor);
+              if (data.vendor) {
+                setVendor(data.vendor);
+              }
               toast.success("Login successful", toastConfigSuccess);
               
               // Check for stored redirect URL
@@ -102,7 +104,9 @@ const LoginForm = ({ setAuthState, close, onLoginSuccess }: LoginProps) => {
                 router.push("/");
               }
               
-              if (close) close();
+              if (close) {
+                close();
+              }
             }
             setIsLoading(false);
           },

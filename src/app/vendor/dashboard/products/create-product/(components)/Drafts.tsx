@@ -8,6 +8,7 @@ import {
 } from "@/app/config/toast.config";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { API_BASE_URL } from "@/utils/config";
 
 type DraftType = {
   draftId: string;
@@ -33,7 +34,7 @@ const Drafts = ({ onEditDraft }: Props) => {
   // Function to fetch drafts from API
   const fetchDraftsFromApi = async () => {
     const response = await fetchWithAuth(
-      "http://localhost:5800/api/v1/products/drafts",
+      `${API_BASE_URL}/products/drafts`,
       { method: "GET" }
     );
 
@@ -189,7 +190,7 @@ const Drafts = ({ onEditDraft }: Props) => {
 
           // Create a new draft in the database
           const response = await fetchWithAuth(
-            "http://localhost:5800/api/v1/products/draft",
+            `${API_BASE_URL}/products/draft`,
             {
               method: "POST",
               body: JSON.stringify(draft),

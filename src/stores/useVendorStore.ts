@@ -34,7 +34,9 @@ export const useVendorStore = create<VendorState>()(
   persist(
     (set, get) => ({
       vendor: null,
-      setVendor: (vendor: IVendor | null) => set({ vendor }),
+      setVendor: (vendor: IVendor | null) => {
+        set({ vendor });
+      },
     
       clearVendorStore: () => {
         set({ vendor: null, listedProducts: [] });

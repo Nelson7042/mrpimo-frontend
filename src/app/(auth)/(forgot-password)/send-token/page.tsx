@@ -9,6 +9,7 @@ import { useMutation } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { toastConfigError, toastConfigInfo } from "@/app/config/toast.config";
 import Loader from "@/components/Loader";
+import { API_BASE_URL } from "@/utils/config";
 
 type Props = {};
 
@@ -26,7 +27,7 @@ const SendToken = (props: Props) => {
     email: string
   ): Promise<{ message: string }> => {
     const response = await fetch(
-      "http://localhost:5800/api/v1/auth/forgot-password",
+      `${API_BASE_URL}/auth/forgot-password`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },

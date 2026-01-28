@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle, ArrowRight, RefreshCw } from "lucide-react";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
 const CompleteVerificationPage = () => {
   const [isChecking, setIsChecking] = useState(true);
@@ -15,7 +16,7 @@ const CompleteVerificationPage = () => {
     setIsChecking(true);
     try {
       const response = await fetchWithAuth(
-        "http://localhost:5800/api/v1/verification/stripe/status"
+        `${API_BASE_URL}/verification/stripe/status`
       );
       if (!response.ok) {
         throw new Error("Failed to fetch verification status");
