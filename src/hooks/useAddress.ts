@@ -16,6 +16,11 @@ interface Address {
   country: string;
   postalCode: string;
   isDefault: boolean;
+  coordinates?: {
+    latitude: number;
+    longitude: number;
+  };
+  hasExactLocation?: boolean;
 }
 
 const API_BASE = `${API_BASE_URL}`;

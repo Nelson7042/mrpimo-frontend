@@ -84,9 +84,15 @@ export default function DashboardLayout({
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: (data) => {
-        // useUserStore.getState().resetStore();
+        // Clear tokens from localStorage
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        } catch (e) {
+          console.warn('Failed to clear tokens:', e);
+        }
+        
         resetAllStores();
-
         router.push("/home");
       },
       onError: (error) => {

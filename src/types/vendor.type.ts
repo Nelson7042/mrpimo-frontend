@@ -69,6 +69,10 @@ export interface IVendor {
       country: string;
       postalCode: string;
     };
+    location?: {
+      coordinates: [number, number]; // [longitude, latitude]
+      hasExactLocation: boolean;
+    };
   };
   bankDetails?: {
     accountHolder: string;

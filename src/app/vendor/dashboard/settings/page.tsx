@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import TwoFactorSetup from "./components/TwoFactorSetup";
 import DisableTwoFactor from "./components/DisableTwoFactor";
 import PushNotification from "./components/PushNotification";
+import VendorPickupLocation from "./components/VendorPickupLocation";
 
 type Props = {};
 
@@ -15,50 +16,58 @@ const page = (props: Props) => {
 
   return (
     <div className="flex justify-center items-center flex-col p-4 md:p-6">
-    <div className="flex justify-center items-center flex-col text-xs mt-10 mb-4">
-      <h3 className="text-lg font-bold mb-2">Two-Factor Authentication</h3>
-      <p className="mb-4">
-        Two-factor authentication adds an extra layer of security to your
-        account.
-      </p>
+      {/* Pickup Location Section */}
+      <div className="w-full max-w-2xl mb-8">
+        <VendorPickupLocation />
+      </div>
 
-      {user?.twoFactorAuth?.enabled ? (
-        <button
-          className="px-4 py-2 bg-red-500 text-white rounded cursor-pointer"
-          onClick={() => setShowDisable2FA(true)}
-        >
-          Disable Two-Factor Authentication
-        </button>
-      ) : (
-        <button
-          className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
-          onClick={() => setShowTwoFactorSetup(true)}
-        >
-          Enable Two-Factor Authentication
-        </button>
-      )}
+      {/* Two-Factor Authentication Section */}
+      <div className="flex justify-center items-center flex-col text-xs mt-10 mb-4">
+        <h3 className="text-lg font-bold mb-2">Two-Factor Authentication</h3>
+        <p className="mb-4">
+          Two-factor authentication adds an extra layer of security to your
+          account.
+        </p>
 
-      {showTwoFactorSetup && (
-        <TwoFactorSetup
-          onComplete={(updatedUser) => {
-            setUser({ ...user, ...updatedUser });
-            setShowTwoFactorSetup(false);
-          }}
-          onCancel={() => setShowTwoFactorSetup(false)}
-        />
-      )}
+        {user?.twoFactorAuth?.enabled ? (
+          <button
+            className="px-4 py-2 bg-red-500 text-white rounded cursor-pointer"
+            onClick={() => setShowDisable2FA(true)}
+          >
+            Disable Two-Factor Authentication
+          </button>
+        ) : (
+          <button
+            className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
+            onClick={() => setShowTwoFactorSetup(true)}
+          >
+            Enable Two-Factor Authentication
+          </button>
+        )}
 
-      {showDisable2FA && (
-        <DisableTwoFactor
-          onComplete={(updatedUser) => {
-            setUser({ ...user, ...updatedUser });
-            setShowDisable2FA(false);
-          }}
-          onCancel={() => setShowDisable2FA(false)}
-        />
-      )}
-    </div>
-    <PushNotification />
+        {showTwoFactorSetup && (
+          <TwoFactorSetup
+            onComplete={(updatedUser) => {
+              setUser({ ...user, ...updatedUser });
+              setShowTwoFactorSetup(false);
+            }}
+            onCancel={() => setShowTwoFactorSetup(false)}
+          />
+        )}
+
+        {showDisable2FA && (
+          <DisableTwoFactor
+            onComplete={(updatedUser) => {
+              setUser({ ...user, ...updatedUser });
+              setShowDisable2FA(false);
+            }}
+            onCancel={() => setShowDisable2FA(false)}
+          />
+        )}
+      </div>
+      
+      {/* Push Notification Section */}
+      <PushNotification />
     </div>
   );
 };

@@ -35,6 +35,8 @@ import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter, useSearchParams } from "next/navigation";
 import AddCardModal from "@/components/users/settings/AddCardModal";
 import { toast } from "react-hot-toast";
+import LocationPicker from "@/components/users/settings/LocationPicker";
+import ShippingInfoBanner from "@/components/users/settings/ShippingInfoBanner";
 
 type SettingsSection =
   | "main"
@@ -465,6 +467,9 @@ export default function SettingsPage() {
           </Button>
         </div>
 
+        {/* Info Banner */}
+        <ShippingInfoBanner />
+
         <div className="space-y-4">
           {/* Existing Addresses */}
           {shippingAddresses.map((address) => (
@@ -474,6 +479,11 @@ export default function SettingsPage() {
                   {address.isDefault && (
                     <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded mb-2 inline-block">
                       Default
+                    </span>
+                  )}
+                  {address.hasExactLocation && (
+                    <span className="bg-green-100 text-green-800 text-xs px-2 py-1 rounded mb-2 ml-2 inline-block">
+                      📍 Home Delivery
                     </span>
                   )}
                   <p className="font-medium">{address.street}</p>
@@ -518,6 +528,16 @@ export default function SettingsPage() {
                   </Button>
                 </div>
               </div>
+              
+              {/* Location Picker for each address */}
+              <LocationPicker
+                addressId={address._id!}
+                currentLocation={address.coordinates}
+                hasExactLocation={address.hasExactLocation}
+                onLocationUpdated={() => {
+                  // Refresh addresses after location update
+                }}
+              />
             </div>
           ))}
 

@@ -56,6 +56,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     logoutMutation.mutate(undefined, {
       onSuccess: () => {
         toast.success("Logout Successfull");
+        
+        // Clear tokens from localStorage
+        try {
+          localStorage.removeItem('accessToken');
+          localStorage.removeItem('refreshToken');
+        } catch (e) {
+          console.warn('Failed to clear tokens:', e);
+        }
+        
         resetAllStores();
         closeLogoutModal();
         router.push("/home");
