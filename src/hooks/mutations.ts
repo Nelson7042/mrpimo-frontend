@@ -109,20 +109,20 @@ const loginUser = async (
   data: LoginData
 ): Promise<{
   message: string;
-  user: User;
-  vendor: IVendor;
-  has2faEnabled: boolean;
+  user?: User;
+  vendor?: IVendor;
+  has2faEnabled?: boolean;
+  requires2FA?: boolean;
 }> => {
-  const response = await fetch( `${API_BASE_URL}/auth/login`, {
+  const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
-    credentials: "include",
+    credentials: "include", // ✅ Critical for cookies
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
   });
 
   if (!response.ok) {
     const errorData = await response.json();
-    toast.error(errorData.message);
     throw new Error(errorData.message);
   }
 
@@ -137,7 +137,6 @@ const loginUser = async (
       }
     } catch (e) {
       console.warn('Failed to store tokens:', e);
-      toast.error('Storage blocked. Try non-private mode', { position: 'top-center' });
     }
   }
 

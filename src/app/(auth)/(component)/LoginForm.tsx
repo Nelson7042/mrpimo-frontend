@@ -17,10 +17,11 @@ import { toast } from "react-toastify";
 
 interface LoginProps {
   setAuthState?: (authState: "login" | "recover" | "otp") => void;
-  close? : () => void;
+  close?: () => void;
+  onLoginSuccess?: (data: any) => void; // ✅ Add callback for 2FA handling
 }
 
-const LoginForm = ({ setAuthState, close }: LoginProps) => {
+const LoginForm = ({ setAuthState, close, onLoginSuccess }: LoginProps) => {
   const [open, setOpen] = React.useState(false);
 
   const toggle = () => {
@@ -38,7 +39,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
   const [isLoading, setIsLoading] = useState(false);
   const { setVendor } = useVendorStore();
   const { mutate: loginUser, isPending } = useLoginUser();
-  const {authType} = useAuthModalStore()
+  const { authType } = useAuthModalStore();
   const router = useRouter();
 
   const validateForm = () => {
@@ -69,39 +70,45 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Perform validation and submit the form if valid
+    
     if (validateForm()) {
       loginUser(
         { email, password },
         {
           onSuccess: (data) => {
-            // if (onLoginSuccess) {
-            //   if (data.has2faEnabled) {
-            //     onLoginSuccess(data)
-            //   }
-            // }
-
-            setUser(data.user);
-            setVendor(data.vendor);
-            toast.success("Login successful", toastConfigSuccess);
-            
-            // Check for stored redirect URL
-            const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
-            if (redirectUrl) {
-              sessionStorage.removeItem('redirectAfterLogin');
-              router.push(redirectUrl);
-            } else if (authType === "vendor") {
-              router.push("/vendor/dashboard");
+            // ✅ Check if 2FA is required
+            if (data.requires2FA || data.has2faEnabled) {
+              setIsLoading(false);
+              if (onLoginSuccess) {
+                onLoginSuccess(data); // Pass to parent for 2FA handling
+              }
+              return;
             }
-            
+
+            // ✅ No 2FA - complete login
+            if (data.user) {
+              setUser(data.user);
+              if (data.vendor) setVendor(data.vendor);
+              toast.success("Login successful", toastConfigSuccess);
+              
+              // Check for stored redirect URL
+              const redirectUrl = sessionStorage.getItem('redirectAfterLogin');
+              if (redirectUrl) {
+                sessionStorage.removeItem('redirectAfterLogin');
+                router.push(redirectUrl);
+              } else if (authType === "vendor") {
+                router.push("/vendor/dashboard");
+              } else {
+                router.push("/");
+              }
+              
+              if (close) close();
+            }
             setIsLoading(false);
-            if (close) close();
           },
           onError: (error) => {
-            // console.error("Login failed:", error);
             toast.error(error.message, toastConfigError);
             setIsLoading(false);
-
           },
         }
       );
@@ -110,6 +117,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
         "Form submission failed. Please ensure you provided the necessary fields",
         toastConfigError
       );
+      setIsLoading(false);
     }
   };
 
@@ -144,6 +152,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
             Password
           </label>
           <button
+            type="button"
             onClick={() => setAuthState && setAuthState("recover")}
             className="text-sm text-blue-600"
           >
@@ -176,7 +185,7 @@ const LoginForm = ({ setAuthState, close }: LoginProps) => {
       </div>
 
       <div className="mb-4 md:mb-6 mt-4 md:mt-6">
-        <FullButton action={() => {}} isLoading={isLoading} color="blue" name="Sign In" />
+        <FullButton action={() => {}} isLoading={isLoading || isPending} color="blue" name="Sign In" />
       </div>
     </form>
   );

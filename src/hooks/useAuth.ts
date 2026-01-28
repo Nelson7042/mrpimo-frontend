@@ -13,7 +13,8 @@ export const useAuth = () => {
       if (user) return;
 
       try {
-        const response = await fetchWithAuth(`${API_BASE_URL}/auth/me`);
+        // ✅ Use /users/profile endpoint as per auth guide
+        const response = await fetchWithAuth(`${API_BASE_URL}/users/profile`);
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);

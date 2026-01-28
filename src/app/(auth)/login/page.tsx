@@ -7,58 +7,43 @@ import { FaArrowLeft } from "react-icons/fa";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "react-toastify";
-import { toastConfigError, toastConfigInfo, toastConfigSuccess } from "@/app/config/toast.config";
-import { useGoogleLogin } from "@/hooks/queries";
+import { toastConfigInfo } from "@/app/config/toast.config";
 import TwoFactorVerification from "@/components/TwoFactorVerification";
 import { useProductStore } from "@/stores/useProductStore";
-
+import { API_BASE_URL } from "@/utils/config";
 
 const LoginPage = () => {
   const [requires2FA, setRequires2FA] = useState(false);
   const [userId, setUserId] = useState("");
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const router = useRouter();
   const { user, setUser } = useUserStore();
-  const {setVendor} = useProductStore();
+  const { setVendor } = useProductStore();
 
-  const { data, isFetching: isCallingGoogle, error, refetch, isFetched } = useGoogleLogin();
-
-  if (user && user.role==="user" && !user.isEmailVerified) {
+  if (user && user.role === "user" && !user.isEmailVerified) {
     router.push("/email-verification");
     toast.info("Please verify your email", toastConfigInfo);
     return null;
   }
 
   const handleGoogleLogin = () => {
-    refetch();
+    setIsGoogleLoading(true);
+    // ✅ Direct redirect to backend Google OAuth
+    window.location.href = `${API_BASE_URL}/auth/google`;
   };
 
-  // Add this function to handle successful login from LoginForm
+  // ✅ Handle successful login from LoginForm
   const handleLoginSuccess = (userData: any) => {
-    if (userData.has2faEnabled) {
-      setUserId(userData.user._id);
+    if (userData.requires2FA || userData.has2faEnabled) {
+      setUserId(userData.user?._id || "");
       setRequires2FA(true);
-      
     } else {
+      // Should not reach here as LoginForm handles complete login
       setUser(userData.user);
+      if (userData.vendor) setVendor(userData.vendor);
       router.push("/");
     }
   };
-
-  useEffect(() => {
-    if (isFetched && data && !error) {
-      setUser(data.user);
-      if (data.vendor) setVendor(data.vendor)
-      if (data.requires2FA) {
-        setUserId(data.user._id);
-        setRequires2FA(true);
-      } else {
-        toast.success(data.message, toastConfigSuccess);
-        router.push("/");
-      }
-    } else if (isFetched && error) {
-      toast.error(error.message, toastConfigError);
-    }
-  }, [isFetched]);
 
   return (
     <div className="flex flex-col md:flex-row gap-6 md:gap-x-8 justify-center items-center min-h-screen p-4 bg-gray-200">
@@ -91,7 +76,7 @@ const LoginPage = () => {
             <div className="flex flex-col sm:flex-row gap-2 font-[family-name:var(--font-poppins)]">
               <button 
                 className={`bg-white border-2 cursor-pointer border-gray-300 hover:bg-gray-100 text-gray-800 py-2 px-2 rounded-xl focus:outline-none focus:shadow-outline w-full flex items-center justify-center disabled:opacity-80 disabled:cursor-not-allowed`}
-                disabled={isCallingGoogle}
+                disabled={isGoogleLoading}
                 onClick={handleGoogleLogin}
               >
                 <img
@@ -99,7 +84,7 @@ const LoginPage = () => {
                   alt="Google Logo"
                   className="w-5 h-5 mr-1"
                 />
-                <div className="text-xs">{!isCallingGoogle ? "Continue with Google" : "..." }</div>
+                <div className="text-xs">{!isGoogleLoading ? "Continue with Google" : "Redirecting..." }</div>
               </button>
               <button className="bg-white border-2 cursor-pointer border-gray-300 hover:bg-gray-100 text-gray-800 py-2 px-2 rounded-xl focus:outline-none focus:shadow-outline w-full flex items-center justify-center">
                 <img
@@ -110,7 +95,6 @@ const LoginPage = () => {
                 <div className="text-xs">Continue with Apple</div>
               </button>
             </div>
-            {error && <p className="text-red-500 text-xs my-2 font-[family-name:var(--font-poppins)]">{error.message}</p>}
             <p className="mt-4 text-center text-gray-600 text-xs font-[family-name:var(--font-inter)]">
               <span>Don't have an account? </span>
               <Link
