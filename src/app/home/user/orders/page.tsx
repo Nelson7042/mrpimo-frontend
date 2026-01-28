@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs"
 import { useRouter, useSearchParams } from "next/navigation"
 import { useUserOrders, useCancelOrder } from "@/hooks/useOrders"
-import { Loader2, Package, Truck, CheckCircle, XCircle, ChevronDown, ChevronUp } from "lucide-react"
+import { Loader2, Package, Truck, CheckCircle, XCircle, ChevronDown, ChevronUp, Clock } from "lucide-react"
 import { format } from "date-fns"
 
 const getStatusColor = (status: string) => {
@@ -20,6 +20,10 @@ const getStatusColor = (status: string) => {
       return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100"
     case "pending":
       return "bg-orange-100 text-orange-800 hover:bg-orange-100"
+    case "pending_payment":
+      return "bg-purple-100 text-purple-800 hover:bg-purple-100"
+    case "payment_failed":
+      return "bg-red-100 text-red-800 hover:bg-red-100"
     case "cancelled":
     case "failed":
       return "bg-red-100 text-red-800 hover:bg-red-100"
@@ -37,6 +41,9 @@ const getStatusIcon = (status: string) => {
     case "processing":
     case "pending":
       return <Package className="w-4 h-4" />
+    case "pending_payment":
+      return <Clock className="w-4 h-4" />
+    case "payment_failed":
     case "cancelled":
     case "failed":
       return <XCircle className="w-4 h-4" />
@@ -194,7 +201,7 @@ export default function OrdersPage() {
                         >
                           View
                         </Button>
-                        {(order.status === 'pending' || order.status === 'processing') && (
+                        {(order.status === 'pending' || order.status === 'pending_payment' || order.status === 'processing') && (
                           <Button 
                             size="sm" 
                             variant="outline"
@@ -245,7 +252,7 @@ export default function OrdersPage() {
                         >
                           View
                         </Button>
-                        {(order.status === 'pending' || order.status === 'processing') && (
+                        {(order.status === 'pending' || order.status === 'pending_payment' || order.status === 'processing') && (
                           <Button 
                             size="sm" 
                             variant="outline"

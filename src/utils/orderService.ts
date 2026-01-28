@@ -16,7 +16,7 @@ export interface Order {
     variantId?: string;
   }>;
   
-  status: 'pending' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'failed';
+  status: 'pending' | 'pending_payment' | 'payment_failed' | 'processing' | 'shipped' | 'delivered' | 'cancelled' | 'failed' | 'refunded';
   shipping: {
     address: any;
     carrier: string;

@@ -28,6 +28,7 @@ import {
   AlertCircle,
   Upload,
   X,
+  Clock,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "react-toastify";
@@ -44,6 +45,10 @@ const getStatusColor = (status: string) => {
       return "bg-yellow-100 text-yellow-800";
     case "pending":
       return "bg-orange-100 text-orange-800";
+    case "pending_payment":
+      return "bg-purple-100 text-purple-800";
+    case "payment_failed":
+      return "bg-red-100 text-red-800";
     case "cancelled":
     case "failed":
       return "bg-red-100 text-red-800";
@@ -62,6 +67,9 @@ const getStatusIcon = (status: string) => {
     case "processing":
     case "pending":
       return <Package className="w-4 h-4" />;
+    case "pending_payment":
+      return <Clock className="w-4 h-4" />;
+    case "payment_failed":
     case "cancelled":
     case "failed":
       return <XCircle className="w-4 h-4" />;
@@ -467,6 +475,7 @@ export default function OrderDetailsPage() {
               <CardContent className="pt-6">
                 <div className="flex flex-col md:flex-row gap-3">
                   {(order.status === "pending" ||
+                    order.status === "pending_payment" ||
                     order.status === "processing") && (
                     <Button
                       variant="destructive"

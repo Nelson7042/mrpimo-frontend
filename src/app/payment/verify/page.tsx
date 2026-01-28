@@ -8,6 +8,8 @@ import { useInitializePayment } from "@/hooks/useWallet";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCartStore } from "@/stores/cartStore";
 import { useUserStore } from "@/stores/useUserStore";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
 export default function PaymentVerifyPage() {
   const router = useRouter();
@@ -21,9 +23,16 @@ export default function PaymentVerifyPage() {
   
   useEffect(() => {
     const reference = searchParams.get('reference');
+    const orderId = searchParams.get('orderId');
     const type = searchParams.get('type') || 'wallet'; // Default to wallet for backward compatibility
     
-    if (!reference) {
+    if (type === 'checkout' && !orderId) {
+      setStatus('failed');
+      setMessage('Order ID not found');
+      return;
+    }
+    
+    if (type === 'wallet' && !reference) {
       setStatus('failed');
       setMessage('Payment reference not found');
       return;
@@ -32,19 +41,34 @@ export default function PaymentVerifyPage() {
     const handleVerification = async () => {
       try {
         if (type === 'checkout') {
-          // Handle checkout payment verification
-          setStatus('success');
-          setMessage('Payment successful! Your order has been created.');
+          // Handle checkout payment verification using your new endpoint
+          const response = await fetchWithAuth(`${API_BASE_URL}/checkout/paystack/verify`, {
+            method: 'POST',
+            body: JSON.stringify({
+              orderId: orderId,
+              reference: reference, // Optional - Paystack reference if available
+            }),
+          });
           
-          // Clear cart and refresh user data
-          await clearCart();
-          await useCartStore.getState().loadCart();
-          await useUserStore.getState().refreshUser();
+          const result = await response.json();
           
-          // Redirect to orders page after 3 seconds
-          setTimeout(() => {
-            router.push('/home/user/orders');
-          }, 3000);
+          if (result.success) {
+            setStatus('success');
+            setMessage('Payment successful! Your order has been created.');
+            
+            // Clear cart and refresh user data
+            await clearCart();
+            await useCartStore.getState().loadCart();
+            await useUserStore.getState().refreshUser();
+            
+            // Redirect to orders page after 3 seconds
+            setTimeout(() => {
+              router.push('/home/user/orders');
+            }, 3000);
+          } else {
+            setStatus('failed');
+            setMessage(result.message || 'Payment verification failed');
+          }
         } else {
           // Handle wallet payment verification
           const result = await verifyPayment(reference);
@@ -73,7 +97,7 @@ export default function PaymentVerifyPage() {
     };
     
     handleVerification();
-  }, [searchParams, verifyPayment, queryClient, router]);
+  }, [searchParams, verifyPayment, queryClient, router, clearCart]);
   
   return (
     <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">

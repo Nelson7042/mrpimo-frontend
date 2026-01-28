@@ -79,7 +79,7 @@ export interface IClientOrder {
     consolidatedDelivery: boolean;
     deliveryInstructions?: string;
   };
-  status: "pending" | "processing" | "partially_shipped" | "shipped" | "delivered" | "cancelled";
+  status: "pending" | "pending_payment" | "payment_failed" | "processing" | "partially_shipped" | "shipped" | "delivered" | "cancelled" | "refunded";
   createdAt: string;
   updatedAt: string;
 }

@@ -268,35 +268,24 @@ export default function CheckoutPage() {
           const billingAddr = sameAsShipping ? shippingAddr : addresses.find(addr => addr.type === 'billing');
           
           const response = await fetchWithAuth(`
-            ${API_BASE_URL}/payments/paystack/initialize`,
+            ${API_BASE_URL}/checkout/paystack/initialize`,
             {
               method: "POST",
               body: JSON.stringify({
-                email: user.email,
-                amount: total,
-                currency: currency,
-                metadata: {
-                  items: items.map((item: any) => ({
-                    productId: item.productId,
-                    variantId: item.variantId,
-                    optionId: item.optionId,
-                    quantity: item.quantity,
-                  })),
-                  shippingAddress: {
-                    street: shippingAddr?.street,
-                    city: shippingAddr?.city,
-                    state: shippingAddr?.state,
-                    country: shippingAddr?.country,
-                    postalCode: shippingAddr?.postalCode,
-                  },
-                  billingAddress: {
-                    street: billingAddr?.street,
-                    city: billingAddr?.city,
-                    state: billingAddr?.state,
-                    country: billingAddr?.country,
-                    postalCode: billingAddr?.postalCode,
-                  },
-                  pricing: { subtotal, shipping, tax, total, currency },
+                items: items.map((item: any) => ({
+                  productId: item.productId,
+                  variantId: item.variantId,
+                  optionId: item.optionId,
+                  quantity: item.quantity,
+                })),
+                pricing: { subtotal, shipping, tax, total, currency },
+                address: {
+                  street: shippingAddr?.street,
+                  city: shippingAddr?.city,
+                  state: shippingAddr?.state,
+                  country: shippingAddr?.country,
+                  postalCode: shippingAddr?.postalCode,
+                  type: 'shipping',
                 },
               }),
             }
@@ -304,10 +293,13 @@ export default function CheckoutPage() {
 
           const data = await response.json();
 
-          if (data.success && data.data.access_code) {
-            const popup = new PaystackPop();
-            popup.resumeTransaction(data.data.access_code);
-            // Note: Order creation will be handled by webhook
+          if (data.success && data.data.authorization_url && data.orderId) {
+            // Redirect to Paystack checkout page with callback URL
+            const callbackUrl = `${window.location.origin}/payment/verify?orderId=${data.orderId}&type=checkout`;
+            const paystackUrl = `${data.data.authorization_url}&callback_url=${encodeURIComponent(callbackUrl)}`;
+            
+            // Redirect to Paystack
+            window.location.href = paystackUrl;
           } else {
             toast.error("Failed to initialize Paystack payment");
           }
