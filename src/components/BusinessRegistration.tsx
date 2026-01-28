@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
 import Link from "next/link";
 import { useRouter } from "next/router";
+import { API_BASE_URL } from "@/utils/config";
 
 type Props = {};
 type Option = {
@@ -108,7 +109,7 @@ const BusinessRegistration = (props: Props) => {
 
     try {
       const response = await fetch(
-        "http://localhost:5800/api/v1/auth/register-vendor",
+        `${API_BASE_URL}/auth/register-vendor`,
         {
           method: "POST",
           headers: {

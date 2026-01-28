@@ -4,9 +4,8 @@ import React, { useState, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useProductSearch, ProductSearchFilters } from "@/hooks/useProductSearch";
 import { ProductCard } from "@/components/Home/ProductCard";
-import { Loader2, Filter, X } from "lucide-react";
+import { Loader2, Filter } from "lucide-react";
 import ProductSearchBar from "@/components/ProductSearchBar";
-import { ProductType } from "@/types/product.type";
 
 export default function SearchPage() {
   const searchParams = useSearchParams();
@@ -189,8 +188,8 @@ export default function SearchPage() {
             {products.length > 0 ? (
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6">
-                  {products.map((product: ProductType) => (
-                    <ProductCard key={product._id} product={product} />
+                  {products.map((product) => (
+                    <ProductCard key={product._id} product={product as any} />
                   ))}
                 </div>
 

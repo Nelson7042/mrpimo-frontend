@@ -7,6 +7,7 @@ import { useDeletePaymentMethod } from "@/hooks/mutations";
 import { toast } from "react-toastify";
 import AddPaymentMethodModal from "./AddPaymentMethodModal";
 import TopUpModal from "./TopUpModal";
+import { API_BASE_URL } from "@/utils/config";
 
 interface PaymentMethod {
   id: string;
@@ -44,7 +45,7 @@ export default function PaymentMethodManager({
   const fetchPaymentMethods = async () => {
     try {
       const response = await fetchWithAuth(
-        "http://localhost:5800/api/v1/wallets/payment-methods"
+        `${API_BASE_URL}/wallets/payment-methods`
       );
       const data = await response.json();
       if (data.success) {

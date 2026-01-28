@@ -1,6 +1,5 @@
 import { useUserStore } from "@/stores/useUserStore";
 import { API_BASE_URL } from "./config";
-import { toast } from "react-toastify";
 
 let isRefreshing = false;
 let failedQueue: Array<{
@@ -23,8 +22,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   const store = useUserStore.getState();
   const user = store.user;
 
-  // Block requests if no user in state (guest mode)
-  if (!user) {
+  // Allow /users/profile endpoint to bypass guest mode check (needed to fetch user on page load)
+  const isProfileEndpoint = url.includes('/users/profile');
+
+  // Block requests if no user in state (guest mode) - except for profile endpoint
+  if (!user && !isProfileEndpoint) {
     return Promise.reject("Guest mode");
   }
 
@@ -122,19 +124,6 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           console.warn('Failed to clear tokens:', e);
         }
         store.resetStore();
-
-        // Only redirect if on protected routes
-        if (typeof window !== 'undefined') {
-          const protectedRoutes = ['/vendor', '/home/user', '/home/dashboard', '/account'];
-          const currentPath = window.location.pathname;
-          const isProtectedRoute = protectedRoutes.some(route => currentPath.startsWith(route));
-          
-          // if (isProtectedRoute && !currentPath.includes('/login')) {
-          //   window.location.href = `/login?redirect=${encodeURIComponent(currentPath)}`;
-          // } else {
-          //   console.log("Session expired. Downgrading to guest mode.");
-          // }
-        }
 
         return Promise.reject("Session expired");
       }

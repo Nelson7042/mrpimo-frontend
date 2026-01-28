@@ -10,20 +10,25 @@ export const useAuth = () => {
 
   useEffect(() => {
     const fetchUser = async () => {
-      if (user) return;
-
+      if (user) {
+        return;
+      }
+      
       try {
-        // ✅ Use /users/profile endpoint as per auth guide
         const response = await fetchWithAuth(`${API_BASE_URL}/users/profile`);
+        
         if (response.ok) {
           const data = await response.json();
           setUser(data.user);
-          if (data.vendor) setVendor(data.vendor);
+          
+          if (data.vendor) {
+            setVendor(data.vendor);
+          }
         }
       } catch (error) {
-        // Only log error if it's not a guest mode rejection
+        // Silently handle guest mode and session expired
         if (error !== "Guest mode" && error !== "Session expired") {
-          console.error('Failed to fetch user:', error);
+          console.error('Auth check failed:', error);
         }
       }
     };
