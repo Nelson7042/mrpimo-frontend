@@ -37,16 +37,17 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
     }
   };
 
-  // Close modal if user is logged in
+  // Close modal if user is logged in AND email is verified
   useEffect(() => {
-    if (user && isOpen) {
+    if (user && user.isEmailVerified && isOpen) {
+      console.log('✅ User logged in and verified, closing modal');
       closeModal();
       close();
     }
   }, [user, isOpen, closeModal, close]);
 
-  // Don't render modal if user is logged in
-  if (user) {
+  // Don't render modal if user is logged in AND email is verified
+  if (user && user.isEmailVerified) {
     return null;
   }
 

@@ -156,6 +156,7 @@ const RegisterFormVendor = ({ setAuthState, close }: LoginProps) => {
       const registrationData = {
         accountType,
         firstName: accountType === "personal" ? firstName : undefined,
+        middleName: accountType === "personal" && middleName ? middleName : undefined,
         lastName: accountType === "personal" ? lastName : undefined,
         businessName: accountType === "business" ? businessName : undefined,
         email,
@@ -173,16 +174,27 @@ const RegisterFormVendor = ({ setAuthState, close }: LoginProps) => {
         registrationData,
         {
           onSuccess: (data: any) => {
+            console.log('✅ Vendor registration successful:', data);
+            
+            // Set user in store
             setUser(data.user);
-            // setAuthState("")
-            toast.success("Vendor registration successful", toastConfigSuccess);
+            
+            // Set vendor in store if returned
+            if (data.vendor) {
+              const { setVendor } = require('@/stores/useVendorStore').useVendorStore.getState();
+              setVendor(data.vendor);
+              console.log('✅ Vendor saved to store:', data.vendor);
+            }
+            
+            toast.success(data.message || "Vendor registration successful! Please verify your email.", toastConfigSuccess);
             setIsLoading(false);
-            if (             setAuthState
-)              setAuthState("otp")
-;
+            
+            if (setAuthState) {
+              setAuthState("otp");
+            }
           },
           onError: (error: any) => {
-            // console.error("Registration failed:", error);
+            console.error("❌ Vendor registration failed:", error);
             toast.error(error.message, toastConfigError);
             setIsLoading(false);
           },

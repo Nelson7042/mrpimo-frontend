@@ -76,6 +76,24 @@ const LoginForm = ({ setAuthState, close, onLoginSuccess }: LoginProps) => {
         { email, password },
         {
           onSuccess: (data) => {
+            // ✅ Check if email verification is required
+            if (data.requiresEmailVerification) {
+              setIsLoading(false);
+              
+              // Store user in store for OTP modal
+              if (data.user) {
+                setUser(data.user);
+              }
+              
+              toast.info(data.message || "Please verify your email to continue", toastConfigSuccess);
+              
+              // Open OTP modal instead of redirecting
+              if (setAuthState) {
+                setAuthState("otp");
+              }
+              return;
+            }
+
             // ✅ Check if 2FA is required
             if (data.requires2FA || data.has2faEnabled) {
               setIsLoading(false);

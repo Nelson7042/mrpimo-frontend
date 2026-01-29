@@ -7,6 +7,64 @@ export interface Coordinates {
   longitude: number;
 }
 
+export interface IPLocationData {
+  city: string;
+  region: string;
+  country: string;
+  country_code: string;
+  postal: string;
+  latitude: number;
+  longitude: number;
+  timezone: string;
+  ip: string;
+}
+
+export interface LocationData {
+  coordinates?: Coordinates;
+  ipLocation?: IPLocationData;
+  source: 'gps' | 'ip';
+}
+
+/**
+ * Get location from IP address using ipapi.co
+ */
+export const getIPLocation = async (): Promise<IPLocationData> => {
+  try {
+    const response = await fetch('https://ipapi.co/json/', {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch IP location');
+    }
+
+    const data = await response.json();
+    
+    // Check if we got an error response
+    if (data.error) {
+      throw new Error(data.reason || 'IP location service error');
+    }
+
+    return {
+      city: data.city || '',
+      region: data.region || '',
+      country: data.country_name || '',
+      country_code: data.country_code || '',
+      postal: data.postal || '',
+      latitude: data.latitude || 0,
+      longitude: data.longitude || 0,
+      timezone: data.timezone || '',
+      ip: data.ip || '',
+    };
+  } catch (error) {
+    console.warn('IP location fetch failed:', error);
+    throw error;
+  }
+};
+
 /**
  * Get user's current location using browser geolocation API
  */
@@ -29,13 +87,13 @@ export const getCurrentLocation = (): Promise<Coordinates> => {
         
         switch (error.code) {
           case error.PERMISSION_DENIED:
-            errorMessage = 'Location permission denied. Please enable location access in your browser settings.';
+            errorMessage = 'Location permission denied';
             break;
           case error.POSITION_UNAVAILABLE:
-            errorMessage = 'Location information is unavailable.';
+            errorMessage = 'Location information is unavailable';
             break;
           case error.TIMEOUT:
-            errorMessage = 'Location request timed out.';
+            errorMessage = 'Location request timed out';
             break;
         }
         
@@ -48,6 +106,48 @@ export const getCurrentLocation = (): Promise<Coordinates> => {
       }
     );
   });
+};
+
+/**
+ * Get comprehensive location data with fallbacks
+ * Tries GPS first, falls back to IP geolocation
+ */
+export const getLocationWithFallback = async (): Promise<LocationData | null> => {
+  // Try GPS first
+  try {
+    console.log('📍 Attempting GPS location...');
+    const coordinates = await getCurrentLocation();
+    console.log('✅ GPS location successful:', coordinates);
+    
+    return {
+      coordinates,
+      source: 'gps',
+    };
+  } catch (gpsError) {
+    console.warn('⚠️ GPS failed:', gpsError);
+    
+    // Fallback to IP geolocation
+    try {
+      console.log('📍 Attempting IP geolocation...');
+      const ipLocation = await getIPLocation();
+      console.log('✅ IP geolocation successful:', ipLocation);
+      
+      return {
+        coordinates: {
+          latitude: ipLocation.latitude,
+          longitude: ipLocation.longitude,
+        },
+        ipLocation,
+        source: 'ip',
+      };
+    } catch (ipError) {
+      console.warn('⚠️ IP geolocation failed:', ipError);
+      
+      // Both methods failed
+      console.log('❌ All location methods failed');
+      return null;
+    }
+  }
 };
 
 /**
