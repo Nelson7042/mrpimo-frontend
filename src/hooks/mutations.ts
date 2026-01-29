@@ -14,6 +14,24 @@ interface SignUpData {
   password: string;
   role: string
   phoneNumber: string;
+  locationData?: {
+    coordinates?: {
+      latitude: number;
+      longitude: number;
+    };
+    ipLocation?: {
+      city: string;
+      region: string;
+      country: string;
+      country_code: string;
+      postal: string;
+      latitude: number;
+      longitude: number;
+      timezone: string;
+      ip: string;
+    };
+    source: 'gps' | 'ip';
+  };
 }
 
 interface LoginData {
@@ -32,7 +50,7 @@ interface SignUpResponse {
 
 const signUpUser = async (
   data: SignUpData
-): Promise<{ message: string; user: User }> => {
+): Promise<{ message: string; user: User; accessToken?: string; refreshToken?: string }> => {
   const response = await fetch( `${API_BASE_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -45,7 +63,22 @@ const signUpUser = async (
     throw new Error(errorData.message);
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // Store tokens in localStorage for mobile compatibility (same as login)
+  if (result.accessToken) {
+    try {
+      localStorage.setItem('accessToken', result.accessToken);
+      if (result.refreshToken) {
+        localStorage.setItem('refreshToken', result.refreshToken);
+      }
+      console.log('✅ Tokens stored after signup');
+    } catch (e) {
+      console.warn('Failed to store tokens:', e);
+    }
+  }
+
+  return result;
 };
 
 export const useSignUp = () => {
@@ -81,22 +114,31 @@ export const useVerifyEmail = () => {
 const resendVerification = async (
   email: string
 ): Promise<{ message: string }> => {
+  console.log('🔄 Resending verification to:', email);
+  console.log('🔄 API URL:', `${API_BASE_URL}/auth/resend-verification`);
+  
   const response = await fetch(
     `${API_BASE_URL}/auth/resend-verification`,
     {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email }),
+      credentials: "include", // Include cookies if needed
     }
   );
 
+  console.log('🔄 Response status:', response.status);
+
   if (!response.ok) {
     const errorData = await response.json();
+    console.error('❌ Resend verification error:', errorData);
     toast.error(errorData.message);
     throw new Error(errorData.message);
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log('✅ Resend verification success:', data);
+  return data;
 };
 
 export const useResendVerification = () => {
@@ -113,6 +155,7 @@ const loginUser = async (
   vendor?: IVendor;
   has2faEnabled?: boolean;
   requires2FA?: boolean;
+  requiresEmailVerification?: boolean;
 }> => {
   const response = await fetch(`${API_BASE_URL}/auth/login`, {
     method: "POST",
@@ -121,12 +164,25 @@ const loginUser = async (
     body: JSON.stringify(data),
   });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message);
+  const result = await response.json();
+
+  // Handle email verification required (403 status)
+  if (response.status === 403 && result.requiresEmailVerification) {
+    console.log('⚠️ Email verification required');
+    // Store user data temporarily for verification page
+    if (result.user) {
+      try {
+        localStorage.setItem('tempUser', JSON.stringify(result.user));
+      } catch (e) {
+        console.warn('Failed to store temp user:', e);
+      }
+    }
+    return result;
   }
 
-  const result = await response.json();
+  if (!response.ok) {
+    throw new Error(result.message || 'Login failed');
+  }
   
   // Store tokens in localStorage for mobile compatibility
   if (result.accessToken) {
@@ -135,6 +191,7 @@ const loginUser = async (
       if (result.refreshToken) {
         localStorage.setItem('refreshToken', result.refreshToken);
       }
+      console.log('✅ Tokens stored after login');
     } catch (e) {
       console.warn('Failed to store tokens:', e);
     }
@@ -145,7 +202,7 @@ const loginUser = async (
 
 const signUpVendor = async (
   data: SignUpData
-): Promise<{ message: string; user: User }> => {
+): Promise<{ message: string; user: User; accessToken?: string; refreshToken?: string }> => {
   const response = await fetch(
      `${API_BASE_URL}/auth/register-vendor`,
     {
@@ -161,7 +218,22 @@ const signUpVendor = async (
     throw new Error(errorData.message);
   }
 
-  return response.json();
+  const result = await response.json();
+  
+  // Store tokens in localStorage for mobile compatibility (same as login)
+  if (result.accessToken) {
+    try {
+      localStorage.setItem('accessToken', result.accessToken);
+      if (result.refreshToken) {
+        localStorage.setItem('refreshToken', result.refreshToken);
+      }
+      console.log('✅ Tokens stored after vendor signup');
+    } catch (e) {
+      console.warn('Failed to store tokens:', e);
+    }
+  }
+
+  return result;
 };
 
 export const useLoginUser = () => {

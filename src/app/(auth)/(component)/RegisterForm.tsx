@@ -7,19 +7,21 @@ import {
 import FullButton from "@/components/FullButton";
 import { useLoginUser, useSignUp } from "@/hooks/mutations";
 import { useUserStore } from "@/stores/useUserStore";
-import { Eye, ChevronDown, Search } from "lucide-react";
+import { Eye, ChevronDown, Search, MapPin } from "lucide-react";
 import { Country } from "country-state-city";
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
 import { FaEyeSlash } from "react-icons/fa";
 import { toast } from "react-toastify";
+import { getLocationWithFallback, type LocationData } from "@/utils/geolocation.util";
 
 interface LoginProps {
   setAuthState?: (authState: "login" | "recover" | "otp") => void;
   close?: () => void;
+  onUserPendingVerification?: (user: any) => void;
 }
 
-const RegisterForm = ({ setAuthState, close }: LoginProps) => {
+const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginProps) => {
   const [open, setOpen] = React.useState(false);
 
   const toggle = () => {
@@ -51,6 +53,8 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
 
   const { setUser } = useUserStore();
   const [isLoading, setIsLoading] = useState(false);
+  const [isCapturingLocation, setIsCapturingLocation] = useState(false);
+  const [locationData, setLocationData] = useState<LocationData | null>(null);
   const { mutate: signUpUser, isPending } = useSignUp();
 
   // Close dropdown when clicking outside
@@ -69,6 +73,28 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
+  }, []);
+
+  // Capture user location on component mount
+  useEffect(() => {
+    const captureLocation = async () => {
+      try {
+        setIsCapturingLocation(true);
+        const location = await getLocationWithFallback();
+        if (location) {
+          setLocationData(location);
+          console.log('📍 Location data captured:', location);
+        } else {
+          console.log('⚠️ No location data available');
+        }
+      } catch (error: any) {
+        console.warn('⚠️ Could not capture location data:', error.message);
+      } finally {
+        setIsCapturingLocation(false);
+      }
+    };
+
+    captureLocation();
   }, []);
 
   // Filter countries based on search query
@@ -126,34 +152,58 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
     setIsLoading(true);
     // Perform validation and submit the form if valid
     if (validateForm()) {
+      // Prepare signup data
+      const signupData: any = {
+        firstName,
+        lastName,
+        email,
+        phoneNumber: `+${selectedCountry.phonecode}${phoneNumber}`,
+        password,
+        role: "customer",
+      };
+
+      // Add location data if available
+      if (locationData) {
+        signupData.locationData = {
+          coordinates: locationData.coordinates,
+          ipLocation: locationData.ipLocation,
+          source: locationData.source,
+        };
+        console.log('📍 Sending location data with signup:', signupData.locationData);
+      }
+
       // Submit the form
       signUpUser(
-        {
-          firstName,
-          lastName,
-          email,
-          phoneNumber: `+${selectedCountry.phonecode}${phoneNumber}`,
-          password,
-          role: "customer",
-        },
+        signupData,
         {
           onSuccess: (data) => {
-            // if (onLoginSuccess) {
-            //   if (data.has2faEnabled) {
-            //     onLoginSuccess(data)
-            //   }
-            // }
-
-            // setUser(data.user);
+            console.log('✅ Signup successful:', data);
+            console.log('📧 User email verified?:', data.user?.isEmailVerified);
+            
             toast.success(
-              data.message || "Login successful",
+              data.message || "Registration successful! Please verify your email.",
               toastConfigSuccess
             );
             setIsLoading(false);
-            if (setAuthState) setAuthState("otp");
+            
+            // Only show OTP if email is not verified
+            if (!data.user?.isEmailVerified && setAuthState) {
+              console.log('📱 Opening OTP modal - NOT setting user in store yet');
+              // Store user temporarily in localStorage for OTP modal to access
+              // Don't set in store yet to prevent redirects
+              if (onUserPendingVerification) {
+                onUserPendingVerification(data.user);
+              }
+              localStorage.setItem('tempUserForVerification', JSON.stringify(data.user));
+              setAuthState("otp");
+            } else if (data.user?.isEmailVerified) {
+              console.log('✅ Email already verified, setting user and closing modal');
+              // Set user and close modal
+              setUser(data.user);
+              if (close) close();
+            }
           },
           onError: (error) => {
-            // console.error("Login failed:", error);
             toast.error(error.message, toastConfigError);
             setIsLoading(false);
           },
@@ -170,6 +220,23 @@ const RegisterForm = ({ setAuthState, close }: LoginProps) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-[10px]">
+      {/* Location Indicator */}
+      {isCapturingLocation && (
+        <div className="flex items-center gap-2 text-xs text-gray-600 bg-blue-50 px-3 py-2 rounded-md mb-2">
+          <MapPin className="w-4 h-4 animate-pulse text-blue-600" />
+          <span>Detecting your location for better shipping experience...</span>
+        </div>
+      )}
+      {locationData && !isCapturingLocation && (
+        <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-md mb-2">
+          <MapPin className="w-4 h-4" />
+          <span>
+            {locationData.source === 'gps' && 'GPS location detected - we\'ll create a shipping address for you'}
+            {locationData.source === 'ip' && `Location detected from IP (${locationData.ipLocation?.city}, ${locationData.ipLocation?.country})`}
+          </span>
+        </div>
+      )}
+      
       <div className="mb-[10px]">
         <label className="text-[14px] md:text-[14px] xl:text-[16px] font-normal leading-[24px] text-[#000000] mb-[8px]">
           First Name

@@ -8,6 +8,7 @@ import { toast } from "react-toastify";
 import { toastConfigSuccess, toastConfigError } from "@/app/config/toast.config";
 import { useUserStore } from "@/stores/useUserStore";
 import { useRouter } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface OTPModalProps {
   email?: string;
@@ -16,7 +17,7 @@ interface OTPModalProps {
 }
 
 const OTPModal: React.FC<OTPModalProps> = ({
-  email,
+  email: emailProp,
   close,
   setAuthState
 }) => {
@@ -25,10 +26,39 @@ const OTPModal: React.FC<OTPModalProps> = ({
   const [timeLeft, setTimeLeft] = useState<number>(120); // 2 minutes in seconds
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   
-  const { setUser } = useUserStore();
+  const { setUser, user } = useUserStore();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const { mutate: verifyEmail, isPending: isVerifying } = useVerifyEmail();
   const { mutate: resendVerification, isPending: isResending } = useResendVerification();
+
+  // Get email from prop, user store, or temporary storage
+  const [tempUser, setTempUser] = useState<any>(null);
+  
+  useEffect(() => {
+    // Try to get user from temporary storage if not in store
+    if (!user) {
+      const tempUserStr = localStorage.getItem('tempUserForVerification');
+      if (tempUserStr) {
+        try {
+          const parsedUser = JSON.parse(tempUserStr);
+          setTempUser(parsedUser);
+          console.log('📧 Loaded temp user from localStorage:', parsedUser);
+        } catch (e) {
+          console.error('Failed to parse temp user:', e);
+        }
+      }
+    }
+  }, [user]);
+
+  const email = emailProp || user?.email || tempUser?.email;
+
+  // Log email for debugging
+  useEffect(() => {
+    console.log('📧 OTP Modal - Email from prop:', emailProp);
+    console.log('📧 OTP Modal - Email from user store:', user?.email);
+    console.log('📧 OTP Modal - Final email:', email);
+  }, [emailProp, user?.email, email]);
 
   // Timer effect
   useEffect(() => {
@@ -107,11 +137,42 @@ const OTPModal: React.FC<OTPModalProps> = ({
         { code: otpValue },
         {
           onSuccess: (data) => {
-            setUser(data.user);
-            setAuthState?.("login");
+            console.log('✅ Email verification successful, user data:', data.user);
+            
+            // Clear temporary user from localStorage
+            localStorage.removeItem('tempUserForVerification');
+            
+            // Ensure isEmailVerified is set to true before adding to store
+            const verifiedUser = {
+              ...data.user,
+              isEmailVerified: true
+            };
+            
+            console.log('✅ Setting verified user in store:', verifiedUser);
+            
+            // Set the verified user in the store
+            setUser(verifiedUser);
+            
+            // Invalidate user profile query to force refetch with updated data
+            queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+            
             toast.success("Email verified successfully!", toastConfigSuccess);
-            if (close) close();
-            router.push("/home");
+            
+            // If we have setAuthState, we're in the auth modal flow
+            if (setAuthState) {
+              // After signup verification, close modal and redirect
+              if (close) close();
+              // Small delay to ensure store is persisted before redirect
+              setTimeout(() => {
+                router.push("/home/user");
+              }, 100);
+            } else {
+              // Standalone flow (login with unverified email) - complete login
+              if (close) close();
+              setTimeout(() => {
+                router.push("/home");
+              }, 100);
+            }
           },
           onError: (error) => {
             toast.error(error.message, toastConfigError);
@@ -125,26 +186,40 @@ const OTPModal: React.FC<OTPModalProps> = ({
 
   // Handle resend
   const handleResend = (): void => {
-    if (!email) {
+    console.log('🔄 Attempting to resend OTP for email:', email);
+    
+    if (!email || email.trim() === '') {
+      console.error('❌ Email is missing or empty');
       toast.error("Email is required to resend verification", toastConfigError);
       return;
     }
+
+    // Prevent resend if timer is still running
+    if (timeLeft > 0) {
+      toast.error(`Please wait ${formatTime(timeLeft)} before resending`, toastConfigError);
+      return;
+    }
     
+    console.log('✅ Email validated, calling resendVerification...');
     resendVerification(
       email,
       {
         onSuccess: () => {
-          setTimeLeft(120); // Reset timer
+          setTimeLeft(120); // Reset timer to 2 minutes
           setOtp(["", "", "", "", "", ""]); // Clear OTP
           inputRefs.current[0]?.focus(); // Focus first input
           toast.success("New OTP sent to your email!", toastConfigSuccess);
         },
         onError: (error) => {
+          console.error('❌ Resend verification failed:', error);
           toast.error(error.message, toastConfigError);
         },
       }
     );
   };
+
+  // Check if resend button should be disabled
+  const isResendDisabled = timeLeft > 0 || isResending;
 
   // Handle close
   const handleClose = (): void => {
@@ -203,18 +278,27 @@ const OTPModal: React.FC<OTPModalProps> = ({
       </div>
 
       {/* Resend and Timer */}
-      <div className="flex justify-between items-center mb-8 text-sm">
-        <div className="flex items-center gap-2">
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-2 mb-8 text-sm">
+        <div className="flex items-center gap-2 flex-wrap justify-center sm:justify-start">
           <span className="text-gray-600">Didn't receive code?</span>
           <button
             onClick={handleResend}
-            className="text-blue-500 hover:text-blue-600 font-medium transition-colors disabled:opacity-50"
-            disabled={timeLeft > 0 || isResending}
+            className={`font-medium transition-colors ${
+              isResendDisabled
+                ? 'text-gray-400 cursor-not-allowed'
+                : 'text-blue-500 hover:text-blue-600 cursor-pointer'
+            }`}
+            disabled={isResendDisabled}
+            type="button"
           >
-            {isResending ? "Sending..." : "Resend"}
+            {isResending ? "Sending..." : timeLeft > 0 ? `Resend (${formatTime(timeLeft)})` : "Resend"}
           </button>
         </div>
-        <div className="text-gray-800 font-medium">{formatTime(timeLeft)}</div>
+        {timeLeft > 0 && (
+          <div className="text-gray-800 font-medium bg-gray-100 px-3 py-1 rounded">
+            {formatTime(timeLeft)}
+          </div>
+        )}
       </div>
 
       {/* Action Buttons */}
