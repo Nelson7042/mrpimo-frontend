@@ -160,6 +160,8 @@ export default function CheckoutPage() {
       return;
     }
 
+    
+
     try {
       if (sameAsShipping) {
         // Save as both billing and shipping
@@ -190,7 +192,7 @@ export default function CheckoutPage() {
       toast.error("You have to be logged in to proceed to checkout");
       return;
     }
-    
+
 
     const addresses = addressData?.addresses || user?.addresses || [];
     const hasShippingAddress = addresses.some(addr => addr.type === "shipping");
