@@ -82,7 +82,7 @@ const Header = () => {
       // if (vendor) {
       //   router.push("/vendor/dashboard");
       // } if {
-        router.push("/home/user");
+      router.push("/home/user");
       // }
     }
   };
@@ -124,7 +124,7 @@ const Header = () => {
     // },
     {
       name: "Best Deals",
-      link: "/about",
+      link: "/home/best-deals",
     },
     {
       name: "Sell",
@@ -132,27 +132,25 @@ const Header = () => {
     },
     {
       name: "Track Order ",
-      link: "/contact",
+      link: "/home/track-order",
     },
     // {
     //   name: "Customer Care",
     //   link: "/contact",
     // },
   ];
-  
+
   return (
-    <header className="text-white ">
+    <header className="text-white sticky top-0 z-50">
       {/* Top banner - responsive */}
-      <div className="w-full bg-primary h-[56px] sm:h-[60px] md:h-auto">
-        <div className="w-full px-4 md:px-6 lg:px-8 text-center py-2 text-xs sm:text-sm lg:text-base font-medium flex justify-between items-center">
-          {/* Logo */}
-          <Link href="/home" className="shrink-0 ">
+      <div className="w-full bg-primary h-[40px] sm:h-[44px] md:h-[48px]">
+        <div className="w-full px-2 sm:px-2 md:px-4 lg:px-8 text-center py-1.5 text-xs sm:text-sm lg:text-base font-medium flex justify-between items-center">
+          {/* Welcome Text */}
+          <Link href="/home" className="flex-shrink-0 hidden md:block">
             <div className="flex items-center">
-              <img
-                src="/images/mprimo-logo2.png"
-                alt="mprimoLogo image"
-                className="h-[36px] w-auto sm:h-[36px] sm:w-auto md:h-[42px] md:w-auto lg:h-[48px] lg:w-[140px]"
-              />
+              <span className="truncate md:block hidden">
+                Welcome to Mprimo online store...
+              </span>
             </div>
           </Link>
 
@@ -173,7 +171,7 @@ const Header = () => {
           </button> */}
           <div className="flex items-center gap-1">
             <button
-                            onClick={() => handleProfileClick()}
+              onClick={() => handleProfileClick()}
 
             >
               <ProfileCircle color="white" className="w-6 h-6" />
@@ -195,7 +193,7 @@ const Header = () => {
 
       {/* Main header */}
       <div className="w-full bg-primary">
-        <div className="w-full px-4 md:px-6 lg:px-8 py-3 sm:py-4">
+        <div className="w-full px-2 sm:px-3 md:px-6 lg:px-8 py-1.5 sm:py-2 md:py-3">
           <div className="flex items-center justify-between gap-2 sm:gap-4">
             {/* Mobile menu button */}
             {/* <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
@@ -238,22 +236,25 @@ const Header = () => {
                 </div>
               </SheetContent>
             </Sheet> */}
-            <div></div>
 
-            {/* Logo */}
-            <Link href="/home" className="flex-shrink-0 hidden md:block">
+            {/* Logo - moved to bottom section */}
+            <Link href="/home" className="shrink-0">
               <div className="flex items-center">
-                <span className="truncate md:block hidden">
-                  Welcome to Mprimo online store...
-                </span>
+                <img
+                  src="/images/mprimo-logo2.png"
+                  alt="mprimoLogo image"
+                  className="h-[28px] w-auto sm:h-[32px] sm:w-auto md:h-[36px] md:w-auto lg:h-[40px] lg:w-[120px]"
+                />
               </div>
             </Link>
 
+            <div></div>
+
             {/* Desktop Search bar */}
             <div className="flex-1 font-normal block md:mx-4 relative">
-              <div className="flex mx-auto max-w-2xl bg-white py-[3px] md:py-[5px] rounded-[8px]">
+              <div className="flex mx-auto max-w-2xl bg-white py-[2px] md:py-[3px] rounded-[8px]">
                 <button className="border-r px-2 md:px-3">
-                  <Search className="w-6 h-6" color="black" />
+                  <Search className="w-5 h-5" color="black" />
                 </button>
                 <input
                   placeholder="Search for anything..."
@@ -264,7 +265,7 @@ const Header = () => {
                 />
                 <button
                   onClick={handleSearchSubmit}
-                  className="py-[10px] md:py-[10px] px-4 text-xs bg-primary text-white rounded-[8px] mr-1 hover:bg-blue-700"
+                  className="py-[8px] md:py-[8px] px-3 text-xs bg-primary text-white rounded-[8px] mr-1 hover:bg-blue-700"
                 >
                   Search
                 </button>
@@ -276,7 +277,7 @@ const Header = () => {
                     {suggestionsData?.suggestions &&
                       suggestionsData.suggestions.map((suggestion) => {
                         const price = formatProductPrice(suggestion);
-                        
+
                         return (
                           <Link
                             key={suggestion._id}

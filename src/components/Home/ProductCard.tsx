@@ -67,13 +67,13 @@ export const ProductCard = ({
         <div className="relative mb-2 sm:mb-4">
           <div
             className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-md ${
-              isLarge ? "h-48 sm:h-64" : "h-24 md:h-34"
+              isLarge ? "h-48 sm:h-64" : "h-40 sm:h-48 md:h-56"
             } flex items-center justify-center overflow-hidden`}
           >
             <img
               src={product?.images?.[0] || "/images/tv.png"}
               alt={product?.name}
-              className="w-full h-full object-contain group-hover:scale-105 transition-transform duration-300"
+              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
 
