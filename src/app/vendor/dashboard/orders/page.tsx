@@ -15,10 +15,10 @@ const page = (props: Props) => {
 
   if (!vendor) {
     return (
-      <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)]">
+      <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-roboto">
         <div className="px-2 lg:px-5">
           <h1 className="text:base md:text-lg font-semibold">My Orders</h1>
-          <p className="text-xs text-gray-800 font-[family-name:var(--font-poppins)]">
+          <p className="text-xs text-gray-800 font-roboto">
             Please login to view your orders.
           </p>
         </div>
@@ -30,10 +30,10 @@ const page = (props: Props) => {
     useVendorAnalytics(vendor?._id || "");
 
   return (
-    <div className="bg-[#f6f6f6] rounded-lg font-light shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)]">
+    <div className="bg-[#f6f6f6] rounded-lg font-light shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-roboto">
       <div className="px-2 lg:px-5">
         <h1 className="text-base **:md:text-lg font-semibold">My Orders</h1>
-        <p className="text-xs text-gray-800 font-[family-name:var(--font-poppins)]">
+        <p className="text-xs text-gray-800 font-roboto">
           Latest orders in real time
         </p>
         <div className="grid md:grid-cols-6 lg:grid-cols-9 xl:grid-cols-12 gap-4 mt-5">

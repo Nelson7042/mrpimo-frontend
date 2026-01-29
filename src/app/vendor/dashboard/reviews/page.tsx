@@ -80,12 +80,12 @@ const page = (props: Props) => {
   const change = reviewAnalytics?.analytics?.totalReview?.change || 0;
 
   return (
-    <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)]">
+    <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-roboto">
       <div className="px-2 lg:px-5">
         <div className="flex flex-col-reverse md:flex-row gap-y-4 justify-between items-center mb-5">
           <div className="self-start">
             <h1 className="text-lg font-semibold">Review Overview</h1>
-            <p className="text-xs text-gray-800 font-[family-name:var(--font-poppins)]">
+            <p className="text-xs text-gray-800 font-roboto">
               Everything in here
             </p>
           </div>
@@ -110,7 +110,7 @@ const page = (props: Props) => {
             <div className="col-span-4">
               <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full">
                 <div className="flex justify-between mb-4">
-                  <p className="font-[family-name:var(--font-poppins)] text-gray-500">
+                  <p className="font-roboto text-gray-500">
                     Review Ratings
                   </p>
                   <div className="rounded-full size-12.5 bg-gray-200 flex items-center justify-center relative">
@@ -135,12 +135,12 @@ const page = (props: Props) => {
                   </div>
                 </div>
                 <div className="flex flex-col gap-y-2">
-                  <p className="font-[family-name:var(--font-alexandria)] text-[#211f1f] font-bold text-xl md:text-2xl lg:text-3xl truncate">
+                  <p className="font-roboto text-[#211f1f] font-bold text-xl md:text-2xl lg:text-3xl truncate">
                     {reviewAnalytics?.analytics?.averageRating?.current || 0}
                   </p>
                   <div className="flex gap-x-2 items-center">
                     <div
-                      className={`font-[family-name:var(--font-poppins)] text-[#211f1f] px-2 py-1 rounded-full flex items-center ${
+                      className={`font-roboto text-[#211f1f] px-2 py-1 rounded-full flex items-center ${
                         (reviewAnalytics?.analytics?.averageRating?.change ||
                           0) > 0
                           ? "bg-[#a8ffdc]"
@@ -156,7 +156,7 @@ const page = (props: Props) => {
                         %
                       </div>
                     </div>
-                    <p className="text-black text-xs font-[family-name:var(--font-poppins)]">
+                    <p className="text-black text-xs font-roboto">
                       Vs last week
                     </p>
                   </div>
@@ -166,7 +166,7 @@ const page = (props: Props) => {
             <div className="col-span-4">
               <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full">
                 <div className="flex justify-between mb-4">
-                  <p className="font-[family-name:var(--font-poppins)] text-gray-500">
+                  <p className="font-roboto text-gray-500">
                     All feedbacks
                   </p>
                   <div>
@@ -191,12 +191,12 @@ const page = (props: Props) => {
                   </div>
                 </div>
                 <div className="flex flex-col gap-y-2">
-                  <p className="font-[family-name:var(--font-alexandria)] text-[#211f1f] font-bold text-xl md:text-2xl lg:text-3xl truncate">
+                  <p className="font-roboto text-[#211f1f] font-bold text-xl md:text-2xl lg:text-3xl truncate">
                     {reviewAnalytics?.analytics?.totalReviews?.current || 0}
                   </p>
                   <div className="flex gap-x-2 items-center">
                     <div
-                      className={`font-[family-name:var(--font-poppins)] text-[#211f1f] px-2 py-1 rounded-full flex items-center ${
+                      className={`font-roboto text-[#211f1f] px-2 py-1 rounded-full flex items-center ${
                         (reviewAnalytics?.analytics?.totalReviews?.change ||
                           0) > 0
                           ? "bg-[#a8ffdc]"
@@ -211,7 +211,7 @@ const page = (props: Props) => {
                         {reviewAnalytics?.analytics?.totalReviews?.change || 0}%
                       </div>
                     </div>
-                    <p className="text-black text-xs font-[family-name:var(--font-poppins)]">
+                    <p className="text-black text-xs font-roboto">
                       {reviewAnalytics?.analytics?.period}
                     </p>
                   </div>
@@ -222,7 +222,7 @@ const page = (props: Props) => {
             <div className="col-span-4">
               <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full">
                 <div className="flex justify-between mb-4">
-                  <p className="font-[family-name:var(--font-poppins)] text-gray-500">
+                  <p className="font-roboto text-gray-500">
                     Average Satisfaction
                   </p>
                 </div>
@@ -363,7 +363,7 @@ const page = (props: Props) => {
                   </div>
                 </div>
                 <div className="flex gap-x-2 items-center">
-                  <p className="text-black text-xs font-[family-name:var(--font-poppins)]">
+                  <p className="text-black text-xs font-roboto">
                     {reviewAnalytics?.analytics?.period}
                   </p>
                 </div>

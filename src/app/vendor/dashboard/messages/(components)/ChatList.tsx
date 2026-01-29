@@ -70,7 +70,7 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
                   </span>
                 </div>
                 <div>
-                  <h3 className="font-normal text-sm md:text-base text-gray-900">{group.participantName}</h3>
+                  <h3 className="font-normal text-sm text-gray-900">{group.participantName}</h3>
                   <p className="text-xs text-gray-500">{group.productChats.length} product{group.productChats.length !== 1 ? 's' : ''}</p>
                 </div>
               </div>

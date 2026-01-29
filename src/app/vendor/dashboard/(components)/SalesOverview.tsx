@@ -28,7 +28,7 @@ const SalesOverview = (props: Props) => {
   return (
     <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm font-light">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="font-semibold text:base md:text-xl  text-gray-600">
+        <h1 className="font-semibold text-lg text-gray-600">
           Sales Overview
         </h1>
         <select
@@ -52,7 +52,7 @@ const SalesOverview = (props: Props) => {
         <div className="bg-blue-50 p-4 rounded-lg">
           <p className="text-sm text-gray-500">Total Sales</p>
           {data?.analytics && (
-            <p className="text-xl md:text-2xl font-semibold">
+            <p className="text-xl font-semibold">
               {getCurrencySymbol(data?.analytics?.currency)}
               {data?.analytics?.totalSales?.toFixed(2) || "0.00"}
             </p>
@@ -60,13 +60,13 @@ const SalesOverview = (props: Props) => {
         </div>
         <div className="bg-green-50 p-4 rounded-lg">
           <p className="text-sm text-gray-500">Orders</p>
-          <p className="text-xl md:text-2xl font-semibold">
+          <p className="text-xl font-semibold">
             {data?.analytics?.totalOrders || 0}
           </p>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg">
           <p className="text-sm text-gray-500 ">Avg. Order Value</p>
-          <p className="text-xl md:text-2xl font-semibold">
+          <p className="text-xl font-semibold">
             {data?.analytics?.averageOrdersPerDay}
           </p>
         </div>

@@ -43,22 +43,22 @@ const Page = (props: Props) => {
   
 
   return (
-    <div className="bg-[#f6f6f6] font-[family-name:var(--font-alexandria)]">
+    <div className="bg-[#f6f6f6] font-roboto">
       <div className="p-4 md:p-10">
-        <h1 className="font-bold text:base md:text-xl mb-2 md:mb-0">Dashboard</h1>
-        <p className=" mb-3 md:mb-5 font-[family-name:var(--font-poppins)] text-sm md:text-base">
+        <h1 className="font-bold text-xl mb-2">Dashboard</h1>
+        <p className="mb-3 md:mb-5 text-sm">
           {`Hey ${vendor?.businessInfo?.name}, welcome back! Let’s take a look at what’s going on in your store today.`}
         </p>
         {vendor?.kycStatus !== "verified" && (
           <div className="">
             <div className="bg-[#f1f1f1] border border-[#e1e1e1] rounded-lg p-2 md:p-5 mb-4 md:mb-5">
-              <h2 className="font-bold text:base md:text-xl  mb-2">KYC Verification</h2>
-              <p className="text-sm md:text-base mb-4">
+              <h2 className="font-bold text-lg mb-2">KYC Verification</h2>
+              <p className="text-sm mb-4">
                 Your KYC verification is {vendor?.kycStatus || 'pending'}. Please complete the KYC
                 verification to be able to request payouts and access all
                 features.
               </p>
-              <Link href="/vendor/verification" className="text-blue-600 underline text-sm md:text-base">
+              <Link href="/vendor/verification" className="text-blue-600 underline text-sm">
                 {vendor?.kycStatus === 'pending' ? 'Continue' : 'Start'} KYC Process
               </Link>
             </div>

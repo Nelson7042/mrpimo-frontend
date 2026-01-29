@@ -171,7 +171,7 @@ const Page = () => {
               isChatOpen ? "hidden lg:block" : "block"
             } mx-2 md:mx-0 lg:m-0 w-full lg:w-[45%] xl:w-[40%] border rounded-2xl lg:rounded-none  lg:p-2 bg-white`}
           >
-            <h1 className="hidden lg:block text-center text-sm md:text-base font-semibold mb-2">
+            <h1 className="hidden lg:block text-center text-sm font-semibold mb-2">
               Chats
             </h1>
             <div className="flex gap-x-2 items-center border rounded-sm border-gray-400 p-2 m-4 lg:m-2 md:hidden">

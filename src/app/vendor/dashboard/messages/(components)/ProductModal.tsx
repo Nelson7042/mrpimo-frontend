@@ -92,7 +92,7 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
           <div className="space-y-2 md:space-y-4">
             <div>
               <h4 className="text-base md:text-lg font-normal text-gray-900 mb-1 md:mb-2">{product.name}</h4>
-              <p className="text-gray-600 text-sm md:text-base leading-relaxed">{selectedProduct?.description}</p>
+              <p className="text-gray-600 text-sm leading-relaxed">{selectedProduct?.description}</p>
             </div>
 
             {/* Pricing */}
@@ -103,10 +103,10 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
                   <div className="flex items-center gap-2">
                     {pricing.salePrice < pricing.price ? (
                       <>
-                        <span className="text-sm md:text-base font-normal text-green-600">
+                        <span className="text-sm font-normal text-green-600">
                           {pricing.currency} {pricing.salePrice}
                         </span>
-                        <span className="text-sm md:text-base text-gray-400 line-through">
+                        <span className="text-sm text-gray-400 line-through">
                           {pricing.currency} {pricing.price}
                         </span>
                         <span className="bg-red-100 text-red-600 px-2 py-1 rounded-full text-xs ">
@@ -114,7 +114,7 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
                         </span>
                       </>
                     ) : (
-                      <span className="text-sm md:text-base font-normal text-green-600">
+                      <span className="text-sm font-normal text-green-600">
                         {pricing.currency} {pricing.price}
                       </span>
                     )}
@@ -166,10 +166,10 @@ const ProductModal = ({ isOpen, product, onClose }: ProductModalProps) => {
             {/* Analytics */}
             {selectedProduct?.analytics && (
               <div className="bg-blue-50/80 p-2 md:p-4 rounded-xl">
-                <h5 className="font-medium text-sm md:text-base  text-gray-900 mb-3">Product Analytics</h5>
+                <h5 className="font-medium text-sm  text-gray-900 mb-3">Product Analytics</h5>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                   <div className="text-center">
-                    <p className="text-sm md:text-base font-bold text-blue-600">{selectedProduct?.analytics.views}</p>
+                    <p className="text-sm font-bold text-blue-600">{selectedProduct?.analytics.views}</p>
                     <p className="text-xs md:text-sm text-gray-600">Views</p>
                   </div>
                 </div>
