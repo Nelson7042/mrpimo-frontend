@@ -13,6 +13,7 @@ import { useSocket } from "@/hooks/useSocket";
 import { useUserNotifications, useVendorAnalytics } from "@/hooks/queries";
 import Link from "next/link";
 import { useVendorStore } from "@/stores/useVendorStore";
+import KybModal from "@/components/KybModal";
 
 type Props = {};
 
@@ -20,6 +21,7 @@ const Page = (props: Props) => {
   const { vendor } = useVendorStore();
   const socket = useSocket();
   const { data, isLoading } = useVendorAnalytics(vendor?._id!);
+  const [showKybModal, setShowKybModal] = useState(false);
 
   const [vendorCurrency] = useState(
     data?.dashboard?.salesTotal?.currency || ""
@@ -49,6 +51,7 @@ const Page = (props: Props) => {
         <p className="mb-3 md:mb-5 text-sm">
           {`Hey ${vendor?.businessInfo?.name}, welcome back! Let’s take a look at what’s going on in your store today.`}
         </p>
+        
         {vendor?.kycStatus !== "verified" && (
           <div className="">
             <div className="bg-[#f1f1f1] border border-[#e1e1e1] rounded-lg p-2 md:p-5 mb-4 md:mb-5">
@@ -111,6 +114,8 @@ const Page = (props: Props) => {
         {/* Recent Orders */}
         <RecentOrders currency={vendorCurrency} />
       </div>
+
+      <KybModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
     </div>
   );
 };
