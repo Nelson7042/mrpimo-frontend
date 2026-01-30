@@ -77,7 +77,7 @@ const NotificationModal = ({
   const position = getPosition();
 
   return (
-    <div className="fixed inset-0 z-50 font-[family-name:var(--font-poppins)]">
+    <div className="fixed inset-0 z-50 font-roboto">
       <div className="fixed inset-0" onClick={onClose}></div>
 
       <div
@@ -152,7 +152,7 @@ const NotificationModal = ({
                       )}
                     </div>
                     <div className="flex-1">
-                      <div className="flex justify-between items-center font-[family-name:var(--font-alexandria)] ">
+                      <div className="flex justify-between items-center font-roboto ">
                         {notification?.sender?.name && (
                           <p>{notification.sender.name}</p>
                         )}
@@ -161,7 +161,7 @@ const NotificationModal = ({
                         </p>
                       </div>
                       <div className="flex gap-x-2">
-                        <div className="font-[family-name:var(--font-alexandria)] ">
+                        <div className="font-roboto ">
                           <p className="text-sm text-gray-600 mt-1">
                             {notification.message}
                           </p>
@@ -170,7 +170,7 @@ const NotificationModal = ({
                           </span>
                         </div>
                         {notification?.product?.productName && (
-                          <div className="mt-2 flex items-center gap-x-2 bg-gray-50 rounded font-[family-name:var(--font-poppins)] flex-shrink-0">
+                          <div className="mt-2 flex items-center gap-x-2 bg-gray-50 rounded font-roboto flex-shrink-0">
                             {notification.product.productImage && (
                               <div className="size-10 bg-gray-100 rounded overflow-hidden flex items-center justify-center flex-shrink-0">
                                 <Image

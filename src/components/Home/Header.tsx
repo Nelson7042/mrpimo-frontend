@@ -1,14 +1,8 @@
-
-"use client";
-
 import {
   Search,
   ShoppingCart,
-  User,
-  Menu,
   Heart,
   ChevronDown,
-  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -17,12 +11,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useCartLength } from "@/stores/cartHook";
-import AuthenticationModal from "@/app/(auth)/authenticationModal";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useSearchSuggestions } from "@/hooks/useSearch";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -33,9 +25,15 @@ import { useCartSync } from "@/hooks/useCartSync";
 import { useRouter } from "next/navigation";
 import { useVendorStore } from "@/stores/useVendorStore";
 import AuthenticationModalVendor from "@/app/(auth)/authenticationModalVendor";
-import { resetAllStores } from "@/stores/resetStore";
 import { ProfileCircle } from "iconsax-react";
 import { formatProductPrice } from "@/utils/formatPrice";
+import dynamic from "next/dynamic";
+
+// Dynamically import the vendor modal to avoid SSR issues
+const VendorRegistrationModal = dynamic(
+  () => import("@/components/vendor/VendorRegistrationModal"),
+  { ssr: false }
+);
 
 const Header = () => {
   const [isSell, setIsSell] = useState(false);
@@ -44,6 +42,7 @@ const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
+  const [showVendorModal, setShowVendorModal] = useState(false);
   const cartLength = useCartLength();
   const router = useRouter();
 
@@ -63,14 +62,36 @@ const Header = () => {
   }, []);
 
   const handleSellClick = () => {
-    if (!vendor) {
-      setAuthType("vendor");
-      setIsSell(!isSell);
-    } else {
-      // console.log("vendor", vendor);
+    // If user is already a vendor, go to dashboard
+    if (vendor) {
       router.push("/vendor/dashboard");
+      return;
     }
+    
+    // If user is not logged in, show auth modal and store intent
+    if (!user) {
+      sessionStorage.setItem("pendingVendorRegistration", "true");
+      openModal();
+      return;
+    }
+    
+    // User is logged in but not a vendor - show vendor registration modal
+    setShowVendorModal(true);
   };
+
+  // Check for pending vendor registration after user logs in
+  useEffect(() => {
+    if (user && !vendor && isMounted) {
+      const pendingRegistration = sessionStorage.getItem("pendingVendorRegistration");
+      if (pendingRegistration === "true") {
+        sessionStorage.removeItem("pendingVendorRegistration");
+        // Small delay to ensure modal renders properly
+        setTimeout(() => {
+          setShowVendorModal(true);
+        }, 500);
+      }
+    }
+  }, [user, vendor, isMounted]);
 
   const handleProfileClick = () => {
     if (!user) {
@@ -107,6 +128,8 @@ const Header = () => {
   const handleSuggestionClick = (suggestion: SearchSuggestion) => {
     setSearchQuery("");
     setShowSuggestions(false);
+    // Navigate to product detail page
+    router.push(`/home/product-details/${suggestion._id}`);
   };
 
   const handleSearchSubmit = () => {
@@ -125,10 +148,6 @@ const Header = () => {
     {
       name: "Best Deals",
       link: "/home/best-deals",
-    },
-    {
-      name: "Sell",
-      link: "/contact",
     },
     {
       name: "Track Order ",
@@ -161,14 +180,18 @@ const Header = () => {
                 <span className="mx-2 hover:underline">{page.name}</span>
               </Link>
             ))}
+            
+            {/* Sell Button */}
+            {isMounted && (
+              <button
+                onClick={handleSellClick}
+                className="ml-2 px-4 py-1.5 bg-white text-blue-600 rounded-md font-medium text-sm hover:bg-gray-100 transition-colors"
+              >
+                {vendor ? "Dashboard" : "Sell"}
+              </button>
+            )}
           </div>
 
-          {/* <button//www.w3.org/2000/svg
-            onClick={handleSellClick}
-            className="text-[#121212]  px-3 sm:px-4 py-2 lg:py-3  lg:w-[180px] rounded-md bg-white font-normal  text-xs sm:text-sm lg:text-base"
-          >
-            Sale
-          </button> */}
           <div className="flex items-center gap-1">
             <button
               onClick={() => handleProfileClick()}
@@ -435,6 +458,12 @@ const Header = () => {
       </div>
 
       <AuthenticationModalVendor isOpen={isSell} close={handlecloseModal} />
+      
+      {/* Vendor Registration Modal */}
+      <VendorRegistrationModal
+        isOpen={showVendorModal}
+        onClose={() => setShowVendorModal(false)}
+      />
     </header>
   );
 };

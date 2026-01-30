@@ -2,7 +2,7 @@ import React from 'react';
 
 const ProductsPageSkeleton = () => {
   return (
-    <div className="bg-[#f6f6f6] font-[family-name:var(--font-alexandria)]" style={{ height: "calc(100vh - 100px)" }}>
+    <div className="bg-[#f6f6f6] font-roboto" style={{ height: "calc(100vh - 100px)" }}>
       <div className="p-4 md:p-4 lg:p-10 h-full">
         {/* Header Section */}
         <div className="flex flex-col md:flex-row justify-between items-center mb-5 gap-4 md:gap-0">

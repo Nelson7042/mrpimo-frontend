@@ -332,7 +332,7 @@ const Page = (props: Props) => {
                 Add Product
               </div>
             </div>
-            <p className="font-[family-name:var(--font-poppins)] text-xs md:text-sm text-[#323232]">
+            <p className="font-roboto text-xs md:text-sm text-[#323232]">
               Welcome back, Bovie! Here's what is happening with your store
               today.
             </p>

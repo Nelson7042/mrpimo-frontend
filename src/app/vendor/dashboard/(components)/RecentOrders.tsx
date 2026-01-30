@@ -93,7 +93,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
   return (
     <div className="bg-white px-6 py-4 rounded-lg shadow-sm">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="font-bold text-lg md:text-xl text-gray-600">
+        <h1 className="font-bold text-lg text-gray-600">
           Recent Orders</h1>
         {data && data.orders && data.orders?.length > 0 && (
           <button
@@ -113,25 +113,25 @@ const RecentOrders = ({ currency }: { currency: string}) => {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Order ID
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Items
                   </th>
-                  <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -275,7 +275,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
       )}
       {data && data.orders && data.orders?.length === 0 && (!products || products.length === 0) && (
         <div className="flex flex-col justify-center items-center gap-y-4 h-40">
-          <p className="font-semibold text:base md:text-xl ">No data available</p>
+          <p className="font-semibold text-lg">No data available</p>
           <p className="text-sm text-gray-500">Add a product to get started</p>
           <div className="">
             <button

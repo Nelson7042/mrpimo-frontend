@@ -266,7 +266,7 @@ export default function ProductVariants({ onSaveDraft }: Props) {
   };
 
   return (
-    <div className="p-4 border border-gray-400 rounded-lg w-full font-[family-name:var(--font-alexandria)]">
+    <div className="p-4 border border-gray-400 rounded-lg w-full font-roboto">
       <div className="flex justify-between items-center mb-4">
         <h3 className="">Product Variants</h3>
         <div className="flex gap-2">

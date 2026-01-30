@@ -89,7 +89,7 @@ const page = (props: Props) => {
   console.log(backendPlans);
 
   return (
-    <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-[family-name:var(--font-alexandria)] text-xs">
+    <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-roboto text-xs">
       <div className="px-2 lg:px-5">
         <h1 className="text-lg font-semibold">Advertisement</h1>
         <p className="text-xs text-gray-600">

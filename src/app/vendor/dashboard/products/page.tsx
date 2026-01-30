@@ -195,7 +195,7 @@ const ProductsPage = () => {
 
   return (
     <div
-      className="bg-[#f6f6f6] font-[family-name:var(--font-alexandria)]"
+      className="bg-[#f6f6f6] font-roboto"
       style={{ height: "calc(100vh - 100px)" }}
     >
       <div className="p-4 md:p-4 lg:p-10 h-full">
@@ -261,7 +261,7 @@ const ProductsPage = () => {
                 Draft
               </div>
             </div>
-            <p className="font-[family-name:var(--font-poppins)] text-[11px] md:text-xs text-[#323232]">
+            <p className="font-roboto text-[11px] md:text-xs text-[#323232]">
               Welcome back, Bovie! Here's what is happening with your store
               today.
             </p>
