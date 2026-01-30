@@ -10,7 +10,6 @@ import OTPModal from "./(component)/Otp";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useUserStore } from "@/stores/useUserStore";
 import { API_BASE_URL } from "@/utils/config";
-import Link from "next/link";
 
 type ModalProps = {
   isOpen: boolean;
@@ -30,9 +29,12 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
 
   const handleGoogleLogin = async () => {
     setIsGoogleLoading(true);
+    
     try {
-      window.location.href = `${API_BASE_URL}/auth/google`;
+      const googleAuthUrl = `${API_BASE_URL}/auth/google`;
+      window.location.href = googleAuthUrl;
     } catch (error) {
+      console.error("Google login error:", error);
       setIsGoogleLoading(false);
     }
   };
@@ -40,7 +42,6 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
   // Close modal if user is logged in AND email is verified
   useEffect(() => {
     if (user && user.isEmailVerified && isOpen) {
-      console.log('✅ User logged in and verified, closing modal');
       closeModal();
       close();
     }

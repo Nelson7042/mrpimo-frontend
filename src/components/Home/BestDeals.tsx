@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Star, ArrowRight } from "lucide-react";
 import { useBestDeals } from "@/hooks/queries";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import Link from "next/link";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
@@ -403,7 +403,7 @@ export default function BestDeals() {
           </div>
           <div className="lg:w-2/3 grid grid-cols-3 gap-4">
             {otherProducts.slice(0, 6)?.map((product: any) => (
-              <ProductCard product={product} />
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         </div>

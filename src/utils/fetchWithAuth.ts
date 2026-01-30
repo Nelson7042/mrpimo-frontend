@@ -33,7 +33,19 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   const getToken = () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
-     
+      
+      // Also check if we have a cookie-based token (for OAuth flows)
+      if (!token && typeof window !== 'undefined') {
+        const cookies = document.cookie.split(';').map(c => c.trim());
+        const accessTokenCookie = cookies.find(c => c.startsWith('accessToken='));
+        if (accessTokenCookie) {
+          const cookieToken = accessTokenCookie.split('=')[1];
+          // Store in localStorage for future requests
+          localStorage.setItem('accessToken', cookieToken);
+          return cookieToken;
+        }
+      }
+      
       return token;
     } catch (e) {
       console.warn('Failed to get token from localStorage:', e);

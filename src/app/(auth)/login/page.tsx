@@ -29,8 +29,18 @@ const LoginPage = () => {
   }
 
   const handleGoogleLogin = () => {
+    console.log("=== FRONTEND: GOOGLE LOGIN (LOGIN PAGE) ===");
+    console.log("API_BASE_URL:", API_BASE_URL);
+    console.log("Current URL:", window.location.href);
+    console.log("Timestamp:", new Date().toISOString());
+    
     setIsGoogleLoading(true);
-    window.location.href = `${API_BASE_URL}/auth/google`;
+    
+    const googleAuthUrl = `${API_BASE_URL}/auth/google`;
+    console.log("Redirecting to:", googleAuthUrl);
+    console.log("=== FRONTEND: REDIRECTING TO GOOGLE ===");
+    
+    window.location.href = googleAuthUrl;
   };
 
   const handleLoginSuccess = (userData: any) => {
