@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* Leaflet Map Styles - will be loaded after npm install */
-@import "leaflet/dist/leaflet.css";
+/* Leaflet Map Styles - Import this in the component that uses leaflet instead */
+/* @import "leaflet/dist/leaflet.css"; */
 
 /* Fix Leaflet z-index to prevent overlap with header */
 .leaflet-container {

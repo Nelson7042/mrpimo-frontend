@@ -172,6 +172,15 @@ const Header = () => {
               </span>
             </div>
           </Link>
+           <Link href="/home" className="shrink-0 md:hidden">
+              <div className="flex items-center">
+                <img
+                  src="/images/mprimo-logo2.png"
+                  alt="mprimoLogo image"
+                  className="h-[28px] w-auto sm:h-[32px] sm:w-auto md:h-[36px] md:w-auto lg:h-[40px] lg:w-[120px]"
+                />
+              </div>
+            </Link>
 
           {/* Desktop navigation */}
           <div className="hidden lg:flex items-center gap-3 font-normal">
@@ -261,7 +270,7 @@ const Header = () => {
             </Sheet> */}
 
             {/* Logo - moved to bottom section */}
-            <Link href="/home" className="shrink-0">
+            <Link href="/home" className="shrink-0 hidden md:block">
               <div className="flex items-center">
                 <img
                   src="/images/mprimo-logo2.png"
@@ -271,7 +280,6 @@ const Header = () => {
               </div>
             </Link>
 
-            <div></div>
 
             {/* Desktop Search bar */}
             <div className="flex-1 font-normal block md:mx-4 relative">

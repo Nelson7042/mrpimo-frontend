@@ -64,7 +64,7 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
               onClick={() => toggleGroup(group._id)}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+                <div className="w-7 h-7 md:w-10 md:h-10 bg-primary  rounded-full flex items-center justify-center">
                   <span className="text-white font-semibold text-sm">
                     {group.participantName.charAt(0).toUpperCase()}
                   </span>
