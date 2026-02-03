@@ -257,7 +257,7 @@ const OrderTable = (props: Props) => {
                       >
                         <Eye size={16} />
                         <span>View</span>
-                        {order._id}
+                      
                       </button>
                     </td>
                   </tr>

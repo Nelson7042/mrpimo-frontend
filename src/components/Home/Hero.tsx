@@ -44,10 +44,10 @@ const MarketplaceSection = () => {
 
   function getProductPrice(product: Product) {
     if (product.priceInfo) {
-      return `${product.priceInfo.currencySymbol}${product.priceInfo.displayPrice}`;
+      return `${product.priceInfo.currencySymbol}${product.priceInfo.displayPrice.toFixed(2)}`;
     }
     
-    const currencySymbol = '$'; // Default fallback
+    const currencySymbol = '$';
     
     if (product.inventory?.listing?.type === 'auction') {
       return `Starting ${currencySymbol}${product.inventory.listing.auction?.reservePrice || 0}`;

@@ -50,43 +50,28 @@ const page = (props: Props) => {
               <div className="col-span-3">
                 <AnalyticsCard
                   title="Total Orders"
-                  value={analyticsData?.analytics?.totalOrders?.value || 0}
-                  percentageIncrease={
-                    analyticsData?.analytics?.totalOrders?.percentageIncrease
-                  }
-                  period={analyticsData?.analytics?.totalOrders?.period}
+                  value={analyticsData?.dashboard?.totalOrders?.value || 0}
+                  percentageIncrease={analyticsData?.dashboard?.totalOrders}
                 />
               </div>
               <div className="col-span-3">
                 <AnalyticsCard
-                  title="Completed Orders"
-                  value={analyticsData?.analytics?.completedOrders?.value || 0}
-                  percentageIncrease={
-                    analyticsData?.analytics?.completedOrders
-                      ?.percentageIncrease
-                  }
-                  period={analyticsData?.analytics?.completedOrders?.period}
+                  title="Total Sales"
+                  amount={analyticsData?.dashboard?.salesTotal?.value || 0}
+                  currency={analyticsData?.analytics?.currency}
+                  percentageIncrease={analyticsData?.dashboard?.salesTotal}
                 />
               </div>
               <div className="col-span-3">
                 <AnalyticsCard
-                  title="Pending Orders"
-                  value={analyticsData?.analytics?.pendingOrders?.value || 0}
-                  percentageIncrease={
-                    analyticsData?.analytics?.pendingOrders?.percentageIncrease
-                  }
-                  period={analyticsData?.analytics?.pendingOrders?.period}
+                  title="Avg Orders/Day"
+                  value={analyticsData?.dashboard?.averageOrdersPerDay || 0}
                 />
               </div>
               <div className="col-span-3">
                 <AnalyticsCard
-                  title="Cancelled Orders"
-                  value={analyticsData?.analytics?.cancelledOrders?.value || 0}
-                  percentageIncrease={
-                    analyticsData?.analytics?.cancelledOrders
-                      ?.percentageIncrease
-                  }
-                  period={analyticsData?.analytics?.cancelledOrders?.period}
+                  title="Total Products"
+                  value={analyticsData?.dashboard?.totalProducts?.value || 0}
                 />
               </div>
             </>

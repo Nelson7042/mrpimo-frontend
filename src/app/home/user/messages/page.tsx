@@ -188,7 +188,7 @@ const Page = () => {
           <div
             className={`${
               isChatOpen ? "hidden lg:block" : "block"
-            } mx-2 md:mx-0 lg:m-0 w-full lg:w-[45%] xl:w-[40%] border rounded-2xl lg:rounded-none border-blue-300 lg:p-2 bg-white`}
+            }  md:mx-0 lg:m-0 w-full lg:w-[45%] xl:w-[40%] border rounded-2xl lg:rounded-none  lg:p-2 bg-white`}
           >
             <h1 className="hidden lg:block text-center font-semibold mb-2">
               Chats
@@ -198,7 +198,7 @@ const Page = () => {
               <input
                 className="w-full"
                 type="search"
-                placeholder="Search Conversations"
+                placeholder="Search Conversationsxx"
               />
             </div>
             <div className="flex gap-x-4 w-full justify-between items-center px-3 md:mt-3 lg:mt-0 mb-4">
@@ -228,10 +228,13 @@ const Page = () => {
             {/* Chat List */}
             <div className="flex flex-col w-full h-[calc(100%-80px)] overflow-y-auto mt-2">
               {isLoading ? (
-                <MessageListSkeleton />
+                <div className="px-4">
+                  <MessageListSkeleton />
+                </div>
+                
               ) : (<>
               {groupedChats.length === 0 ? (
-                <div className="flex flex-col items-center justify-center h-full p-8">
+                <div className="flex flex-col items-center justify-center h-full p-4 md:p-8">
                   <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <svg
                       className="w-8 h-8 text-gray-400"

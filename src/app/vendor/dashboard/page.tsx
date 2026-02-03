@@ -61,9 +61,9 @@ const Page = (props: Props) => {
                 verification to be able to request payouts and access all
                 features.
               </p>
-              <Link href="/vendor/verification" className="text-blue-600 underline text-sm">
+              <button onClick={() => setShowKybModal(true)} className="text-blue-600 underline text-sm">
                 {vendor?.kycStatus === 'pending' ? 'Continue' : 'Start'} KYC Process
-              </Link>
+              </button>
             </div>
           </div>
         )}

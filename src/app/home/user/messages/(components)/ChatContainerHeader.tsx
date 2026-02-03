@@ -77,7 +77,7 @@ const ChatContainerHeader = (props: Props) => {
               onClick={props.closeChat}
               className="opacity-80 lg:hidden"
             />
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center">
+            <div className="w-7 h-7 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center">
                   <span className="text-white font-semibold text-sm">
                     {props.participantName.charAt(0).toUpperCase()}
                   </span>
