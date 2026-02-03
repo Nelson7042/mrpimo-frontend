@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useMemo } from "react";
+import { useState, useRef, useMemo, useEffect } from "react";
 import Image from "next/image";
 import {
   Edit,
@@ -34,6 +34,7 @@ import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
+import { parseUserAgent } from "@/utils/parseUserAgent";
 
 /**
  * Refactored DashboardPage
@@ -284,7 +285,7 @@ export default function DashboardPage() {
                   <span className="text-xs sm:text-sm text-gray-600">Balance:</span>
                   <p className="font-bold text-sm sm:text-lg break-all">
                     {showBalance
-                      ? `$${parseFloat(profileData?.fiatWallet?.balances?.available || "0").toFixed(2)} ${profileData?.fiatWallet?.currency || ""}`
+                      ? `$${parseFloat(profileData?.fiatWallet?.balances?.available.toString() || "0").toFixed(2)} ${profileData?.fiatWallet?.currency || ""}`
                       : `******`}
                   </p>
                 </div>
@@ -374,6 +375,37 @@ export default function DashboardPage() {
                         }
                       );
 
+                 
+                      // Parse device information from metadata
+                      const metadata = activity.metadata || {};
+                      const userAgent = metadata.userAgent || '';
+                      const location = metadata.location || 'Unknown';
+                      const deviceType = metadata.device || 'desktop';
+                      
+                      console.log('📱 Parsed Metadata:', {
+                        userAgent,
+                        location,
+                        deviceType,
+                        hasMetadata: !!activity.metadata,
+                      });
+                      
+                      // Parse browser and OS from user agent
+                      const { browser, os } = parseUserAgent(userAgent);
+                      
+                      console.log('🌐 Parsed User Agent:', {
+                        browser,
+                        os,
+                        originalUserAgent: userAgent,
+                      });
+                      
+                      // Extract base activity (remove the old "from X on Y with Z" part)
+                      const baseActivity = activity.activity?.split(' from ')[0] || activity.activity;
+                      
+                      console.log('📝 Activity Text:', {
+                        original: activity.activity,
+                        base: baseActivity,
+                      });
+
                       return (
                         <tr
                           key={activity.id || activity._id || index}
@@ -384,10 +416,13 @@ export default function DashboardPage() {
                           </td>
                           <td className="py-3">
                             <div className="flex items-center space-x-3">
-                              {getActivityIcon(activity.activity)}
+                              {getActivityIcon(baseActivity)}
                               <div className="flex flex-col">
-                                <span className="text-sm">
-                                  {activity.activity}
+                                <span className="text-sm font-medium">
+                                  {`${baseActivity} from ${location} on ${deviceType}`}
+                                </span>
+                                <span className="text-xs text-gray-500">
+                                  {browser} • {os} • {deviceType} • {location}
                                 </span>
                                 <div className="sm:hidden text-xs text-gray-500 mt-1">
                                   {activityTime} • {activityDateStr}

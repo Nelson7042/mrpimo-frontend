@@ -8,21 +8,22 @@ export function TokenRefresher() {
   const { user } = useUserStore();
   
   useEffect(() => {
-    // Only set up refresh interval if user is logged in
     if (!user) return;
     
-    const refreshInterval = setInterval(async () => {
-      try {
-        await refreshToken();
-      } catch (error) {
-        console.error("Token refresh failed:", error);
-      }
-    }, 14 * 60 * 1000); // 14 minutes in milliseconds
+    // Initial refresh if we have refreshToken but no accessToken
+    const accessToken = localStorage.getItem('accessToken');
+    const hasRefreshToken = localStorage.getItem('refreshToken') || document.cookie.includes('refreshToken=');
+    
+    if (!accessToken && hasRefreshToken) {
+      refreshToken().catch(console.error);
+    }
+    
+    const refreshInterval = setInterval(() => {
+      refreshToken().catch(console.error);
+    }, 14 * 60 * 1000);
 
-    // Clean up interval on unmount
     return () => clearInterval(refreshInterval);
   }, [user]);
   
-  // This component doesn't render anything
   return null;
 }

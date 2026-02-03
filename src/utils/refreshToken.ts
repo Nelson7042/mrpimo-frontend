@@ -1,27 +1,37 @@
 import { API_BASE_URL } from "./config";
 
 export const refreshToken = async (): Promise<boolean> => {
-    console.log('🔄 [REFRESH] Attempting to refresh token');
+  try {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
     
-    try {
-      console.log('🔄 [REFRESH] Calling API:', `${API_BASE_URL}/auth/refresh`);
-      const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-        method: "POST",
-        credentials: "include" // Include cookies in refresh request
-      });
-  
-      console.log('🔄 [REFRESH] Response status:', response.status, response.statusText);
+    if (!token) return false;
+
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: "POST",
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`,
+      },
+      credentials: "include",
+    });
+
+    if (response.ok) {
+      const data = await response.json();
       
-      if (response.ok) {
-        console.log('✅ [REFRESH] Token refresh successful');
-        return true;
-      } else {
-        // Refresh failed
-        console.error('❌ [REFRESH] Token refresh failed with status:', response.status);
-        return false;
+      if (data.accessToken) {
+        localStorage.setItem('accessToken', data.accessToken);
       }
-    } catch (error) {
-      console.error('❌ [REFRESH] Error during token refresh:', error);
-      return false;
+      
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+      }
+      
+      return true;
     }
-  };
+    
+    return false;
+  } catch (error) {
+    console.error('Token refresh error:', error);
+    return false;
+  }
+};
