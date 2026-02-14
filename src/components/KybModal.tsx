@@ -32,12 +32,57 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  const handleFileChange = (field: 'idCardFront' | 'idCardBack' | 'businessDocument' | 'bankStatement', file: File | null) => {
+  const handleFileChange = (field: 'idCardFront' | 'idCardBack' | 'businessDocument' | 'bankStatement' | 'selfieImage', file: File | null) => {
     setFormData({ [field]: file });
     if (errors[field]) {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
+
+  // Country-specific field requirements
+  const getCountryRequirements = (countryCode: string) => {
+    const requirements: Record<string, { dateOfBirth?: boolean; selfieImage?: boolean; phoneNumber?: boolean; addressLine1?: boolean; city?: boolean; postalCode?: boolean; state?: boolean; houseNumber?: boolean; street?: boolean; voterCardType?: boolean; civIdType?: boolean }> = {
+      'NG': { dateOfBirth: true, selfieImage: true },
+      'ZA': { dateOfBirth: true, phoneNumber: true },
+      'KE': { dateOfBirth: true },
+      'GH': { dateOfBirth: true, voterCardType: true, selfieImage: true },
+      'CI': { dateOfBirth: true, civIdType: true },
+      'US': { addressLine1: true, city: true, postalCode: true },
+      'GB': { addressLine1: true, city: true, postalCode: true },
+      'DE': { addressLine1: true, city: true, postalCode: true, houseNumber: true, street: true },
+      'FR': { addressLine1: true, city: true, postalCode: true, houseNumber: true },
+      'CA': { addressLine1: true, street: true, postalCode: true, state: true, houseNumber: true },
+      'AU': { addressLine1: true, city: true, postalCode: true, state: true, houseNumber: true, street: true },
+      'SG': { dateOfBirth: true },
+      'IN': {},
+      'BR': {},
+      'JP': {},
+      'NO': { phoneNumber: true, city: true, postalCode: true },
+      'PH': { dateOfBirth: true, phoneNumber: true },
+      'AR': {},
+      'AT': { addressLine1: true, city: true, postalCode: true, state: true, houseNumber: true, street: true },
+      'BE': { dateOfBirth: true },
+      'CL': { dateOfBirth: true },
+      'CN': {},
+      'CO': {},
+      'CZ': { city: true },
+      'DK': {},
+      'FI': {},
+      'HK': { dateOfBirth: true },
+      'IE': { dateOfBirth: true, city: true, postalCode: true, street: true, houseNumber: true },
+      'IT': { city: true, postalCode: true, state: true, houseNumber: true, street: true },
+      'MY': { dateOfBirth: true, city: true, postalCode: true, state: true },
+      'MX': {},
+      'NL': { street: true, city: true, postalCode: true, houseNumber: true },
+      'PL': { city: true, postalCode: true, street: true, houseNumber: true },
+      'PT': { houseNumber: true, city: true, postalCode: true, street: true },
+      'SE': {},
+      'TR': { dateOfBirth: true },
+    };
+    return requirements[countryCode] || {};
+  };
+
+  const countryReqs = getCountryRequirements(formData.countryCode);
 
   const validateStep3 = () => {
     const newErrors: Record<string, string> = {};
@@ -93,20 +138,19 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
     if (!validateStep2()) return;
 
     const formDataToSend = new FormData();
-    formDataToSend.append('vendorId', formData.vendorId || '');
     formDataToSend.append('businessName', formData.businessName);
     formDataToSend.append('shippingZone', formData.shippingZone);
     formDataToSend.append('registrationNumber', formData.registrationNumber);
     formDataToSend.append('registrationName', formData.registrationName);
     formDataToSend.append('premium', formData.premium.toString());
     
-    if (formData.businessDocument) formDataToSend.append('businessDocument', formData.businessDocument);
+    // API expects businessRegistration, not businessDocument
+    if (formData.businessDocument) formDataToSend.append('businessRegistration', formData.businessDocument);
 
     try {
       const result = await kybStep2Mutation.mutateAsync(formDataToSend);
       if (result.success) {
         setCurrentStep(3);
-        // TODO: Move to step 3
       }
     } catch (error) {
       console.error('Step 2 submission error:', error);
@@ -115,6 +159,7 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
 
   const validateStep1 = () => {
     const newErrors: Record<string, string> = {};
+    const reqs = getCountryRequirements(formData.countryCode);
     
     if (!formData.firstName.trim()) newErrors.firstName = 'First name is required';
     if (!formData.lastName.trim()) newErrors.lastName = 'Last name is required';
@@ -122,6 +167,14 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
     if (!formData.nationalIDNumber.trim()) newErrors.nationalIDNumber = 'National ID number is required';
     if (!formData.idCardFront) newErrors.idCardFront = 'ID card front is required';
     if (!formData.idCardBack) newErrors.idCardBack = 'ID card back is required';
+    
+    // Country-specific validations
+    if (reqs.dateOfBirth && !formData.dateOfBirth) newErrors.dateOfBirth = 'Date of birth is required';
+    if (reqs.selfieImage && !formData.selfieImage) newErrors.selfieImage = 'Selfie image is required';
+    if (reqs.phoneNumber && !formData.phoneNumber) newErrors.phoneNumber = 'Phone number is required';
+    if (reqs.addressLine1 && !formData.addressLine1?.trim()) newErrors.addressLine1 = 'Address is required';
+    if (reqs.city && !formData.city?.trim()) newErrors.city = 'City is required';
+    if (reqs.postalCode && !formData.postalCode?.trim()) newErrors.postalCode = 'Postal code is required';
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -132,23 +185,41 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
 
     const formDataToSend = new FormData();
     formDataToSend.append('firstName', formData.firstName);
-    formDataToSend.append('middleName', formData.middleName);
+    if (formData.middleName) formDataToSend.append('middleName', formData.middleName);
     formDataToSend.append('lastName', formData.lastName);
     formDataToSend.append('countryCode', formData.countryCode);
     formDataToSend.append('nationalIDNumber', formData.nationalIDNumber);
     formDataToSend.append('accountType', formData.accountType);
-    formDataToSend.append('voterCardType', formData.voterCardType);
-    formDataToSend.append('civIdType', formData.civIdType);
     
-    if (formData.idCardFront) formDataToSend.append('idCardFront', formData.idCardFront);
-    if (formData.idCardBack) formDataToSend.append('idCardBack', formData.idCardBack);
+    // Country-specific fields
+    if (formData.dateOfBirth) formDataToSend.append('dateOfBirth', formData.dateOfBirth);
+    if (formData.phoneNumber) formDataToSend.append('phoneNumber', formData.phoneNumber);
+    if (formData.addressLine1) formDataToSend.append('addressLine1', formData.addressLine1);
+    if (formData.city) formDataToSend.append('city', formData.city);
+    if (formData.postalCode) formDataToSend.append('postalCode', formData.postalCode);
+    if (formData.state) formDataToSend.append('state', formData.state);
+    if (formData.houseNumber) formDataToSend.append('houseNumber', formData.houseNumber);
+    if (formData.street) formDataToSend.append('street', formData.street);
+    if (formData.voterCardType) formDataToSend.append('voterCardType', formData.voterCardType);
+    if (formData.civIdType) formDataToSend.append('civIdType', formData.civIdType);
+    
+    // Files
+    if (formData.idCardFront) formDataToSend.append('idFront', formData.idCardFront);
+    if (formData.idCardBack) formDataToSend.append('idBack', formData.idCardBack);
+    if (formData.selfieImage) formDataToSend.append('selfieImage', formData.selfieImage);
 
     try {
       const result = await kybMutation.mutateAsync(formDataToSend);
       if (result.success) {
-        setFormData({ vendorId: result.data.vendorId });
-        setCurrentStep(2);
-        // TODO: Move to step 2
+        setFormData({ vendorId: result.vendorId || result.data?.vendorId });
+        
+        // If individual account, skip to step 3 (bank account)
+        // If business account, go to step 2 (business info)
+        if (formData.accountType === 'personal') {
+          setCurrentStep(3);
+        } else {
+          setCurrentStep(2);
+        }
       }
     } catch (error) {
       console.error('Step 1 submission error:', error);
@@ -200,11 +271,26 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
               <div className="space-y-4">
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    Account Type <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.accountType}
+                    onChange={(e) => handleInputChange('accountType', e.target.value)}
+                    className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  >
+                    <option value="personal">Individual (Personal)</option>
+                    <option value="business">Business</option>
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Choose individual for personal selling or business for company registration</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
                     First Name <span className="text-red-500">*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter your email address"
+                    placeholder="Enter your first name"
                     value={formData.firstName}
                     onChange={(e) => handleInputChange('firstName', e.target.value)}
                     className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.firstName ? 'border-red-500' : 'border-gray-200'}`}
@@ -216,7 +302,7 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
                   <label className="block text-sm font-semibold text-gray-900 mb-2">Middle Name</label>
                   <input
                     type="text"
-                    placeholder="Enter your email address"
+                    placeholder="Enter your middle name (optional)"
                     value={formData.middleName}
                     onChange={(e) => handleInputChange('middleName', e.target.value)}
                     className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -229,7 +315,7 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
                   </label>
                   <input
                     type="text"
-                    placeholder="Enter your email address"
+                    placeholder="Enter your last name"
                     value={formData.lastName}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
                     className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.lastName ? 'border-red-500' : 'border-gray-200'}`}
@@ -247,18 +333,216 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
                     className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.countryCode ? 'border-red-500' : 'border-gray-200'}`}
                   >
                     <option value="">Choose your country</option>
-                    <option value="NG">Nigeria</option>
-                    <option value="GH">Ghana</option>
-                    <option value="ZA">South Africa</option>
-                    <option value="KE">Kenya</option>
+                    <optgroup label="African Countries">
+                      <option value="NG">🇳🇬 Nigeria</option>
+                      <option value="ZA">🇿🇦 South Africa</option>
+                      <option value="KE">🇰🇪 Kenya</option>
+                      <option value="GH">🇬🇭 Ghana</option>
+                      <option value="CI">🇨🇮 Côte d'Ivoire</option>
+                    </optgroup>
+                    <optgroup label="Global Countries">
+                      <option value="US">🇺🇸 United States</option>
+                      <option value="GB">🇬🇧 United Kingdom</option>
+                      <option value="DE">🇩🇪 Germany</option>
+                      <option value="FR">🇫🇷 France</option>
+                      <option value="CA">🇨🇦 Canada</option>
+                      <option value="AU">🇦🇺 Australia</option>
+                      <option value="SG">🇸🇬 Singapore</option>
+                      <option value="IN">🇮🇳 India</option>
+                      <option value="BR">🇧🇷 Brazil</option>
+                      <option value="JP">🇯🇵 Japan</option>
+                      <option value="NO">🇳🇴 Norway</option>
+                      <option value="PH">🇵🇭 Philippines</option>
+                      <option value="AR">🇦🇷 Argentina</option>
+                      <option value="AT">🇦🇹 Austria</option>
+                      <option value="BE">🇧🇪 Belgium</option>
+                      <option value="CL">🇨🇱 Chile</option>
+                      <option value="CN">🇨🇳 China</option>
+                      <option value="CO">🇨🇴 Colombia</option>
+                      <option value="CZ">🇨🇿 Czech Republic</option>
+                      <option value="DK">🇩🇰 Denmark</option>
+                      <option value="FI">🇫🇮 Finland</option>
+                      <option value="HK">🇭🇰 Hong Kong</option>
+                      <option value="IE">🇮🇪 Ireland</option>
+                      <option value="IT">🇮🇹 Italy</option>
+                      <option value="MY">🇲🇾 Malaysia</option>
+                      <option value="MX">🇲🇽 Mexico</option>
+                      <option value="NL">🇳🇱 Netherlands</option>
+                      <option value="PL">🇵🇱 Poland</option>
+                      <option value="PT">🇵🇹 Portugal</option>
+                      <option value="SE">🇸🇪 Sweden</option>
+                      <option value="TR">🇹🇷 Turkey</option>
+                    </optgroup>
                   </select>
                   {errors.countryCode && <p className="text-red-500 text-xs mt-1">{errors.countryCode}</p>}
-                  <p className="text-xs text-gray-500 mt-1">Choose the country your origin</p>
+                  <p className="text-xs text-gray-500 mt-1">Choose the country of your origin</p>
                 </div>
 
                 <div>
                   <label className="block text-sm font-semibold text-gray-900 mb-2">
-                    National Identification <span className="text-red-500">*</span>
+                    National ID Number <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Enter your national ID number"
+                    value={formData.nationalIDNumber}
+                    onChange={(e) => handleInputChange('nationalIDNumber', e.target.value)}
+                    className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.nationalIDNumber ? 'border-red-500' : 'border-gray-200'}`}
+                  />
+                  {errors.nationalIDNumber && <p className="text-red-500 text-xs mt-1">{errors.nationalIDNumber}</p>}
+                </div>
+
+                {/* Country-specific fields */}
+                {countryReqs.dateOfBirth && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Date of Birth <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="date"
+                      value={formData.dateOfBirth || ''}
+                      onChange={(e) => handleInputChange('dateOfBirth', e.target.value)}
+                      className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.dateOfBirth ? 'border-red-500' : 'border-gray-200'}`}
+                    />
+                    {errors.dateOfBirth && <p className="text-red-500 text-xs mt-1">{errors.dateOfBirth}</p>}
+                  </div>
+                )}
+
+                {countryReqs.phoneNumber && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Phone Number <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="tel"
+                      placeholder="+234..."
+                      value={formData.phoneNumber || ''}
+                      onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
+                      className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.phoneNumber ? 'border-red-500' : 'border-gray-200'}`}
+                    />
+                    {errors.phoneNumber && <p className="text-red-500 text-xs mt-1">{errors.phoneNumber}</p>}
+                  </div>
+                )}
+
+                {countryReqs.voterCardType && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Voter Card Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.voterCardType || ''}
+                      onChange={(e) => handleInputChange('voterCardType', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select type</option>
+                      <option value="new_voter_card">New Voter Card</option>
+                      <option value="old_voter_card">Old Voter Card</option>
+                    </select>
+                  </div>
+                )}
+
+                {countryReqs.civIdType && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      ID Type <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      value={formData.civIdType || ''}
+                      onChange={(e) => handleInputChange('civIdType', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="">Select type</option>
+                      <option value="national_id">National ID</option>
+                      <option value="old_national_id">Old National ID</option>
+                    </select>
+                  </div>
+                )}
+
+                {countryReqs.addressLine1 && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Address <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Street address"
+                      value={formData.addressLine1 || ''}
+                      onChange={(e) => handleInputChange('addressLine1', e.target.value)}
+                      className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.addressLine1 ? 'border-red-500' : 'border-gray-200'}`}
+                    />
+                    {errors.addressLine1 && <p className="text-red-500 text-xs mt-1">{errors.addressLine1}</p>}
+                  </div>
+                )}
+
+                {countryReqs.street && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">Street</label>
+                    <input
+                      type="text"
+                      value={formData.street || ''}
+                      onChange={(e) => handleInputChange('street', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
+
+                {countryReqs.houseNumber && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">House Number</label>
+                    <input
+                      type="text"
+                      value={formData.houseNumber || ''}
+                      onChange={(e) => handleInputChange('houseNumber', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
+
+                {countryReqs.city && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      City <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.city || ''}
+                      onChange={(e) => handleInputChange('city', e.target.value)}
+                      className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.city ? 'border-red-500' : 'border-gray-200'}`}
+                    />
+                    {errors.city && <p className="text-red-500 text-xs mt-1">{errors.city}</p>}
+                  </div>
+                )}
+
+                {countryReqs.state && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">State/Province</label>
+                    <input
+                      type="text"
+                      value={formData.state || ''}
+                      onChange={(e) => handleInputChange('state', e.target.value)}
+                      className="w-full bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  </div>
+                )}
+
+                {countryReqs.postalCode && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Postal Code <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={formData.postalCode || ''}
+                      onChange={(e) => handleInputChange('postalCode', e.target.value)}
+                      className={`w-full bg-gray-50 border rounded-lg px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${errors.postalCode ? 'border-red-500' : 'border-gray-200'}`}
+                    />
+                    {errors.postalCode && <p className="text-red-500 text-xs mt-1">{errors.postalCode}</p>}
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    ID Card (Front) <span className="text-red-500">*</span>
                   </label>
                   <div
                     className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors ${errors.idCardFront ? 'border-red-500' : 'border-gray-300'}`}
@@ -267,9 +551,9 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
                     <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
                     <p className="text-sm">
                       <span className="font-semibold text-gray-900">Click to Upload</span>
-                      <span className="text-gray-500"> or Drag and Drop here to National ID (Front)</span>
+                      <span className="text-gray-500"> National ID (Front)</span>
                     </p>
-                    <p className="text-xs text-red-500 mt-1">PDF, JPG, IMG</p>
+                    <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG</p>
                     {formData.idCardFront && (
                       <p className="text-xs text-green-600 mt-2">✓ {formData.idCardFront.name}</p>
                     )}
@@ -285,16 +569,19 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
                 </div>
 
                 <div>
+                  <label className="block text-sm font-semibold text-gray-900 mb-2">
+                    ID Card (Back) <span className="text-red-500">*</span>
+                  </label>
                   <div
-                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors mt-8 ${errors.idCardBack ? 'border-red-500' : 'border-gray-300'}`}
+                    className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors ${errors.idCardBack ? 'border-red-500' : 'border-gray-300'}`}
                     onClick={() => document.getElementById('idCardBack')?.click()}
                   >
                     <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
                     <p className="text-sm">
                       <span className="font-semibold text-gray-900">Click to Upload</span>
-                      <span className="text-gray-500"> or Drag and Drop here to National ID (Back)</span>
+                      <span className="text-gray-500"> National ID (Back)</span>
                     </p>
-                    <p className="text-xs text-red-500 mt-1">PDF, JPG, IMG</p>
+                    <p className="text-xs text-gray-500 mt-1">PDF, JPG, PNG</p>
                     {formData.idCardBack && (
                       <p className="text-xs text-green-600 mt-2">✓ {formData.idCardBack.name}</p>
                     )}
@@ -309,6 +596,36 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
                   {errors.idCardBack && <p className="text-red-500 text-xs mt-1">{errors.idCardBack}</p>}
                   <p className="text-xs text-gray-500 mt-2">The name on your ID should match your name</p>
                 </div>
+
+                {countryReqs.selfieImage && (
+                  <div>
+                    <label className="block text-sm font-semibold text-gray-900 mb-2">
+                      Selfie Image <span className="text-red-500">*</span>
+                    </label>
+                    <div
+                      className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer hover:border-gray-400 transition-colors ${errors.selfieImage ? 'border-red-500' : 'border-gray-300'}`}
+                      onClick={() => document.getElementById('selfieImage')?.click()}
+                    >
+                      <Upload className="w-6 h-6 mx-auto mb-2 text-gray-400" />
+                      <p className="text-sm">
+                        <span className="font-semibold text-gray-900">Click to Upload</span>
+                        <span className="text-gray-500"> Selfie Photo</span>
+                      </p>
+                      <p className="text-xs text-gray-500 mt-1">JPG, PNG</p>
+                      {formData.selfieImage && (
+                        <p className="text-xs text-green-600 mt-2">✓ {formData.selfieImage.name}</p>
+                      )}
+                    </div>
+                    <input
+                      id="selfieImage"
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => handleFileChange('selfieImage', e.target.files?.[0] || null)}
+                      className="hidden"
+                    />
+                    {errors.selfieImage && <p className="text-red-500 text-xs mt-1">{errors.selfieImage}</p>}
+                  </div>
+                )}
               </div>
 
               <div className="space-y-3 mt-8">
@@ -523,7 +840,7 @@ const KybModal: React.FC<KybModalProps> = ({ isOpen, onClose }) => {
 
               <div className="flex justify-between gap-3 mt-6">
                 <button
-                  onClick={() => setCurrentStep(2)}
+                  onClick={() => setCurrentStep(formData.accountType === 'personal' ? 1 : 2)}
                   className="px-4 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
                 >
                   Back

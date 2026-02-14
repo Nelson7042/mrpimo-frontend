@@ -13,6 +13,7 @@ interface KybFormData {
   civIdType: string;
   idCardFront: File | null;
   idCardBack: File | null;
+  selfieImage: File | null;
   vendorId: string | null;
   businessName: string;
   shippingZone: string;
@@ -26,6 +27,14 @@ interface KybFormData {
   routingNumber: string;
   bankCode: string;
   bankStatement: File | null;
+  dateOfBirth?: string;
+  phoneNumber?: string;
+  addressLine1?: string;
+  city?: string;
+  postalCode?: string;
+  state?: string;
+  houseNumber?: string;
+  street?: string;
 }
 
 interface KybStore {
@@ -48,6 +57,7 @@ const initialFormData: KybFormData = {
   civIdType: '',
   idCardFront: null,
   idCardBack: null,
+  selfieImage: null,
   vendorId: null,
   businessName: '',
   shippingZone: '',
@@ -61,6 +71,14 @@ const initialFormData: KybFormData = {
   routingNumber: '',
   bankCode: '',
   bankStatement: null,
+  dateOfBirth: undefined,
+  phoneNumber: undefined,
+  addressLine1: undefined,
+  city: undefined,
+  postalCode: undefined,
+  state: undefined,
+  houseNumber: undefined,
+  street: undefined,
 };
 
 export const useKybStore = create<KybStore>()(
@@ -82,6 +100,8 @@ export const useKybStore = create<KybStore>()(
               ...state.formData,
               firstName: user.profile.firstName || '',
               lastName: user.profile.lastName || '',
+              phoneNumber: user.profile.phoneNumber || '',
+              countryCode: user.country || '',
             },
           }));
         }

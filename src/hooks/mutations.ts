@@ -249,16 +249,21 @@ export const useSignVendor = () => {
 };
 
 const logoutUser = async (): Promise<{ message: string }> => {
-  const response = await fetchWithAuth(
-     `${API_BASE_URL}/auth/logout`,
-    {
-      method: "POST",
-    }
-  );
+  // Use regular fetch instead of fetchWithAuth to avoid auth checks during logout
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+  
+  const response = await fetch(`${API_BASE_URL}/auth/logout`, {
+    method: "POST",
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    },
+    credentials: 'include'
+  });
 
   if (!response.ok) {
     const errorData = await response.json();
-    toast.error(errorData.message);
+    // Don't show error toast for logout - it should always succeed client-side
     throw new Error(errorData.message);
   }
 

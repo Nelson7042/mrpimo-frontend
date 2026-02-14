@@ -34,8 +34,13 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       
+      // If no token found, user is logged out
+      if (!token) {
+        return null;
+      }
+      
       // Also check if we have a cookie-based token (for OAuth flows)
-      if (!token && typeof window !== 'undefined') {
+      if (typeof window !== 'undefined') {
         const cookies = document.cookie.split(';').map(c => c.trim());
         const accessTokenCookie = cookies.find(c => c.startsWith('accessToken='));
         if (accessTokenCookie) {
@@ -66,6 +71,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
 
   try {
     const token = getToken();
+    
+    // If no token available, reject immediately (user is logged out)
+    if (!token && !isProfileEndpoint) {
+      return Promise.reject("No authentication token available");
+    }
     
     const response = await fetch(url, {
       ...options,
@@ -131,6 +141,9 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
           if (typeof window !== 'undefined') {
             localStorage.removeItem('accessToken');
             localStorage.removeItem('refreshToken');
+            // Clear authentication cookies
+            document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+            document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
           }
         } catch (e) {
           console.warn('Failed to clear tokens:', e);

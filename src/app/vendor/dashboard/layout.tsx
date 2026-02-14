@@ -84,16 +84,13 @@ export default function DashboardLayout({
   const handleLogout = () => {
     logoutMutation.mutate(undefined, {
       onSuccess: (data) => {
-        // Clear tokens from localStorage
-        try {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-        } catch (e) {
-          console.warn('Failed to clear tokens:', e);
-        }
+        // Clear all cookies
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
         
         resetAllStores();
-        router.push("/home");
+        window.location.href = "/home";
       },
       onError: (error) => {
         console.error("Logout failed:", error);

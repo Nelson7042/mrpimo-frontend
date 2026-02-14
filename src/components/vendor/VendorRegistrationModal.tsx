@@ -297,9 +297,9 @@ function VendorRegistrationForm({
     // Build registration data based on account type
     const registrationData: any = {
       accountType,
-      email: formData.email,
-      password: formData.password,
-      phoneNumber: formData.phoneNumber,
+      email: user ? user.email : formData.email,
+      password: user ? "existing-user" : formData.password,
+      phoneNumber: user ? user.profile?.phoneNumber : formData.phoneNumber,
       country: country.name,
       street: formData.street,
       city: formData.city,
@@ -701,7 +701,7 @@ function VendorRegistrationForm({
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1.5">
-                Account Holder Name *
+                Account Holder Name *pp
               </label>
               <input
                 type="text"
@@ -731,10 +731,10 @@ function VendorRegistrationForm({
                 <input
                   type="text"
                   required
-                  pattern="[0-9]{10,20}"
                   value={formData.accountNumber}
                   onChange={(e) => handleInputChange("accountNumber", e.target.value)}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  placeholder="Enter account number"
                 />
               </div>
             </div>

@@ -20,6 +20,7 @@ import { CartValidationResponse } from "@/utils/checkoutService";
 import { cartService } from "@/utils/cartService";
 import CartSidebar from "./(components)/CartSidebar";
 import { NumericFormat } from "react-number-format";
+import { toast } from "react-hot-toast";
 // import { BidModal1 } from "../product-details/[id]/(component)/(component)/BidModal";
 
 const isHexColor = (value: string) => /^#[0-9A-F]{6}$/i.test(value);
@@ -129,6 +130,7 @@ export default function CartPage() {
       ? `${item.selectedVariant.variantId}::${item.selectedVariant.optionId}`
       : undefined;
     await removeFromCart(productId, variantKey);
+    toast.success("Item removed from cart");
   };
 
   const checkAvailableQuantity = useCallback(async (item: any) => {

@@ -13,6 +13,9 @@ import { resetAllStores } from "@/stores/resetStore";
 import AuthenticationModalVendor from "@/app/(auth)/authenticationModalVendor";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useVendorStore } from "@/stores/useVendorStore";
+import KybModal from "@/components/KybModal";
+import { useKybStore } from "@/stores/useKybStore";
+import { useUserStore } from "@/stores/useUserStore";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -20,13 +23,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isSell, setIsSell] = useState(false);
+  const [isKybModalOpen, setIsKybModalOpen] = useState(false);
   const { setAuthType } = useAuthModalStore();
   const { vendor } = useVendorStore();
+  const { user } = useUserStore();
+  const { setFormData, resetForm } = useKybStore();
 
   const handleSellClick = () => {
     if (!vendor) {
-      setAuthType("vendor");
-      setIsSell(!isSell);
+      // Reset and populate KYB form with user data
+      resetForm();
+      if (user?.profile) {
+        setFormData({
+          firstName: user.profile.firstName || '',
+          lastName: user.profile.lastName || '',
+          phoneNumber: user.profile.phoneNumber || '',
+          countryCode: user.country || '',
+        });
+      }
+      setIsKybModalOpen(true);
     } else {
       router.push("/vendor/dashboard");
     }
@@ -53,23 +68,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const handleLogout = () => {
+    // Clear everything immediately, don't wait for API call
+    try {
+      localStorage.removeItem('accessToken');
+      localStorage.removeItem('refreshToken');
+      localStorage.removeItem('tempUser');
+      
+      // Clear authentication cookies
+      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+    } catch (e) {
+      console.warn('Failed to clear tokens:', e);
+    }
+    
+    resetAllStores();
+    closeLogoutModal();
+    
+    // Make logout API call but don't depend on it
     logoutMutation.mutate(undefined, {
-      onSuccess: () => {
-        toast.success("Logout Successfull");
-        
-        // Clear tokens from localStorage
-        try {
-          localStorage.removeItem('accessToken');
-          localStorage.removeItem('refreshToken');
-        } catch (e) {
-          console.warn('Failed to clear tokens:', e);
-        }
-        
-        resetAllStores();
-        closeLogoutModal();
+      onSettled: () => {
+        // Always redirect regardless of API success/failure
         router.push("/home");
       },
     });
+    
+    toast.success("Logout Successful");
   };
 
   return (
@@ -77,10 +100,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <div className="flex">
         {/* Desktop Sidebar */}
         <div className="hidden lg:block">
+          
           <Sidebar
             openLogoutModal={openLogoutModal}
             handleSellClick={handleSellClick}
           />
+
         </div>
 
         {/* Mobile Sidebar Overlay */}
@@ -140,6 +165,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         />
 
         <AuthenticationModalVendor isOpen={isSell} close={handleCloseVendorModal} />
+        <KybModal isOpen={isKybModalOpen} onClose={() => setIsKybModalOpen(false)} />
       </div>
     </div>
   );
