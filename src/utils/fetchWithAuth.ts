@@ -30,7 +30,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     return Promise.reject("Guest mode");
   }
 
-  const getToken = () => {
+  const getAccessToken = () => {
     try {
       const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
       
@@ -53,7 +53,28 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
       
       return token;
     } catch (e) {
-      console.warn('Failed to get token from localStorage:', e);
+      console.warn('Failed to get access token from localStorage:', e);
+      return null;
+    }
+  };
+
+  const getRefreshToken = () => {
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+      
+      if (!token && typeof window !== 'undefined') {
+        const cookies = document.cookie.split(';').map(c => c.trim());
+        const refreshTokenCookie = cookies.find(c => c.startsWith('refreshToken='));
+        if (refreshTokenCookie) {
+          const cookieToken = refreshTokenCookie.split('=')[1];
+          localStorage.setItem('refreshToken', cookieToken);
+          return cookieToken;
+        }
+      }
+      
+      return token;
+    } catch (e) {
+      console.warn('Failed to get refresh token from localStorage:', e);
       return null;
     }
   };
@@ -70,7 +91,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   };
 
   try {
-    const token = getToken();
+    const accessToken = getAccessToken();
     
     // If no token available, reject immediately (user is logged out)
     if (!token && !isProfileEndpoint) {
@@ -79,13 +100,13 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     
     const response = await fetch(url, {
       ...options,
-      headers: getHeaders(token),
+      headers: getHeaders(accessToken),
       credentials: "include",
     });
 
-    // Handle token expiry
+    // Handle token expiry (401 Unauthorized) or forbidden (403)
     if (response.status === 401 || response.status === 403) {
-      
+      // If already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {
           failedQueue.push({ resolve, reject });
@@ -97,17 +118,17 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
       isRefreshing = true;
 
       try {
-        const refreshToken = getToken();
+        const refreshToken = getRefreshToken();
         
         if (!refreshToken) {
           throw new Error("No refresh token available");
         }
         
-        const refreshResponse = await fetch( `${API_BASE_URL}/auth/refresh`, { 
+        const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, { 
           method: "POST",
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${refreshToken}`
+            'Authorization': `Bearer ${refreshToken}`,
           },
           credentials: "include",
         });
@@ -115,24 +136,39 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
         if (refreshResponse.ok) {
           const data = await refreshResponse.json();
           
+          // Save new access token from response body
           if (data.accessToken) {
             try {
               if (typeof window !== 'undefined') {
                 localStorage.setItem('accessToken', data.accessToken);
               }
             } catch (e) {
-              console.warn('Failed to save new token:', e);
+              console.warn('Failed to save new access token:', e);
+            }
+          }
+
+          // Save new refresh token if provided (backend might rotate refresh tokens)
+          if (data.refreshToken) {
+            try {
+              if (typeof window !== 'undefined') {
+                localStorage.setItem('refreshToken', data.refreshToken);
+              }
+            } catch (e) {
+              console.warn('Failed to save new refresh token:', e);
             }
           }
           
+          // Process queued requests
           processQueue(null, true);
           isRefreshing = false;
+          
+          // Retry the original request with new token
           return fetchWithAuth(url, options);
         } else {
           throw new Error("Refresh failed");
         }
       } catch (refreshError) {
-        // Graceful degradation: downgrade to guest
+        // Process queued requests with error
         processQueue(refreshError, false);
         isRefreshing = false;
         
@@ -165,3 +201,76 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   }
 };
   
+
+/**
+ * Manual token refresh utility for testing
+ * Call this from browser console: window.testTokenRefresh()
+ */
+export const manualTokenRefresh = async () => {
+  console.group('🧪 Manual Token Refresh Test');
+  
+  try {
+    const refreshToken = localStorage.getItem('refreshToken');
+    
+    if (!refreshToken) {
+      console.error('❌ No refresh token found in localStorage');
+      console.groupEnd();
+      return { success: false, error: 'No refresh token' };
+    }
+
+    console.log('📡 Calling refresh endpoint with token:', refreshToken.substring(0, 20) + '...');
+    
+    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${refreshToken}`
+      },
+      body: JSON.stringify({ refreshToken }),
+      credentials: 'include',
+    });
+
+    console.log('📥 Response status:', response.status);
+
+    if (response.ok) {
+      const data = await response.json();
+      console.log('✅ Refresh successful:', data);
+      
+      if (data.accessToken) {
+        localStorage.setItem('accessToken', data.accessToken);
+        console.log('💾 New access token saved');
+      }
+      
+      if (data.refreshToken) {
+        localStorage.setItem('refreshToken', data.refreshToken);
+        console.log('💾 New refresh token saved');
+      }
+      
+      console.groupEnd();
+      return { success: true, data };
+    } else {
+      const errorText = await response.text();
+      console.error('❌ Refresh failed:', response.status, errorText);
+      console.groupEnd();
+      return { success: false, error: errorText };
+    }
+  } catch (error) {
+    console.error('❌ Error during refresh:', error);
+    console.groupEnd();
+    return { success: false, error };
+  }
+};
+
+// Expose to window for testing
+if (typeof window !== 'undefined') {
+  (window as any).testTokenRefresh = manualTokenRefresh;
+  (window as any).checkTokens = () => {
+    console.group('🔑 Current Tokens');
+    const accessToken = localStorage.getItem('accessToken');
+    const refreshToken = localStorage.getItem('refreshToken');
+    console.log('Access Token:', accessToken ? accessToken.substring(0, 50) + '...' : 'Not found');
+    console.log('Refresh Token:', refreshToken ? refreshToken.substring(0, 50) + '...' : 'Not found');
+    console.groupEnd();
+    return { accessToken, refreshToken };
+  };
+}

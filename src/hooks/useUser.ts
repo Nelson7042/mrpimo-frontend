@@ -177,7 +177,16 @@ const userApi = {
     
     const response = await fetchWithAuth(`${API_BASE}/users/activities?${params.toString()}`);
     if (!response.ok) throw new Error('Failed to fetch recent activities');
-    return response.json();
+    const data = await response.json();
+    
+    // Log the API response for debugging
+    console.log('🔥 Recent Activities API Response:', {
+      totalActivities: data.activities?.length,
+      firstActivity: data.activities?.[0],
+      pagination: data.pagination,
+    });
+    
+    return data;
   },
 };
 

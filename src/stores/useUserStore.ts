@@ -41,9 +41,7 @@ export const useUserStore = create<UserState>()(
     (set, get) => ({
       user: null,
       setUser: (user: User | null) => {
-        console.log('🔄 useUserStore.setUser called with:', user);
         set({ user });
-        console.log('✅ useUserStore.setUser completed, current state:', get().user);
       },
       
       updateUser: (updates: Partial<User>) => {
