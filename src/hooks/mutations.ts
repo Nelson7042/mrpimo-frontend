@@ -3,6 +3,7 @@ import { toast } from "react-toastify";
 import { User } from "@/types/user.type";
 import { toastConfigError } from "@/app/config/toast.config";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { fetchPublic } from "@/utils/fetchPublic";
 import {IVendor} from "@/types/vendor.type";
 import ICryptoWallet from "@/types/wallet.type";
 import { API_BASE_URL } from "@/utils/config";
@@ -248,6 +249,32 @@ export const useSignVendor = () => {
   });
 };
 
+const upgradeToVendor = async (
+  data: SignUpData
+): Promise<{ message: string; user: User; vendor?: any }> => {
+  const response = await fetchWithAuth(
+    `${API_BASE_URL}/auth/upgrade-to-vendor`,
+    {
+      method: "POST",
+      body: JSON.stringify(data),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    toast.error(errorData.message, toastConfigError);
+    throw new Error(errorData.message);
+  }
+
+  return response.json();
+};
+
+export const useUpgradeToVendor = () => {
+  return useMutation<{ message: string; user: User; vendor?: any }, Error, SignUpData>({
+    mutationFn: upgradeToVendor,
+  });
+};
+
 const logoutUser = async (): Promise<{ message: string }> => {
   // Use regular fetch instead of fetchWithAuth to avoid auth checks during logout
   const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
@@ -260,6 +287,8 @@ const logoutUser = async (): Promise<{ message: string }> => {
     },
     credentials: 'include'
   });
+
+  console.log('🔒 Logout response status:', response.status);
 
   if (!response.ok) {
     const errorData = await response.json();
@@ -850,10 +879,7 @@ export const useCreateBuyNowOrder = () => {
 
 // Fetch active banners (public API - no auth required)
 const fetchActiveBanners = async (): Promise<{ success: boolean; data: any[] }> => {
-  const response = await fetch(`${API_BASE_URL}/banners/active`, {
-    method: 'GET',
-    headers: { 'Content-Type': 'application/json' },
-  });
+  const response = await fetchPublic(`${API_BASE_URL}/banners/active`);
 
   if (!response.ok) {
     const errorData = await response.json();

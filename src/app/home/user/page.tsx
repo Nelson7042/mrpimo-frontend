@@ -35,6 +35,7 @@ import "swiper/css";
 import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { parseUserAgent } from "@/utils/parseUserAgent";
+import { useUserStore } from "@/stores/useUserStore";
 
 /**
  * Refactored DashboardPage
@@ -54,10 +55,21 @@ export default function DashboardPage() {
   const itemsPerPage = 4;
   const router = useRouter();
 
-  // Use 'any' for Swiper refs to avoid strict typing issues — you can replace with proper types later
   const recentViewsSwiperRef = useRef<any>(null);
   const recommendationsSwiperRef = useRef<any>(null);
 
+  const userFromStore = useUserStore((state) => state.user);
+  
+  // Client-side auth check
+  useEffect(() => {
+    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+    const refreshToken = typeof window !== 'undefined' ? localStorage.getItem('refreshToken') : null;
+    
+    if (!userFromStore && !accessToken && !refreshToken) {
+      router.push('/home');
+    }
+  }, [userFromStore, router]);
+  
   const { data: profileData, isLoading: profileLoading } = useUserProfile();
   const { data: recentViewsData, isLoading: viewsLoading } = useRecentViews(8);
   const { data: recomendationsData, isLoading: recomendationsLoading } =
@@ -67,6 +79,11 @@ export default function DashboardPage() {
 
   const recentViews = recentViewsData?.recentViews || [];
   const recommendations = recomendationsData?.products || [];
+
+  // Use Zustand store as fallback when API hasn't loaded
+  const user = profileData?.user || userFromStore;
+  const shippingAddress = profileData?.shippingDefaultAddress || userFromStore?.addresses?.find((a: any) => a.isDefault && a.type === 'shipping');
+  const fiatWallet = profileData?.fiatWallet;
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
     { label: "My Account", href: "/home/user/settings" },
@@ -187,10 +204,10 @@ export default function DashboardPage() {
 
       {/* Greeting */}
       <div className="mb-8 max-w-full">
-        <h1 className="text-xl sm:text-2xl font-bold mb-2 break-words">
-          Hello, {profileData?.user?.profile?.firstName || "User"}
+        <h1 className="font-roboto text-lg sm:text-xl font-bold mb-2 break-words">
+          Hello, {user?.profile?.firstName || "User"}
         </h1>
-        <p className="text-gray-600 text-sm sm:text-base leading-relaxed break-words max-w-full">
+        <p className="font-roboto text-gray-600 text-xs sm:text-sm leading-relaxed break-words max-w-full">
           Welcome to your Shopping Command Centre! Easily manage your orders,
           wishlist, and explore tailored deals in one convenient hub.
         </p>
@@ -201,23 +218,33 @@ export default function DashboardPage() {
         {/* Account Info */}
         <Card className="p-0 rounded-none ">
           <CardContent className="p-0 rounded-none">
-            <div className="flex items-center justify-between mb-4 p-2 bg-[#E2E8F0]">
-              <h3 className="font-medium text-sm md:text-base">ACCOUNT INFO</h3>
-              <Button variant="ghost" size="sm">
-                <Edit className="w-4 h-4" />
+            <div className="flex items-center justify-between mb-4 p-2 bg-primary">
+              <h3 className="font-roboto font-medium text-white text-xs md:text-sm">ACCOUNT INFO</h3>
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => router.push("/home/user/settings")}
+                className="hover:bg-white/20"
+              >
+                <Edit className="w-4 h-4 text-white" />
               </Button>
             </div>
             <div className="space-y-2 p-2">
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-gray-600">Name:</span>
-                <p className="">
-                  {profileData?.user?.profile?.firstName}{" "}
-                  {profileData?.user?.profile?.lastName}
+              <div className="flex flex-col gap-1">
+                <span className="font-roboto text-xs text-gray-600">Full Name</span>
+                <p className="font-roboto text-xs font-medium">
+                  {user?.profile?.firstName} {user?.profile?.lastName}
                 </p>
               </div>
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-gray-600">Email:</span>
-                <p className="">{profileData?.user?.email}</p>
+              <div className="flex flex-col gap-1">
+                <span className="font-roboto text-xs text-gray-600">Email Address</span>
+                <p className="font-roboto text-xs font-medium break-all">{user?.email}</p>
+              </div>
+              <div className="flex flex-col gap-1">
+                <span className="font-roboto text-xs text-gray-600">Phone Number</span>
+                <p className="font-roboto text-xs font-medium">
+                  {user?.profile?.phoneNumber || "Not provided"}
+                </p>
               </div>
             </div>
           </CardContent>
@@ -226,43 +253,54 @@ export default function DashboardPage() {
         {/* Shipping Address */}
         <Card className="p-0 rounded-none ">
           <CardContent className="p-0 rounded-none">
-            <div className="flex items-center justify-between mb-4 p-2 bg-[#E2E8F0]">
-              <h3 className="font-medium text-sm md:text-base">
+            <div className="flex items-center justify-between mb-4 p-2 bg-primary">
+              <h3 className="font-roboto font-medium text-white text-xs md:text-sm">
                 SHIPPING ADDRESS
               </h3>
-
-              <Button variant="ghost" size="sm">
-                <Edit className="w-4 h-4" />
+              <Button 
+                variant="ghost" 
+                size="sm"
+                onClick={() => router.push("/home/user/settings")}
+                className="hover:bg-white/20"
+              >
+                <Edit className="w-4 h-4 text-white" />
               </Button>
             </div>
             <div className="space-y-3 p-2">
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-gray-600">Name:</span>
-                <p className="">
-                  {profileData?.user?.profile?.firstName}{" "}
-                  {profileData?.user?.profile?.lastName}
-                </p>
-              </div>
-              {profileData?.shippingDefaultAddress && (
-                <div className="flex  gap-1">
-                  <span className="text-sm text-gray-600">Address:</span>
-                  <p className="">
-                    {`${profileData.shippingDefaultAddress.street}, ${profileData.shippingDefaultAddress.city}, ${profileData.shippingDefaultAddress.state}`}
-                  </p>
-                </div>
+              {shippingAddress ? (
+                <>
+                  <div className="flex gap-1">
+                    <span className="font-roboto text-xs text-gray-600">Street:</span>
+                    <p className="font-roboto text-xs">{shippingAddress.street}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-roboto text-xs text-gray-600">City:</span>
+                    <p className="font-roboto text-xs">{shippingAddress.city}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-roboto text-xs text-gray-600">State:</span>
+                    <p className="font-roboto text-xs">{shippingAddress.state}</p>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <span className="font-roboto text-xs text-gray-600">Country:</span>
+                    <p className="font-roboto text-xs">{shippingAddress.country}</p>
+                  </div>
+                  {shippingAddress.postalCode && (
+                    <div className="flex items-center gap-1">
+                      <span className="font-roboto text-xs text-gray-600">Postal Code:</span>
+                      <p className="font-roboto text-xs">{shippingAddress.postalCode}</p>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <p className="font-roboto text-xs text-gray-500">No shipping address added</p>
               )}
-              <div className="flex items-center gap-1">
-                <span className="text-sm text-gray-600">Phone:</span>
-                <p className="">
-                  {profileData?.user?.profile?.phoneNumber || "Not provided"}
-                </p>
-              </div>
             </div>
           </CardContent>
           {!profileData?.shippingDefaultAddress && (
             <div className="p-2 border-t">
               <Button
-                className="cursor-pointer w-full bg-blue-600 hover:bg-blue-700"
+                className="font-roboto cursor-pointer w-full bg-primary hover:bg-primary/90 text-xs"
                 onClick={() => router.push("/home/user/settings")}
               >
                 Add Shipping Address
@@ -274,18 +312,18 @@ export default function DashboardPage() {
         {/* Credit Balance */}
         <Card className="p-0 rounded-none relative">
           <CardContent className="p-0 rounded-none">
-            <div className="flex items-center justify-between mb-4 p-2 bg-[#E2E8F0]">
-              <h3 className="font-medium text-sm md:text-base">
+            <div className="flex items-center justify-between mb-4 p-2 bg-primary">
+              <h3 className="font-roboto font-medium text-white text-xs md:text-sm">
                 CREDIT BALANCE
               </h3>
             </div>
             <div className="space-y-2 p-4 pb-16">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1">
-                  <span className="text-xs sm:text-sm text-gray-600">Balance:</span>
-                  <p className="font-bold text-sm sm:text-lg break-all">
+                  <span className="font-roboto text-xs text-gray-600">Balance:</span>
+                  <p className="font-roboto font-bold text-xs sm:text-sm break-all">
                     {showBalance
-                      ? `$${parseFloat(profileData?.fiatWallet?.balances?.available.toString() || "0").toFixed(2)} ${profileData?.fiatWallet?.currency || ""}`
+                      ? `${fiatWallet?.currency || ""} ${parseFloat(fiatWallet?.balances?.available.toString() || "0").toFixed(2)}`
                       : `******`}
                   </p>
                 </div>
@@ -303,7 +341,7 @@ export default function DashboardPage() {
               </div>
               <Link href={"/home/user/wallet"}>
                 <Button
-                  className="cursor-pointer w-[95%] bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 rounded absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs sm:text-sm"
+                  className="font-roboto cursor-pointer w-[95%] bg-primary hover:bg-primary/90 text-white font-medium py-2 rounded absolute bottom-2 left-1/2 transform -translate-x-1/2 text-xs"
                 >
                   Add Funds
                 </Button>
@@ -314,13 +352,14 @@ export default function DashboardPage() {
       </div>
 
       {/* Recent Activities */}
+      {!activitiesLoading && activitiesData?.activities?.length > 0 && (
       <Card className="mb-8 py-3 ">
         <CardContent className="p-3 sm:p-4 md:p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-lg">Recent Activities</h3>
+            <h3 className="font-roboto font-bold text-base">Recent Activities</h3>
             <Button
               variant="link"
-              className="text-blue-600 hover:text-blue-800"
+              className="font-roboto primary hover:text-primary/80 text-xs"
               onClick={() => setShowActivitiesModal(true)}
             >
               See All →
@@ -330,11 +369,11 @@ export default function DashboardPage() {
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b text-left text-sm text-gray-600">
-                  <th className="pb-3">SN</th>
-                  <th className="pb-3">ACTIVITIES</th>
-                  <th className="pb-3 hidden sm:table-cell">TIME</th>
-                  <th className="pb-3 hidden sm:table-cell">DATE</th>
+                <tr className="border-b text-left text-xs text-gray-600">
+                  <th className="font-roboto pb-3">SN</th>
+                  <th className="font-roboto pb-3">ACTIVITIES</th>
+                  <th className="font-roboto pb-3 hidden sm:table-cell">TIME</th>
+                  <th className="font-roboto pb-3 hidden sm:table-cell">DATE</th>
                 </tr>
               </thead>
               <tbody>
@@ -382,12 +421,7 @@ export default function DashboardPage() {
                       const location = metadata.location || 'Unknown';
                       const deviceType = metadata.device || 'desktop';
                       
-                      console.log('📱 Parsed Metadata:', {
-                        userAgent,
-                        location,
-                        deviceType,
-                        hasMetadata: !!activity.metadata,
-                      });
+                    
                       
                       // Parse browser and OS from user agent
                       const { browser, os } = parseUserAgent(userAgent);
@@ -401,10 +435,7 @@ export default function DashboardPage() {
                       // Extract base activity (remove the old "from X on Y with Z" part)
                       const baseActivity = activity.activity?.split(' from ')[0] || activity.activity;
                       
-                      console.log('📝 Activity Text:', {
-                        original: activity.activity,
-                        base: baseActivity,
-                      });
+                    
 
                       return (
                         <tr
@@ -412,28 +443,28 @@ export default function DashboardPage() {
                           className="border-b"
                         >
                           <td className="py-3">
-                            <span className="text-sm font-medium">{index + 1}</span>
+                            <span className="font-roboto text-xs font-medium">{index + 1}</span>
                           </td>
                           <td className="py-3">
                             <div className="flex items-center space-x-3">
                               {getActivityIcon(baseActivity)}
                               <div className="flex flex-col">
-                                <span className="text-sm font-medium">
+                                <span className="font-roboto text-xs font-medium">
                                   {`${baseActivity} from ${location} on ${deviceType}`}
                                 </span>
-                                <span className="text-xs text-gray-500">
+                                <span className="font-roboto text-[10px] text-gray-500">
                                   {browser} • {os} • {deviceType} • {location}
                                 </span>
-                                <div className="sm:hidden text-xs text-gray-500 mt-1">
+                                <div className="font-roboto sm:hidden text-[10px] text-gray-500 mt-1">
                                   {activityTime} • {activityDateStr}
                                 </div>
                               </div>
                             </div>
                           </td>
-                          <td className="py-3 text-sm hidden sm:table-cell">
+                          <td className="font-roboto py-3 text-xs hidden sm:table-cell">
                             {activityTime}
                           </td>
-                          <td className="py-3 text-sm hidden sm:table-cell">
+                          <td className="font-roboto py-3 text-xs hidden sm:table-cell">
                             {activityDateStr}
                           </td>
                         </tr>
@@ -478,29 +509,29 @@ export default function DashboardPage() {
             )}
         </CardContent>
       </Card>
+      )}
 
       {/* Recent Views */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="font-bold text-lg">Recent Views</h3>
-          {recentViews.length > 0 && (
+      {recentViews.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="font-roboto font-bold text-base">Recent Views</h3>
             <Button
               variant="link"
-              className="text-blue-600 hover:text-blue-800"
+              className="font-roboto primary hover:text-primary/80 text-xs"
             >
               See All →
             </Button>
-          )}
-        </div>
+          </div>
 
-        {/* Mobile Swiper (full-bleed) */}
-        <MobileSwiper
-          items={recentViews}
-          renderItem={(product: any) => <ProductCard product={product} />}
-          swiperRef={recentViewsSwiperRef}
-          prevClass="recent-views-prev"
-          nextClass="recent-views-next"
-        />
+          {/* Mobile Swiper (full-bleed) */}
+          <MobileSwiper
+            items={recentViews}
+            renderItem={(product: any) => <ProductCard product={product} />}
+            swiperRef={recentViewsSwiperRef}
+            prevClass="recent-views-prev"
+            nextClass="recent-views-next"
+          />
 
         {/* Desktop Grid */}
         <div className="hidden sm:block">
@@ -558,15 +589,16 @@ export default function DashboardPage() {
           )}
         </div>
       </div>
+      )}
 
       {/* You Might Like */}
       {!recomendationsLoading && recommendations.length > 0 && (
         <div className="mb-8">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="font-bold text-lg">You Might Like</h3>
+            <h3 className="font-roboto font-bold text-base">You Might Like</h3>
             <Button
               variant="link"
-              className="text-blue-600 hover:text-blue-800"
+              className="font-roboto primary hover:text-primary/80 text-xs"
             >
               See All →
             </Button>

@@ -21,33 +21,27 @@ export interface IPLocationData {
 
 export interface LocationData {
   coordinates?: Coordinates;
-  ipLocation?: IPLocationData;
+  address?: {
+    street?: string;
+    city?: string;
+    state?: string;
+    country?: string;
+    postalCode?: string;
+    formattedAddress?: string;
+  };
   source: 'gps' | 'ip';
 }
 
 /**
- * Get location from IP address using ipapi.co
+ * Get user's IP-based location
  */
 export const getIPLocation = async (): Promise<IPLocationData> => {
   try {
-    const response = await fetch('https://ipapi.co/json/', {
-      method: 'GET',
-      headers: {
-        'Accept': 'application/json',
-      },
-    });
-
+    const response = await fetch('https://ipapi.co/json/');
     if (!response.ok) {
       throw new Error('Failed to fetch IP location');
     }
-
     const data = await response.json();
-    
-    // Check if we got an error response
-    if (data.error) {
-      throw new Error(data.reason || 'IP location service error');
-    }
-
     return {
       city: data.city || '',
       region: data.region || '',
@@ -60,7 +54,56 @@ export const getIPLocation = async (): Promise<IPLocationData> => {
       ip: data.ip || '',
     };
   } catch (error) {
-    console.warn('IP location fetch failed:', error);
+    throw error;
+  }
+};
+
+/**
+ * Reverse geocode coordinates to address using Google Maps API
+ */
+export const reverseGeocode = async (coordinates: Coordinates): Promise<{
+  street?: string;
+  city?: string;
+  state?: string;
+  country?: string;
+  postalCode?: string;
+  formattedAddress?: string;
+}> => {
+  try {
+    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+    if (!apiKey) {
+      throw new Error('Google Maps API key not configured');
+    }
+
+    const response = await fetch(
+      `https://maps.googleapis.com/maps/api/geocode/json?latlng=${coordinates.latitude},${coordinates.longitude}&key=${apiKey}`
+    );
+
+    if (!response.ok) {
+      throw new Error('Geocoding request failed');
+    }
+
+    const data = await response.json();
+
+    if (data.status !== 'OK' || !data.results || data.results.length === 0) {
+      throw new Error(data.error_message || 'No address found');
+    }
+
+    const result = data.results[0];
+    const components = result.address_components;
+
+    const getComponent = (type: string) =>
+      components.find((c: any) => c.types.includes(type))?.long_name || '';
+
+    return {
+      street: getComponent('route') || getComponent('sublocality'),
+      city: getComponent('locality') || getComponent('administrative_area_level_2'),
+      state: getComponent('administrative_area_level_1'),
+      country: getComponent('country'),
+      postalCode: getComponent('postal_code'),
+      formattedAddress: result.formatted_address,
+    };
+  } catch (error) {
     throw error;
   }
 };
@@ -110,43 +153,28 @@ export const getCurrentLocation = (): Promise<Coordinates> => {
 
 /**
  * Get comprehensive location data with fallbacks
- * Tries GPS first, falls back to IP geolocation
+ * Uses GPS + Google Maps reverse geocoding
  */
 export const getLocationWithFallback = async (): Promise<LocationData | null> => {
-  // Try GPS first
   try {
-    console.log('📍 Attempting GPS location...');
     const coordinates = await getCurrentLocation();
-    console.log('✅ GPS location successful:', coordinates);
     
-    return {
-      coordinates,
-      source: 'gps',
-    };
-  } catch (gpsError) {
-    console.warn('⚠️ GPS failed:', gpsError);
-    
-    // Fallback to IP geolocation
     try {
-      console.log('📍 Attempting IP geolocation...');
-      const ipLocation = await getIPLocation();
-      console.log('✅ IP geolocation successful:', ipLocation);
+      const address = await reverseGeocode(coordinates);
       
       return {
-        coordinates: {
-          latitude: ipLocation.latitude,
-          longitude: ipLocation.longitude,
-        },
-        ipLocation,
-        source: 'ip',
+        coordinates,
+        address,
+        source: 'gps',
       };
-    } catch (ipError) {
-      console.warn('⚠️ IP geolocation failed:', ipError);
-      
-      // Both methods failed
-      console.log('❌ All location methods failed');
-      return null;
+    } catch (geocodeError) {
+      return {
+        coordinates,
+        source: 'gps',
+      };
     }
+  } catch (gpsError) {
+    return null;
   }
 };
 

@@ -4,7 +4,7 @@ import React, { useRef } from "react";
 import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useCategories } from "@/hooks/queries";
-import { Category } from "@/types/product.type.ts_";
+import { Category } from "@/types/product.type";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Button } from "@/components/ui/button";

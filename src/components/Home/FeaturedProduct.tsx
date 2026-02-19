@@ -5,9 +5,10 @@ import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import "swiper/css/navigation";
 import { AllProduct } from "@/utils/config";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import Link from "next/link";
 import { ProductCard } from "./ProductCard";
+import { fetchPublic } from "@/utils/fetchPublic";
 
 type FeaturedCategory = {
   _id: string;
@@ -23,7 +24,7 @@ export default function FeaturedProducts() {
   const { data: categories = [] } = useQuery({
     queryKey: ["featuredCategories"],
     queryFn: async () => {
-      const response = await fetch(`${AllProduct}/featured-categories`);
+      const response = await fetchPublic(`${AllProduct}/featured-categories`);
       if (!response.ok) throw new Error("Failed to fetch categories");
       return response.json();
     },
@@ -37,7 +38,7 @@ export default function FeaturedProducts() {
     queryFn: async () => {
       const params = new URLSearchParams({ page: "1", limit: "12" });
       if (selectedCategory !== "all") params.append("category", selectedCategory);
-      const response = await fetch(`${AllProduct}/featured?${params}`);
+      const response = await fetchPublic(`${AllProduct}/featured?${params}`);
       if (!response.ok) throw new Error("Failed to fetch featured products");
       const data = await response.json();
       console.log('Featured Products API Response:', data);

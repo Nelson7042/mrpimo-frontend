@@ -32,6 +32,10 @@ export interface OfflineCartItem {
   variantName?: string;
   optionValue?: string;
   addedAt: string;
+  /** Original vendor price in vendor currency - used for backend recalculation on sync */
+  originalPrice: number;
+  /** Vendor's currency code (e.g., "NGN") - used for backend recalculation on sync */
+  originalCurrency: string;
   priceInfo?: {
     currencySymbol: string;
     displayCurrency: string;
@@ -122,6 +126,7 @@ export const cartService = {
       return response.json();
     } catch (error) {
       // Save to offline storage if request fails
+      // Store original price data for backend recalculation when user logs in
       if (data.optionId && data.name && data.price) {
         const offlineItem: OfflineCartItem = {
           productId: data.productId,
@@ -134,6 +139,10 @@ export const cartService = {
           variantName: data.variantName,
           optionValue: data.optionValue,
           addedAt: new Date().toISOString(),
+          // Store original price and currency for backend recalculation on sync
+          // This allows the backend to recalculate displayPrice with current rates when user logs in
+          originalPrice: data.priceInfo?.originalPrice ?? data.price,
+          originalCurrency: data.priceInfo?.originalCurrency ?? 'USD',
           priceInfo: data.priceInfo
         };
         
@@ -198,18 +207,34 @@ export const cartService = {
     const offlineItems = offlineCartStorage.get();
     
     // Format cart items to match backend expectations
+    // Send originalPrice and originalCurrency instead of priceInfo
+    // Let backend recalculate displayPrice with current rates
     const cart = items.map(item => ({
       productId: item.product._id,
+      variantId: item.selectedVariant?.variantId,
       optionId: item.selectedVariant?.optionId,
       quantity: item.quantity,
-      price: item.selectedVariant?.price || 0,
+      price: item.priceInfo?.originalPrice ?? item.selectedVariant?.price ?? 0,
       name: item.product.name,
-      images: item.product.images || [],
-      priceInfo: item.priceInfo
+      images: item.product.images || []
+      // Don't send priceInfo - let backend recalculate
+    }));
+    
+    // Format offline items similarly - send original prices for backend recalculation
+    // Use top-level originalPrice/originalCurrency fields which are guaranteed to exist
+    const formattedOfflineItems = offlineItems.map(item => ({
+      productId: item.productId,
+      variantId: item.variantId,
+      optionId: item.optionId,
+      quantity: item.quantity,
+      price: item.originalPrice ?? item.priceInfo?.originalPrice ?? item.price ?? 0,
+      name: item.name,
+      images: item.images || []
+      // Don't send priceInfo - let backend recalculate
     }));
     
     // Add offline items to cart
-    const allItems = [...cart, ...offlineItems];
+    const allItems = [...cart, ...formattedOfflineItems];
 
     const response = await fetchWithAuth(`${API_BASE_URL}/products/cart/merge`, {
       method: 'POST',

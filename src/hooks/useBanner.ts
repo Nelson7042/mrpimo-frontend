@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchPublic } from '@/utils/fetchPublic';
 import { API_BASE_URL } from '@/utils/config';
 
 interface Banner {
@@ -28,10 +29,7 @@ interface Banner {
 
 const bannerApi = {
   getBanners: async (): Promise<Banner[]> => {
-    const response = await fetch(`${API_BASE_URL}/banners/active`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
+    const response = await fetchPublic(`${API_BASE_URL}/banners/active`);
     if (!response.ok) throw new Error('Failed to fetch banners');
     const data = await response.json();
     return data.success ? data.data : [];

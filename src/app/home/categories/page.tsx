@@ -12,10 +12,11 @@ import { categoriesConfig } from "@/lib/categories-config";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/hooks/queries";
-import { Category } from "@/types/product.type.ts_";
+import { Category } from "@/types/product.type";
 
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/utils/config";
+import { fetchPublic } from "@/utils/fetchPublic";
 
 const categories = Object.values(categoriesConfig);
 
@@ -48,7 +49,7 @@ export default function CategoriesPage() {
 
   // Fetch categories
   const fetchCategories = async () => {
-    const response = await fetch(`${API_BASE_URL}/categories`);
+    const response = await fetchPublic(`${API_BASE_URL}/categories`);
     if (!response.ok) {
       throw new Error('Failed to fetch categories');
     }

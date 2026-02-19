@@ -2,6 +2,7 @@ import { useQuery, useMutation } from '@tanstack/react-query';
 
 import { API_BASE_URL } from '@/utils/config';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchPublic } from '@/utils/fetchPublic';
 
 interface ProductFilters {
   category?: string;
@@ -25,7 +26,7 @@ const fetchProducts = async (filters: ProductFilters) => {
     }
   });
 
-  const response = await fetch(`${API_BASE_URL}/products/get-products?${params.toString()}`);
+  const response = await fetchPublic(`${API_BASE_URL}/products/get-products?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch products');
   }
@@ -42,7 +43,7 @@ export const useProducts = (filters: ProductFilters) => {
 };
 
 const fetchCategoryBySlug = async (slug: string) => {
-  const response = await fetch(`${API_BASE_URL}/categories/slug/${slug}`);
+  const response = await fetchPublic(`${API_BASE_URL}/categories/slug/${slug}`);
   if (!response.ok) {
     throw new Error('Failed to fetch category');
   }
@@ -61,7 +62,7 @@ export const useCategoryBySlug = (slug: string) => {
 
 const fetchCategoryTree = async (parentId?: string) => {
   const params = parentId ? `?parentId=${parentId}` : '';
-  const response = await fetch(`${API_BASE_URL}/categories/tree${params}`);
+  const response = await fetchPublic(`${API_BASE_URL}/categories/tree${params}`);
   if (!response.ok) {
     throw new Error('Failed to fetch category tree');
   }
@@ -103,7 +104,7 @@ const fetchProductsByCategory = async (filters: CategoryProductFilters) => {
   const queryString = queryParams.toString();
   const url = `${API_BASE_URL}/products/categories/${categoryId}${queryString ? `?${queryString}` : ''}`;
   
-  const response = await fetch(url);
+  const response = await fetchPublic(url);
   if (!response.ok) {
     throw new Error('Failed to fetch products by category');
   }
@@ -151,7 +152,7 @@ const placeBid = async (productId: string, maxBid: number) => {
 };
 
 const getBids = async (productId: string) => {
-  const response = await fetch(`${API_BASE_URL}/products/${productId}/bids`);
+  const response = await fetchPublic(`${API_BASE_URL}/products/${productId}/bids`);
   if (!response.ok) {
     throw new Error('Failed to fetch bids');
   }
@@ -178,7 +179,7 @@ export const useAddReview = () => {
 };
 
 const fetchCategoryPriceRanges = async (categoryId: string) => {
-  const response = await fetch(`${API_BASE_URL}/products/categories/${categoryId}/price-ranges`);
+  const response = await fetchPublic(`${API_BASE_URL}/products/categories/${categoryId}/price-ranges`);
   if (!response.ok) {
     throw new Error('Failed to fetch price ranges');
   }

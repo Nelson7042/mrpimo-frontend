@@ -1,7 +1,7 @@
 import Wishlist from "@/components/client-component/Wishlist";
 import { StarRating } from "@/components/Home/ProductCard";
 import { useUserStore } from "@/stores/useUserStore";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import Link from "next/link";
 import { useState } from "react";
 

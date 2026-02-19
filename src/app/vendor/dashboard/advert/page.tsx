@@ -23,7 +23,7 @@ import {
 import PlanCard from "./(componets)/PlanCard";
 import ProductSelector from "./(componets)/ProductSelector";
 import Timer from "./(componets)/Timer";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import { useVendorStore } from "@/stores/useVendorStore";
 import { Check } from "lucide-react";
 

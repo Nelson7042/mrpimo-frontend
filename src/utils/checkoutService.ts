@@ -80,5 +80,13 @@ export const checkoutService = {
       method: 'POST',
       body: JSON.stringify({ address }),
     });
+  },
+
+  async calculateShipping(deliveryMethod: string) {
+    const response = await fetchWithAuth(`${API_BASE_URL}/checkout/shipping/calculate`, {
+      method: 'POST',
+      body: JSON.stringify({ deliveryMethod }),
+    });
+    return response.json();
   }
 };

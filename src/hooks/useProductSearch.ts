@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/utils/config";
 import { SearchResponse } from "@/types/search.types";
+import { fetchPublic } from "@/utils/fetchPublic";
 
 export interface ProductSearchFilters {
   category?: string;
@@ -40,7 +41,7 @@ const fetchProductSearch = async (
   params.append("page", (filters.page || 1).toString());
   params.append("limit", (filters.limit || 20).toString());
 
-  const response = await fetch(
+  const response = await fetchPublic(
     `${API_BASE_URL}/products/search?${params.toString()}`
   );
   

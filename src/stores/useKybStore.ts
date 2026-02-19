@@ -21,12 +21,6 @@ interface KybFormData {
   registrationName: string;
   premium: boolean;
   businessDocument: File | null;
-  accountName: string;
-  accountNumber: string;
-  bankName: string;
-  routingNumber: string;
-  bankCode: string;
-  bankStatement: File | null;
   dateOfBirth?: string;
   phoneNumber?: string;
   addressLine1?: string;
@@ -65,12 +59,6 @@ const initialFormData: KybFormData = {
   registrationName: '',
   premium: false,
   businessDocument: null,
-  accountName: '',
-  accountNumber: '',
-  bankName: '',
-  routingNumber: '',
-  bankCode: '',
-  bankStatement: null,
   dateOfBirth: undefined,
   phoneNumber: undefined,
   addressLine1: undefined,

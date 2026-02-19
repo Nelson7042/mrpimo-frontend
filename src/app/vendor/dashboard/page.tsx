@@ -13,6 +13,7 @@ import { useSocket } from "@/hooks/useSocket";
 import { useUserNotifications, useVendorAnalytics } from "@/hooks/queries";
 import Link from "next/link";
 import { useVendorStore } from "@/stores/useVendorStore";
+import KycModal from "@/components/KycModal";
 import KybModal from "@/components/KybModal";
 
 type Props = {};
@@ -22,6 +23,28 @@ const Page = (props: Props) => {
   const socket = useSocket();
   const { data, isLoading } = useVendorAnalytics(vendor?._id!);
   const [showKybModal, setShowKybModal] = useState(false);
+  const isPersonalAccount = vendor?.accountType === 'personal';
+  
+  // For business accounts, check both KYC and KYB status
+  // For personal accounts, only check KYC status
+  const needsKycVerification = vendor?.kycStatus !== "verified";
+  const needsKybVerification = !isPersonalAccount && vendor?.kybStatus !== "verified";
+  const needsVerification = isPersonalAccount ? needsKycVerification : (needsKycVerification || needsKybVerification);
+  
+  // Determine which verification is pending for business accounts
+  const getVerificationStatus = () => {
+    if (isPersonalAccount) {
+      return vendor?.kycStatus || 'pending';
+    }
+    // For business accounts
+    if (vendor?.kycStatus !== 'verified') {
+      return vendor?.kycStatus || 'pending';
+    }
+    // KYC is verified, check KYB
+    return vendor?.kybStatus || 'pending';
+  };
+  
+  const verificationStatus = getVerificationStatus();
 
   const [vendorCurrency] = useState(
     data?.dashboard?.salesTotal?.currency || ""
@@ -52,18 +75,33 @@ const Page = (props: Props) => {
           {`Hey ${vendor?.businessInfo?.name}, welcome back! Let’s take a look at what’s going on in your store today.`}
         </p>
         
-        {vendor?.kycStatus !== "verified" && (
+        {needsVerification && (
           <div className="">
-            <div className="bg-[#f1f1f1] border border-[#e1e1e1] rounded-lg p-2 md:p-5 mb-4 md:mb-5">
-              <h2 className="font-bold text-lg mb-2">KYC Verification</h2>
+            <div className={`border rounded-lg p-2 md:p-5 mb-4 md:mb-5 ${
+              verificationStatus === 'requires_review' 
+                ? 'bg-yellow-50 border-yellow-200' 
+                : verificationStatus === 'rejected'
+                  ? 'bg-red-50 border-red-200'
+                  : 'bg-[#f1f1f1] border-[#e1e1e1]'
+            }`}>
+              <h2 className="font-bold text-lg mb-2">
+                {isPersonalAccount ? 'KYC' : (vendor?.kycStatus === 'verified' ? 'KYB (Business)' : 'KYC/KYB')} Verification
+              </h2>
               <p className="text-sm mb-4">
-                Your KYC verification is {vendor?.kycStatus || 'pending'}. Please complete the KYC
-                verification to be able to request payouts and access all
-                features.
+                {verificationStatus === 'requires_review' 
+                  ? 'Your verification is under review. An administrator will review your information shortly.'
+                  : verificationStatus === 'rejected'
+                    ? `Your ${!isPersonalAccount && vendor?.kycStatus === 'verified' ? 'business' : ''} verification was rejected. Please try again with correct information.`
+                    : !isPersonalAccount && vendor?.kycStatus === 'verified'
+                      ? `Your business verification is ${vendor?.kybStatus || 'pending'}. Please complete KYB verification to access all features.`
+                      : `Your verification is ${verificationStatus}. Please complete the verification to be able to request payouts and access all features.`
+                }
               </p>
-              <button onClick={() => setShowKybModal(true)} className="text-blue-600 underline text-sm">
-                {vendor?.kycStatus === 'pending' ? 'Continue' : 'Start'} KYC Process
-              </button>
+              {verificationStatus !== 'requires_review' && (
+                <button onClick={() => setShowKybModal(true)} className="text-blue-600 underline text-sm">
+                  {verificationStatus === 'rejected' ? 'Retry' : verificationStatus === 'pending' ? 'Continue' : 'Start'} {isPersonalAccount ? 'KYC' : (vendor?.kycStatus === 'verified' ? 'KYB' : 'KYC/KYB')} Process
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -115,7 +153,11 @@ const Page = (props: Props) => {
         <RecentOrders currency={vendorCurrency} />
       </div>
 
-      <KybModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
+      {isPersonalAccount ? (
+        <KycModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
+      ) : (
+        <KybModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
+      )}
     </div>
   );
 };

@@ -5,6 +5,7 @@ import { cartService } from "@/utils/cartService";
 import { useUserStore } from "./useUserStore";
 import { toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
 import { toast } from "react-toastify";
+import { getDisplayPrice } from "@/utils/priceUtils";
 
 const KEY_SEPARATOR = "::";
 
@@ -79,10 +80,11 @@ const calculateCartSummary = (items: CartItem[]): CartSummary => {
   })));
 
   const subtotal = items.reduce((total, item) => {
-    // Use the same logic as the cart page: variant price * exchange rate
-    const price = (item.selectedVariant?.price || 0) * (item.priceInfo?.exchangeRate || 1);
+    // FIX: Use displayPrice directly (already converted by backend)
+    // Do NOT multiply by exchange rate - that causes double conversion
+    const price = getDisplayPrice(item);
     const itemTotal = Math.round((price * item.quantity) * 100) / 100;
-    console.log(`Item: ${item.product.name}, Variant Price: ${item.selectedVariant?.price}, Exchange Rate: ${item.priceInfo?.exchangeRate}, Final Price: ${price}, Qty: ${item.quantity}, Total: ${itemTotal}`);
+    console.log(`Item: ${item.product.name}, Display Price: ${price}, Qty: ${item.quantity}, Total: ${itemTotal}`);
     return total + itemTotal;
   }, 0);
 
@@ -515,11 +517,16 @@ export const useCartStore = create<CartState>()(
         try {
           if (items.length > 0) {
             // Merge local cart items with backend cart
+            // mergeCart sends originalPrice/originalCurrency (not stale priceInfo)
+            // so backend can recalculate displayPrice with current exchange rates
             await cartService.mergeCart(items);
-            // Clear local items after successful merge
+            // Clear local items after successful merge to remove any stale offline priceInfo
+            // This ensures we don't accidentally use outdated price conversions
             set({ items: [] });
           }
-          // Load cart from backend (this will get the merged cart)
+          // Load cart from backend - this fetches fresh priceInfo calculated by backend
+          // After this call, all items will have backend-calculated priceInfo.displayPrice
+          // which is the single source of truth for price display (Property 9)
           await get().loadCart();
         } catch (error) {
           set({ error: error instanceof Error ? error.message : 'Failed to sync cart' });

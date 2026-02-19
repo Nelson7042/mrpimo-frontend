@@ -137,24 +137,28 @@ const OTPModal: React.FC<OTPModalProps> = ({
         { code: otpValue },
         {
           onSuccess: (data) => {
-            console.log('✅ Email verification successful, user data:', data.user);
+            console.log('✅ FRONTEND: Email verification successful');
+            console.log('📦 FRONTEND: Received user data from backend:', data.user);
+            console.log('📧 FRONTEND: User email verified status:', data.user?.isEmailVerified);
             
-            // Clear temporary user from localStorage
             localStorage.removeItem('tempUserForVerification');
             
-            // Ensure isEmailVerified is set to true before adding to store
             const verifiedUser = {
               ...data.user,
               isEmailVerified: true
             };
             
-            console.log('✅ Setting verified user in store:', verifiedUser);
-            
-            // Set the verified user in the store
+            console.log('💾 FRONTEND: Setting verified user in Zustand store:', verifiedUser);
             setUser(verifiedUser);
             
-            // Invalidate user profile query to force refetch with updated data
+            console.log('🔄 FRONTEND: Invalidating user profile query');
             queryClient.invalidateQueries({ queryKey: ['userProfile'] });
+            
+            console.log('✅ FRONTEND: User stored in Zustand, checking store state...');
+            setTimeout(() => {
+              const currentUser = useUserStore.getState().user;
+              console.log('📊 FRONTEND: Current user in store after setUser:', currentUser);
+            }, 100);
             
             toast.success("Email verified successfully!", toastConfigSuccess);
             

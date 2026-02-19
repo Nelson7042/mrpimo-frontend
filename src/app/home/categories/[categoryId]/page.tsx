@@ -24,7 +24,7 @@ import {
   useProductsByCategory,
   useCategoryPriceRanges,
 } from "@/hooks/useProducts";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import { ProductCard } from "@/components/Home/ProductCard";
 import { filterAvailableProducts } from "@/utils/productUtils";
 

@@ -2,7 +2,7 @@
 
 import { useVendorProducts } from "@/hooks/queries";
 import { useProductStore } from "@/stores/useProductStore";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import VariantPriceDisplay from "@/components/VariantPriceDisplay";
 import {
   Plus,

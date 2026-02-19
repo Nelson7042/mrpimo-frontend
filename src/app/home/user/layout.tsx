@@ -68,31 +68,31 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   };
 
   const handleLogout = () => {
-    // Clear everything immediately, don't wait for API call
-    try {
-      localStorage.removeItem('accessToken');
-      localStorage.removeItem('refreshToken');
-      localStorage.removeItem('tempUser');
-      
-      // Clear authentication cookies
-      document.cookie = 'accessToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-      document.cookie = 'refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
-    } catch (e) {
-      console.warn('Failed to clear tokens:', e);
-    }
-    
-    resetAllStores();
-    closeLogoutModal();
-    
-    // Make logout API call but don't depend on it
     logoutMutation.mutate(undefined, {
-      onSettled: () => {
-        // Always redirect regardless of API success/failure
-        router.push("/home");
+      onSuccess: () => {
+        // Clear all cookies (including httpOnly ones the browser can access)
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
+
+        resetAllStores();
+        closeLogoutModal();
+        toast.success("Logout Successful");
+
+        // Full page reload to clear all in-memory state
+        window.location.href = "/home";
+      },
+      onError: (error) => {
+        console.error("Logout failed:", error);
+        // Still clear frontend state on error so user isn't stuck
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
+        resetAllStores();
+        closeLogoutModal();
+        window.location.href = "/home";
       },
     });
-    
-    toast.success("Logout Successful");
   };
 
   return (

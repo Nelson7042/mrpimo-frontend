@@ -4,10 +4,11 @@ import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { AllProduct } from "@/utils/config";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import { ProductCard } from "@/components/Home/ProductCard";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter } from "next/navigation";
+import { fetchPublic } from "@/utils/fetchPublic";
 
 type FeaturedCategory = {
   _id: string;
@@ -39,7 +40,7 @@ export default function FeaturedProductsPage() {
   const { data: categories } = useQuery({
     queryKey: ["featuredCategories"],
     queryFn: async () => {
-      const response = await fetch(`${AllProduct}/featured-categories`);
+      const response = await fetchPublic(`${AllProduct}/featured-categories`);
       if (!response.ok) throw new Error("Failed to fetch categories");
       return response.json();
     },
@@ -56,7 +57,7 @@ export default function FeaturedProductsPage() {
         params.append("category", selectedCategory);
       if (searchQuery) params.append("search", searchQuery);
 
-      const response = await fetch(`${AllProduct}/featured?${params}`);
+      const response = await fetchPublic(`${AllProduct}/featured?${params}`);
       if (!response.ok) throw new Error("Failed to fetch products");
       return response.json();
     },

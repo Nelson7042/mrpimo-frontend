@@ -40,6 +40,9 @@ export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       user: null,
+      deviceId: null,
+      wallet: null,
+      
       setUser: (user: User | null) => {
         set({ user });
       },
@@ -52,18 +55,20 @@ export const useUserStore = create<UserState>()(
       },
 
       refreshUser: async () => {
-        await refreshToken();
+        try {
+          await refreshToken();
+        } catch (error) {
+          get().resetStore();
+        }
       },
 
-      logout: () => set({ user: null }),
+      logout: () => set({ user: null, wallet: null }),
 
-      deviceId: null,
       setDeviceId: (deviceId: string | null) => set({ deviceId }),
-      wallet: null,
-      setWallet: (wallet: ICryptoWallet | null) => set({wallet}),
+      
+      setWallet: (wallet: ICryptoWallet | null) => set({ wallet }),
 
       resetStore: () => {
-        useUserStore.persist.clearStorage();
         set({ user: null, deviceId: null, wallet: null });
       },
     }),

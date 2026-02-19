@@ -23,7 +23,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ChevronRight, ChevronLeft, Edit, Eye, EyeOff } from "lucide-react";
+import { SearchableSelect } from "@/components/ui/searchable-select";
+import { ChevronRight, ChevronLeft, Edit, Eye, EyeOff, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -279,11 +280,11 @@ export default function SettingsPage() {
   };
 
   const renderMainSettings = () => (
-    <div className="flex gap-8">
+    <div className="flex gap-8 font-roboto">
       {/* Left Panel - Navigation */}
       <Card className="flex-1 bg-transparent border-0 shadow-none">
         <CardContent className="p-6 bg-transparent">
-          <h2 className="text-xl font-bold mb-6">Settings</h2>
+          <h2 className="text-xl font-semibold mb-6">Settings</h2>
           <div className="space-y-2">
             {settingsNavigation.map((item) => (
               <Button
@@ -304,34 +305,36 @@ export default function SettingsPage() {
       <Card className="flex-2">
         <CardContent className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-bold">Account Information</h3>
-            <Button variant="ghost" size="sm">
+            <h3 className="font-roboto text-base font-semibold">Account Information</h3>
+            <Button 
+              variant="ghost" 
+              size="sm"
+              onClick={() => setCurrentSection("account")}
+            >
               <Edit className="w-4 h-4" />
             </Button>
           </div>
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm text-gray-600">Name</Label>
-                <p className="font-medium">
-                  {profileData?.user?.profile?.firstName}{" "}
-                  {profileData?.user?.profile?.lastName}
-                </p>
-              </div>
-              <div>
-                <Label className="text-sm text-gray-600">Phone</Label>
-                <p className="font-medium">
-                  {profileData?.user?.profile?.phoneNumber || "Not provided"}
-                </p>
-              </div>
+            <div className="flex flex-col gap-1">
+              <Label className="font-roboto text-xs text-gray-600">Full Name</Label>
+              <p className="font-roboto text-xs font-medium">
+                {profileData?.user?.profile?.firstName}{" "}
+                {profileData?.user?.profile?.lastName}
+              </p>
             </div>
-            <div>
-              <Label className="text-sm text-gray-600">Email Address</Label>
-              <p className="font-medium">{profileData?.user?.email}</p>
+            <div className="flex flex-col gap-1">
+              <Label className="font-roboto text-xs text-gray-600">Email Address</Label>
+              <p className="font-roboto text-xs font-medium break-all">{profileData?.user?.email}</p>
             </div>
-            <div>
-              <Label className="text-sm text-gray-600">Credit Balance</Label>
-              <p className="font-bold text-lg">
+            <div className="flex flex-col gap-1">
+              <Label className="font-roboto text-xs text-gray-600">Phone Number</Label>
+              <p className="font-roboto text-xs font-medium">
+                {profileData?.user?.profile?.phoneNumber || "Not provided"}
+              </p>
+            </div>
+            <div className="flex flex-col gap-1">
+              <Label className="font-roboto text-xs text-gray-600">Credit Balance</Label>
+              <p className="font-roboto font-semibold text-sm">
                 ₦ {profileData?.fiatWallet?.toLocaleString() || "0"}
               </p>
             </div>
@@ -342,7 +345,7 @@ export default function SettingsPage() {
   );
 
   const renderAccountSettings = () => (
-    <Card>
+    <Card className="font-roboto">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
@@ -353,87 +356,87 @@ export default function SettingsPage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <h2 className="text-xl font-bold">Account Information</h2>
+            <h2 className="font-roboto text-base font-semibold">Account Information</h2>
           </div>
           <Button variant="ghost" size="sm">
             <Edit className="w-4 h-4" />
-            Edit
+            <span className="font-roboto text-xs">Edit</span>
           </Button>
         </div>
 
         <div className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label htmlFor="firstName">First Name</Label>
+              <Label htmlFor="firstName" className="font-roboto text-xs">First Name</Label>
               <Input
                 id="firstName"
                 value={profileData?.user?.profile?.firstName || ""}
                 onChange={(e) => handleInputChange("firstName", e.target.value)}
-                className="bg-[#E2E8F0] border-0 mt-1"
+                className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1"
               />
             </div>
             <div>
-              <Label htmlFor="lastName">Last Name</Label>
+              <Label htmlFor="lastName" className="font-roboto text-xs">Last Name</Label>
               <Input
                 id="lastName"
                 value={profileData?.user?.profile?.lastName || ""}
                 onChange={(e) => handleInputChange("lastName", e.target.value)}
-                className="bg-[#E2E8F0] border-0 mt-1 focus:border-[0.5px] focus:outline-0"
+                className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1 focus:border-[0.5px] focus:outline-0"
               />
             </div>
           </div>
 
           <div>
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="email" className="font-roboto text-xs">Email Address</Label>
             <Input
               id="email"
               type="email"
               value={profileData?.user?.email || ""}
               onChange={(e) => handleInputChange("email", e.target.value)}
-              className="bg-[#E2E8F0] border-0 mt-1"
+              className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1"
             />
           </div>
 
           <div>
-            <Label htmlFor="phoneNumber">Phone Number</Label>
+            <Label htmlFor="phoneNumber" className="font-roboto text-xs">Phone Number</Label>
             <Input
               id="phoneNumber"
               value={profileData?.user?.profile?.phoneNumber || ""}
               onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-              className="bg-[#E2E8F0] border-0 mt-1"
+              className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1"
             />
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <Label>Default Shipping Address</Label>
+              <Label className="font-roboto text-xs">Default Shipping Address</Label>
               <div className="bg-[#E2E8F0] p-3 rounded mt-1">
                 {profileData?.shippingDefaultAddress ? (
                   <div>
-                    <p className="font-medium">
+                    <p className="font-roboto text-xs font-medium">
                       {profileData.user.profile.firstName}{" "}
                       {profileData.user.profile.lastName}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="font-roboto text-xs text-gray-600">
                       {profileData.shippingDefaultAddress.street},{" "}
                       {profileData.shippingDefaultAddress.city},{" "}
                       {profileData.shippingDefaultAddress.state}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="font-roboto text-xs text-gray-600">
                       {profileData.user.profile.phoneNumber}
                     </p>
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-500">
+                  <p className="font-roboto text-xs text-gray-500">
                     No default address set
                   </p>
                 )}
               </div>
             </div>
             <div>
-              <Label>Credit Balance</Label>
+              <Label className="font-roboto text-xs">Credit Balance</Label>
               <div className="bg-[#E2E8F0] p-3 rounded mt-1">
-                <p className="font-bold text-lg">
+                <p className="font-roboto font-semibold text-sm">
                   ₦ {profileData?.fiatWallet?.toLocaleString() || "0"}
                 </p>
               </div>
@@ -445,7 +448,7 @@ export default function SettingsPage() {
   );
 
   const renderShippingSettings = () => (
-    <Card>
+    <Card className="font-roboto">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
@@ -456,13 +459,14 @@ export default function SettingsPage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <h2 className="text-xl font-bold">Shipping Addresses</h2>
+            <h2 className="text-xl font-semibold">Shipping Addresses</h2>
           </div>
           <Button
-            variant="ghost"
             size="sm"
-            onClick={() => setShowAddForm(true)}
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="bg-blue-600 hover:bg-blue-700 text-white"
           >
+            <Plus className="w-4 h-4 mr-1" />
             Add Address
           </Button>
         </div>
@@ -471,6 +475,21 @@ export default function SettingsPage() {
         <ShippingInfoBanner />
 
         <div className="space-y-4">
+          {/* Empty State */}
+          {shippingAddresses.length === 0 && !showAddForm && (
+            <div className="text-center py-8 border rounded-lg bg-gray-50">
+              <p className="text-gray-500 mb-2">No shipping addresses added yet</p>
+              <Button
+                size="sm"
+                onClick={() => setShowAddForm(true)}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                <Plus className="w-4 h-4 mr-1" />
+                Add your first address
+              </Button>
+            </div>
+          )}
+
           {/* Existing Addresses */}
           {shippingAddresses.map((address) => (
             <div key={address._id} className="border rounded-lg p-4">
@@ -486,7 +505,7 @@ export default function SettingsPage() {
                       📍 Home Delivery
                     </span>
                   )}
-                  <p className="font-medium">{address.street}</p>
+                  <p>{address.street}</p>
                   <p className="text-sm text-gray-600">
                     {address.city}, {address.state}, {address.country}{" "}
                     {address.postalCode}
@@ -571,42 +590,33 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Select
+                    <SearchableSelect
+                      options={countries.map((country) => ({
+                        value: country.isoCode,
+                        label: country.name,
+                      }))}
                       value={selectedCountry}
                       onValueChange={handleCountryChange}
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select Country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem
-                            key={country.isoCode}
-                            value={country.isoCode}
-                          >
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select Country"
+                      searchPlaceholder="Search country..."
+                      className="w-full"
+                      emptyMessage="No countries found"
+                    />
                   </div>
                   <div>
-                    <Select
+                    <SearchableSelect
+                      options={states.map((state) => ({
+                        value: state.isoCode,
+                        label: state.name,
+                      }))}
                       value={selectedState}
                       onValueChange={handleStateChange}
+                      placeholder="Select State/Province"
+                      searchPlaceholder="Search state/province..."
                       disabled={!selectedCountry}
-                    >
-                      <SelectTrigger className="w-full bg-[#E2E8F0]">
-                        <SelectValue placeholder="Select State" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {states.map((state) => (
-                          <SelectItem key={state.isoCode} value={state.isoCode}>
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      className="w-full bg-[#E2E8F0]"
+                      emptyMessage="No states found"
+                    />
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -676,42 +686,31 @@ export default function SettingsPage() {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <Select
+                    <SearchableSelect
+                      options={countries.map((country) => ({
+                        value: country.isoCode,
+                        label: country.name,
+                      }))}
                       value={editSelectedCountry}
                       onValueChange={handleEditCountryChange}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Country" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {countries.map((country) => (
-                          <SelectItem
-                            key={country.isoCode}
-                            value={country.isoCode}
-                          >
-                            {country.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      placeholder="Select Country"
+                      searchPlaceholder="Search country..."
+                      emptyMessage="No countries found"
+                    />
                   </div>
                   <div>
-                    <Select
+                    <SearchableSelect
+                      options={editStates.map((state) => ({
+                        value: state.isoCode,
+                        label: state.name,
+                      }))}
                       value={editSelectedState}
                       onValueChange={handleEditStateChange}
+                      placeholder="Select State/Province"
+                      searchPlaceholder="Search state/province..."
                       disabled={!editSelectedCountry}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select State" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {editStates.map((state) => (
-                          <SelectItem key={state.isoCode} value={state.isoCode}>
-                            {state.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                      emptyMessage="No states found"
+                    />
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -752,7 +751,7 @@ export default function SettingsPage() {
   );
 
   const renderPaymentSettings = () => (
-    <Card>
+    <Card className="font-roboto">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
@@ -763,7 +762,7 @@ export default function SettingsPage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <h2 className="text-xl font-bold">Payment Information</h2>
+            <h2 className="text-xl font-semibold">Payment Information</h2>
           </div>
           <Button
             variant="ghost"
@@ -796,7 +795,7 @@ export default function SettingsPage() {
 
                 <img src={"images/mastercard.svg"} alt="maste card" />
                 <div>
-                  <p className="font-medium">**** **** **** {card.last4}</p>
+                  <p>**** **** **** {card.last4}</p>
                   <p className="text-sm text-gray-500">
                     {card.cardHolderName} • {card.expMonth}/{card.expYear}
                   </p>
@@ -849,7 +848,7 @@ export default function SettingsPage() {
   );
 
   const renderNotificationSettings = () => (
-    <Card>
+    <Card className="font-roboto">
       <CardContent className="p-6">
         <div className="flex items-center mb-6">
           <Button
@@ -859,12 +858,12 @@ export default function SettingsPage() {
           >
             <ChevronLeft className="w-4 h-4" />
           </Button>
-          <h2 className="text-xl font-bold ml-4">Notifications</h2>
+          <h2 className="font-roboto text-base font-semibold ml-4">Notifications</h2>
         </div>
 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-medium">Email Notification</h3>
+            <h3 className="font-roboto text-sm font-medium">Email Notification</h3>
             <Switch defaultChecked />
           </div>
 
@@ -883,7 +882,7 @@ export default function SettingsPage() {
                     handleNotificationChange(item.key, checked as boolean)
                   }
                 />
-                <Label className="text-sm">{item.label}</Label>
+                <Label className="font-roboto text-xs">{item.label}</Label>
               </div>
             ))}
           </div>
@@ -893,7 +892,7 @@ export default function SettingsPage() {
   );
 
   const renderSecuritySettings = () => (
-    <Card>
+    <Card className="font-roboto">
       <CardContent className="p-6">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center space-x-4">
@@ -904,7 +903,7 @@ export default function SettingsPage() {
             >
               <ChevronLeft className="w-4 h-4" />
             </Button>
-            <h2 className="text-xl font-bold">Security</h2>
+            <h2 className="text-xl font-semibold">Security</h2>
           </div>
           <Button variant="ghost" size="sm">
             <Edit className="w-4 h-4" />

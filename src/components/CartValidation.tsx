@@ -1,4 +1,4 @@
-import { UnavailableItem } from '@/types/checkout.types.ts_';
+import { UnavailableItem } from '@/types/checkout.types';
 import React from 'react';
 
 

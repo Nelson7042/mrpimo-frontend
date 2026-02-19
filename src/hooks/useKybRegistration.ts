@@ -16,15 +16,28 @@ export const useKybRegistration = () => {
         }
       );
 
+      const data = await response.json();
+      
       if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Registration failed');
+        // Check for requires_review status - this is not a failure, just needs admin review
+        if (data.data?.vendor?.kycStatus === 'requires_review') {
+          return {
+            ...data,
+            success: false,
+            requiresReview: true,
+          };
+        }
+        throw new Error(data.message || 'Registration failed');
       }
 
-      return response.json();
+      return data;
     },
     onSuccess: (data) => {
-      toast.success('Step 1 completed successfully');
+      if (data.requiresReview) {
+        toast.success('Your identity verification is under review. An administrator will review your information shortly.');
+      } else {
+        toast.success('Step 1 completed successfully');
+      }
       queryClient.invalidateQueries({ queryKey: ['vendor'] });
       return data;
     },
@@ -65,33 +78,3 @@ export const useKybStep2Registration = () => {
   });
 };
 
-export const useKybStep3Registration = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (formData: FormData) => {
-      const response = await fetchWithAuth(
-        `${API_BASE_URL}/vendor-registration/step-bank-account`,
-        {
-          method: 'POST',
-          body: formData,
-        }
-      );
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || 'Step 3 registration failed');
-      }
-
-      return response.json();
-    },
-    onSuccess: (data) => {
-      toast.success('Bank account information submitted successfully');
-      queryClient.invalidateQueries({ queryKey: ['vendor'] });
-      return data;
-    },
-    onError: (error: any) => {
-      toast.error(error.message || 'Failed to submit bank account information');
-    },
-  });
-};

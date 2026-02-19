@@ -3,6 +3,8 @@ import {
   ShoppingCart,
   Heart,
   ChevronDown,
+  LogOut,
+  LayoutDashboard,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,7 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import { useCartLength } from "@/stores/cartHook";
 import { useAuthModalStore } from "@/stores/useAuthModalStore";
@@ -28,6 +30,9 @@ import AuthenticationModalVendor from "@/app/(auth)/authenticationModalVendor";
 import { ProfileCircle } from "iconsax-react";
 import { formatProductPrice } from "@/utils/formatPrice";
 import dynamic from "next/dynamic";
+import { useLogoutUser } from "@/hooks/mutations";
+import { resetAllStores } from "@/stores/resetStore";
+import { toast } from "react-toastify";
 
 // Dynamically import the vendor modal to avoid SSR issues
 const VendorRegistrationModal = dynamic(
@@ -43,6 +48,8 @@ const Header = () => {
   const [showSuggestions, setShowSuggestions] = useState(true);
   const [isMounted, setIsMounted] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const profileModalRef = useRef<HTMLDivElement>(null);
   const cartLength = useCartLength();
   const router = useRouter();
 
@@ -57,9 +64,24 @@ const Header = () => {
   // Initialize cart sync
   useCartSync();
 
+  const logoutMutation = useLogoutUser();
+
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Close profile modal on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileModalRef.current && !profileModalRef.current.contains(e.target as Node)) {
+        setShowProfileModal(false);
+      }
+    };
+    if (showProfileModal) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showProfileModal]);
 
   const handleSellClick = () => {
     // If user is already a vendor, go to dashboard
@@ -95,17 +117,31 @@ const Header = () => {
 
   const handleProfileClick = () => {
     if (!user) {
-      // Store the intended redirect URL before opening modal
       sessionStorage.setItem("redirectAfterLogin", "/home/user");
       openModal();
     } else {
-      // Check if user is a vendor and route accordingly
-      // if (vendor) {
-      //   router.push("/vendor/dashboard");
-      // } if {
-      router.push("/home/user");
-      // }
+      setShowProfileModal((prev) => !prev);
     }
+  };
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
+        resetAllStores();
+        toast.success("Logout Successful");
+        window.location.href = "/home";
+      },
+      onError: () => {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
+        resetAllStores();
+        window.location.href = "/home";
+      },
+    });
   };
   const handlecloseModal = () => {
     setIsSell(false);
@@ -202,12 +238,39 @@ const Header = () => {
           </div>
 
           <div className="flex items-center gap-1">
-            <button
-              onClick={() => handleProfileClick()}
+            <div className="relative" ref={profileModalRef}>
+              <button
+                onClick={handleProfileClick}
+                className="p-1 rounded hover:bg-blue-700 transition-colors"
+              >
+                <ProfileCircle color="white" className="w-6 h-6" />
+              </button>
 
-            >
-              <ProfileCircle color="white" className="w-6 h-6" />
-            </button>
+              {showProfileModal && user && (
+                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  <button
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      router.push("/home/user");
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <LayoutDashboard className="w-4 h-4" />
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      handleLogout();
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4" />
+                    Logout
+                  </button>
+                </div>
+              )}
+            </div>
             <Link
               href="/home/my-cart"
               className="text-white   hover:bg-blue-700 relative p-2 rounded"

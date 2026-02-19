@@ -6,6 +6,7 @@ import { AllProduct } from "@/utils/config";
 import { ProductCard } from "@/components/Home/ProductCard";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter } from "next/navigation";
+import { fetchPublic } from "@/utils/fetchPublic";
 
 export default function BestDealsPage() {
   const [page, setPage] = useState(1);
@@ -34,7 +35,7 @@ export default function BestDealsPage() {
         limit: limit.toString(),
         minDiscount: "5",
       });
-      const response = await fetch(`${AllProduct}/best-deals?${params}`);
+      const response = await fetchPublic(`${AllProduct}/best-deals?${params}`);
       if (!response.ok) throw new Error("Failed to fetch best deals");
       return response.json();
     },

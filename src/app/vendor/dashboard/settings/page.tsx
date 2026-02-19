@@ -6,6 +6,7 @@ import TwoFactorSetup from "./components/TwoFactorSetup";
 import DisableTwoFactor from "./components/DisableTwoFactor";
 import PushNotification from "./components/PushNotification";
 import VendorPickupLocation from "./components/VendorPickupLocation";
+import UpgradeToBusinessAccount from "./components/UpgradeToBusinessAccount";
 
 type Props = {};
 
@@ -16,6 +17,9 @@ const page = (props: Props) => {
 
   return (
     <div className="flex justify-center items-center flex-col p-4 md:p-6">
+      {/* Upgrade to Business Account Section (only shows for personal accounts) */}
+      <UpgradeToBusinessAccount />
+
       {/* Pickup Location Section */}
       <div className="w-full max-w-2xl mb-8">
         <VendorPickupLocation />

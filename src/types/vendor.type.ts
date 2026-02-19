@@ -43,7 +43,10 @@ export interface IVendor {
   _id?: string;
   userId: string;
   accountType: "personal" | "business";
-  kycStatus: "pending" | "verified" | "rejected";
+  kycStatus: "pending" | "verified" | "rejected" | "requires_review";
+  kybStatus?: "pending" | "verified" | "rejected" | "requires_review" | null;
+  kybStatusIsVerified?: boolean | null;
+  kybRejectionReason?: string | null;
   verificationDocuments: VerificationDocument[];
   stripeAccountId?: string;
   stripeVerificationStatus: string;

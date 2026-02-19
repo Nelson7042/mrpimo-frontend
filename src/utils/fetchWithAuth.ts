@@ -94,7 +94,7 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
     const accessToken = getAccessToken();
     
     // If no token available, reject immediately (user is logged out)
-    if (!token && !isProfileEndpoint) {
+    if (!accessToken && !isProfileEndpoint) {
       return Promise.reject("No authentication token available");
     }
     
@@ -104,8 +104,29 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
       credentials: "include",
     });
 
-    // Handle token expiry (401 Unauthorized) or forbidden (403)
+    // Handle token expiry (401 Unauthorized) or specific 403 for expired token
     if (response.status === 401 || response.status === 403) {
+      // Check if this is actually a token expiry issue vs a permission issue
+      const responseClone = response.clone();
+      let errorData: any = {};
+      try {
+        errorData = await responseClone.json();
+      } catch {
+        // If we can't parse JSON, treat as potential token issue
+      }
+      
+      // Only attempt refresh for actual token issues, not permission denials
+      const isTokenExpiry = 
+        response.status === 401 || 
+        errorData.message === "Access Token Expired" ||
+        errorData.message === "Unauthorized - No token provided" ||
+        errorData.message === "Invalid Token";
+      
+      // If it's a permission issue (not token expiry), return the response as-is
+      if (!isTokenExpiry) {
+        return response;
+      }
+      
       // If already refreshing, queue this request
       if (isRefreshing) {
         return new Promise((resolve, reject) => {

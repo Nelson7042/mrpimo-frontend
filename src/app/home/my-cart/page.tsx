@@ -21,6 +21,7 @@ import { cartService } from "@/utils/cartService";
 import CartSidebar from "./(components)/CartSidebar";
 import { NumericFormat } from "react-number-format";
 import { toast } from "react-hot-toast";
+import { getDisplayPrice, getItemTotal as getItemTotalFromUtils } from "@/utils/priceUtils";
 // import { BidModal1 } from "../product-details/[id]/(component)/(component)/BidModal";
 
 const isHexColor = (value: string) => /^#[0-9A-F]{6}$/i.test(value);
@@ -74,12 +75,27 @@ const getColorForValue = (value: string) => {
   return colorName ? colorMap[colorName] : null;
 };
 
-const getItemPrice = (item: any) => {
-  return item.selectedVariant?.price * item?.priceInfo?.exchangeRate || 0;
+/**
+ * Gets the display price for a cart item.
+ * Uses the backend-calculated displayPrice directly without any exchange rate multiplication.
+ * This fixes the double-conversion bug.
+ *
+ * @param item - The cart item
+ * @returns The display price
+ */
+const getItemPrice = (item: any): number => {
+  return getDisplayPrice(item);
 };
 
-const getItemTotal = (item: any) => {
-  return getItemPrice(item) * item.quantity;
+/**
+ * Calculates the total price for a cart item (displayPrice × quantity).
+ * Uses the backend-calculated displayPrice directly without any exchange rate multiplication.
+ *
+ * @param item - The cart item
+ * @returns The item total
+ */
+const getItemTotal = (item: any): number => {
+  return getItemTotalFromUtils(item);
 };
 
 export default function CartPage() {
@@ -259,11 +275,11 @@ export default function CartPage() {
     const total = subtotal + shipping - discount + tax;
     return (
       <div>
-        <div className="grid lg:grid-cols-3 gap-6">
+        <div className="grid lg:grid-cols-3 gap-4">
           <div className="lg:col-span-2">
-            <div className="bg-white rounded-lg border overflow-hidden">
+            <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
               {/* Desktop Header */}
-              <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-gray-700">
+              <div className="hidden md:grid md:grid-cols-12 gap-3 p-3 bg-gray-50 border-b border-gray-100 text-xs font-medium text-gray-600">
                 <div className="col-span-4">Products</div>
                 <div className="col-span-2">Variant</div>
                 <div className="col-span-2">Amount</div>
@@ -272,21 +288,21 @@ export default function CartPage() {
               </div>
 
               {/* Items */}
-              <div className="divide-y overflow-x-auto">
+              <div className="divide-y divide-gray-100 overflow-x-auto">
                 {buyItems.map((item) => (
                   <div
                     key={`${item.product?._id}::${item.selectedVariant?.variantId || ''}::${item.selectedVariant?.optionId || ''}`}
-                    className="p-4"
+                    className="p-3"
                   >
                     {/* Mobile Layout */}
                     <div className="md:hidden relative">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-0 right-0 text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 z-10"
+                        className="absolute top-0 right-0 text-red-500 hover:text-red-700 hover:bg-red-50 h-5 w-5 z-10"
                         onClick={() => handleRemove(item)}
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5" />
                       </Button>
                       <Link
                         href={{
@@ -299,34 +315,34 @@ export default function CartPage() {
                         as={`/home/product-details/${item?.product._id}`}
                         className="block"
                       >
-                        <div className="flex gap-3 mb-3">
+                        <div className="flex gap-2.5 mb-2.5">
                           <Image
                             src={
                               item?.product?.images?.[0] || "/placeholder.svg"
                             }
                             alt={item?.product?.name || "product image"}
-                            width={80}
-                            height={80}
+                            width={64}
+                            height={64}
                             className="rounded-lg object-cover flex-shrink-0"
                           />
-                          <div className="flex-1 min-w-0 pr-6">
-                            <h3 className="font-semibold text-sm leading-tight mb-1">
+                          <div className="flex-1 min-w-0 pr-5">
+                            <h3 className="font-medium text-xs leading-tight mb-0.5 text-gray-800 line-clamp-1">
                               {item?.product?.name}
                             </h3>
-                            <p className="text-xs text-gray-500 line-clamp-2 mb-2">
+                            <p className="text-[10px] text-gray-500 line-clamp-1 mb-1.5">
                               {item?.product?.description}
                             </p>
                             {item?.selectedVariant && (
-                              <div className="flex items-center gap-1.5 mb-2">
-                                <span className="text-xs text-gray-500">
+                              <div className="flex items-center gap-1 mb-1.5">
+                                <span className="text-[10px] text-gray-500">
                                   {item.selectedVariant.variantName}:
                                 </span>
                                 {getColorForValue(
                                   item.selectedVariant.optionValue
                                 ) ? (
-                                  <div className="flex items-center gap-1">
+                                  <div className="flex items-center gap-0.5">
                                     <div
-                                      className="w-3.5 h-3.5 rounded-full border border-gray-300"
+                                      className="w-3 h-3 rounded-full border border-gray-300"
                                       style={{
                                         backgroundColor:
                                           getColorForValue(
@@ -334,18 +350,18 @@ export default function CartPage() {
                                           ) || undefined,
                                       }}
                                     />
-                                    <span className="text-xs font-medium">
+                                    <span className="text-[10px] font-medium text-gray-700">
                                       {item.selectedVariant.optionValue}
                                     </span>
                                   </div>
                                 ) : (
-                                  <span className="text-xs font-medium">
+                                  <span className="text-[10px] font-medium text-gray-700">
                                     {item.selectedVariant.optionValue}
                                   </span>
                                 )}
                               </div>
                             )}
-                            <div className="text-base font-bold text-gray-900">
+                            <div className="text-xs font-medium text-gray-900">
                               <NumericFormat
                                 value={getItemPrice(item).toFixed(2)}
                                 displayType={"text"}
@@ -359,25 +375,25 @@ export default function CartPage() {
                         </div>
                       </Link>
                       <div className="flex items-center justify-between pt-2 border-t border-gray-100">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-2">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 w-8 p-0 rounded-md"
+                            className="h-7 w-7 p-0 rounded-md border-gray-200"
                             onClick={() =>
                               handleQuantityChange(item, getDisplayQuantity(item) - 1)
                             }
                             disabled={isQuantityPending(item)}
                           >
-                            <Minus className="w-3.5 h-3.5" />
+                            <Minus className="w-3 h-3" />
                           </Button>
-                          <span className="w-10 text-center text-sm font-medium">
+                          <span className="w-8 text-center text-xs font-medium text-gray-800">
                             {getDisplayQuantity(item)}
                           </span>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 w-8 p-0 rounded-md"
+                            className="h-7 w-7 p-0 rounded-md border-gray-200"
                             disabled={(() => {
                               const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
                               const available = availableQuantities[key];
@@ -391,10 +407,10 @@ export default function CartPage() {
                               handleQuantityChange(item, getDisplayQuantity(item) + 1)
                             }
                           >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-3 h-3" />
                           </Button>
                         </div>
-                        <div className="text-base font-bold text-gray-900">
+                        <div className="text-xs font-medium text-gray-900">
                           <NumericFormat
                             value={getItemTotal(item).toFixed(2)}
                             displayType={"text"}
@@ -408,44 +424,43 @@ export default function CartPage() {
                     </div>
 
                     {/* Desktop Layout */}
-                    <div className="hidden md:grid md:grid-cols-12 gap-4 items-center relative">
+                    <div className="hidden md:grid md:grid-cols-12 gap-3 items-center relative">
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute top-2 right-2 text-red-500 hover:text-red-700 hover:bg-red-50 h-6 w-6 z-10"
+                        className="absolute top-1 right-1 text-red-500 hover:text-red-700 hover:bg-red-50 h-5 w-5 z-10"
                         onClick={() => handleRemove(item)}
                       >
-                        <X className="w-4 h-4" />
+                        <X className="w-3.5 h-3.5" />
                       </Button>
-                      <div className="col-span-4 flex items-center space-x-3">
+                      <div className="col-span-4 flex items-center space-x-2.5">
                         <Link
                           href={{
                             pathname: "/home/product-details/[id]",
                             query: {
                               id: item?.product._id,
-                              productData: JSON.stringify(item?.product), // Pass full product data
+                              productData: JSON.stringify(item?.product),
                             },
                           }}
-                          as={`/home/product-details/${item?.product._id}`} // Clean URL in browser
-                          className="flex items-center space-x-3"
+                          as={`/home/product-details/${item?.product._id}`}
+                          className="flex items-center space-x-2.5"
                         >
-                          {" "}
                           <div className="relative">
                             <Image
                               src={
                                 item?.product?.images?.[0] || "/placeholder.svg"
                               }
                               alt={item?.product?.name || "product image"}
-                              width={80}
-                              height={80}
+                              width={56}
+                              height={56}
                               className="rounded-lg object-cover"
                             />
                           </div>
                           <div>
-                            <h3 className="font-medium">
+                            <h3 className="font-medium text-xs text-gray-800 line-clamp-1">
                               {item?.product?.name}
                             </h3>
-                            <p className="text-sm text-gray-500 line-clamp-2">
+                            <p className="text-[10px] text-gray-500 line-clamp-1">
                               {item?.product?.description}
                             </p>
                           </div>
@@ -453,8 +468,8 @@ export default function CartPage() {
                       </div>
                       <div className="col-span-2">
                         {item?.selectedVariant && (
-                          <div className="flex flex-col gap-1">
-                            <span className="text-xs text-gray-500">
+                          <div className="flex flex-col gap-0.5">
+                            <span className="text-[10px] text-gray-500">
                               {item.selectedVariant.variantName}
                             </span>
                             {getColorForValue(
@@ -462,7 +477,7 @@ export default function CartPage() {
                             ) ? (
                               <div className="flex items-center gap-1">
                                 <div
-                                  className="w-5 h-5 rounded-full border border-gray-300"
+                                  className="w-4 h-4 rounded-full border border-gray-300"
                                   style={{
                                     backgroundColor:
                                       getColorForValue(
@@ -470,12 +485,12 @@ export default function CartPage() {
                                       ) || undefined,
                                   }}
                                 />
-                                <span className="text-sm font-medium">
+                                <span className="text-xs font-medium text-gray-700">
                                   {item.selectedVariant.optionValue}
                                 </span>
                               </div>
                             ) : (
-                              <span className="text-sm font-medium">
+                              <span className="text-xs font-medium text-gray-700">
                                 {item.selectedVariant.optionValue}
                               </span>
                             )}
@@ -483,39 +498,37 @@ export default function CartPage() {
                         )}
                       </div>
                       <div className="col-span-2">
-                        <div className="flex items-center space-x-2">
-                          <span className="font-bold">
-                            <NumericFormat
-                              value={getItemPrice(item).toFixed(2)}
-                              displayType={"text"}
-                              thousandSeparator={true}
-                              prefix={item?.priceInfo?.currencySymbol || "$"}
-                              decimalScale={2}
-                              fixedDecimalScale={true}
-                            />
-                          </span>
-                        </div>
+                        <span className="font-medium text-xs text-gray-900">
+                          <NumericFormat
+                            value={getItemPrice(item).toFixed(2)}
+                            displayType={"text"}
+                            thousandSeparator={true}
+                            prefix={item?.priceInfo?.currencySymbol || "$"}
+                            decimalScale={2}
+                            fixedDecimalScale={true}
+                          />
+                        </span>
                       </div>
                       <div className="col-span-2">
-                        <div className="flex items-center space-x-2">
+                        <div className="flex items-center space-x-1.5">
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 border-gray-200"
                             onClick={() =>
                               handleQuantityChange(item, getDisplayQuantity(item) - 1)
                             }
                             disabled={isQuantityPending(item)}
                           >
-                            <Minus className="w-4 h-4" />
+                            <Minus className="w-3 h-3" />
                           </Button>
-                          <span className="w-8 text-center">
+                          <span className="w-6 text-center text-xs font-medium text-gray-800">
                             {getDisplayQuantity(item).toString().padStart(2, "0")}
                           </span>
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-8 w-8 p-0"
+                            className="h-7 w-7 p-0 border-gray-200"
                             disabled={(() => {
                               const key = `${item.product._id}-${item.selectedVariant?.optionId}`;
                               const available = availableQuantities[key];
@@ -529,11 +542,11 @@ export default function CartPage() {
                               handleQuantityChange(item, getDisplayQuantity(item) + 1)
                             }
                           >
-                            <Plus className="w-4 h-4" />
+                            <Plus className="w-3 h-3" />
                           </Button>
                         </div>
                       </div>
-                      <div className="col-span-2 font-bold">
+                      <div className="col-span-2 font-medium text-xs text-gray-900">
                         <NumericFormat
                           value={getItemTotal(item).toFixed(2)}
                           displayType={"text"}
@@ -576,15 +589,15 @@ export default function CartPage() {
           </div>
           <div className="flex flex-col items-center justify-center h-full mt-15">
             <div className="text-center">
-              <h1 className=" text-lg md:text-2xl font-bold mb-2">
+              <h1 className="text-base md:text-lg font-medium mb-1.5 text-gray-800">
                 Your cart is empty
               </h1>
-              <p className="text-gray-600 mb-4 text-sm md:text-base">
+              <p className="text-gray-500 mb-4 text-xs md:text-sm">
                 Looks like you haven't added anything to your cart yet.
               </p>
               <Button
                 variant="outline"
-                className="text-blue-600 hover:text-blue-800"
+                className="text-blue-600 hover:text-blue-800 text-xs h-9"
                 onClick={() => router.push("/home")}
               >
                 Continue Shopping
@@ -608,17 +621,17 @@ export default function CartPage() {
           />
 
           {/* Header */}
-          <div className="flex flex-row items-center justify-between mb-4 md:mb-6">
-            <div className="flex items-center space-x-2 mb-4 sm:mb-0">
-              <h1 className="text-2xl font-bold">My Cart</h1>
-              <span className="text-gray-600">
+          <div className="flex flex-row items-center justify-between mb-4">
+            <div className="flex items-center space-x-2">
+              <h1 className="text-base md:text-lg font-medium text-gray-800">My Cart</h1>
+              <span className="text-xs text-gray-500">
                 {cartSummary.totalItems} Items
               </span>
             </div>
 
             <Button
               variant="link"
-              className="text-blue-600 hover:text-blue-800 p-0 h-auto font-normal"
+              className="text-blue-600 hover:text-blue-800 p-0 h-auto text-xs font-normal"
               onClick={removeAll}
             >
               Remove All
@@ -627,7 +640,7 @@ export default function CartPage() {
         </div>
 
         {/* Tab Content */}
-        <div className="pt-2 md:py-4">
+        <div className="pt-2 md:py-3">
           <BuyNow />
         </div>
 
@@ -644,6 +657,9 @@ export default function CartPage() {
           onClose={() => setShowValidationModal(false)}
           validationData={validationData}
           onProceed={() => {
+            // Set flag to allow checkout access
+            sessionStorage.setItem('checkoutAuthorized', 'true');
+            sessionStorage.setItem('checkoutTimestamp', Date.now().toString());
             setShowValidationModal(false);
             router.push("/home/checkout");
           }}

@@ -13,6 +13,7 @@ import { Wishlist } from "@/types/wishlist.type"
 import { Heart } from "iconsax-react"
 import { useUserStore } from "@/stores/useUserStore"
 import { useEffect } from "react"
+import { getWishlistDisplayPrice } from "@/utils/priceUtils"
 
   export default function WishlistPage() {
     const router = useRouter()
@@ -92,11 +93,14 @@ import { useEffect } from "react"
     }
   
     const getProductPrice = (item: Wishlist) => {
-      return item.priceInfo?.displayPrice || 0
+      // Use centralized price utility for consistency with cart
+      // Validates: Requirements 5.1, 5.3, 5.5
+      return getWishlistDisplayPrice(item)
     }
   
-    const getSalePrice = (item: any) => {
-      return item.priceInfo?.displayPrice || 0
+    const getSalePrice = (item: Wishlist) => {
+      // Use centralized price utility for consistency with cart
+      return getWishlistDisplayPrice(item)
     }
 
     const getCurrencySymbol = (item: Wishlist) => {

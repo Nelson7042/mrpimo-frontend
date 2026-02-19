@@ -2,10 +2,11 @@ import React from "react";
 import {  ArrowRight, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import Link from "next/link";
 import { ProductCard } from "./ProductCard";
 import { API_BASE_URL } from "@/utils/config";
+import { fetchPublic } from "@/utils/fetchPublic";
 
 const navCategories = [
   "All Accessories",
@@ -23,7 +24,7 @@ export default function ComputerAccessories() {
   const { data: categoriesData } = useQuery({
     queryKey: ["categories"],
     queryFn: async () => {
-      const response = await fetch(`${API_BASE_URL}/categories`);
+      const response = await fetchPublic(`${API_BASE_URL}/categories`);
       if (!response.ok) throw new Error("Failed to fetch categories");
       return response.json();
     },
@@ -41,7 +42,7 @@ export default function ComputerAccessories() {
       throw new Error("Electronics category not found");
     }
 
-    const response = await fetch(
+    const response = await fetchPublic(
       `${API_BASE_URL}/products/categories/${electronicsCategory._id}?page=1&limit=12`
     );
     if (!response.ok) {

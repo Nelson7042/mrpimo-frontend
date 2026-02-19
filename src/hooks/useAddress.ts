@@ -81,10 +81,24 @@ export const useAddAddress = () => {
 
   return useMutation({
     mutationFn: addressApi.addAddress,
-    onSuccess: async () => {
+    onSuccess: async (data) => {
+      // Invalidate addresses and shipping estimate queries
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      queryClient.invalidateQueries({ queryKey: ["shipping-estimate"] });
+      
       // Refresh user data to update addresses
       const { useUserStore } = await import("@/stores/useUserStore");
+      
+      // If the response includes the new address, update the store directly
+      if (data?.address) {
+        const currentUser = useUserStore.getState().user;
+        if (currentUser) {
+          const updatedAddresses = [...(currentUser.addresses || []), data.address];
+          useUserStore.getState().updateUser({ addresses: updatedAddresses });
+        }
+      }
+      
+      // Also refresh user to ensure sync with backend
       await useUserStore.getState().refreshUser();
       toast.success("Address added successfully", toastConfigSuccess);
     },
@@ -100,7 +114,10 @@ export const useUpdateAddress = () => {
   return useMutation({
     mutationFn: addressApi.updateAddress,
     onSuccess: async () => {
+      // Invalidate addresses and shipping estimate queries
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      queryClient.invalidateQueries({ queryKey: ["shipping-estimate"] });
+      
       // Refresh user data to update addresses
       const { useUserStore } = await import("@/stores/useUserStore");
       await useUserStore.getState().refreshUser();

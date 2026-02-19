@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { SearchSuggestionsResponse } from "@/types/search.types";
 import { API_BASE_URL } from "@/utils/config";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { fetchPublic } from "@/utils/fetchPublic";
 import { useUserStore } from "@/stores/useUserStore";
 
 const fetchSearchSuggestions = async (
@@ -12,7 +13,7 @@ const fetchSearchSuggestions = async (
     return { success: true, suggestions: [] };
   }
   
-  const response = await fetch(
+  const response = await fetchPublic(
     `${API_BASE_URL}/products/search/suggestions?q=${encodeURIComponent(query.trim())}&limit=${limit}`
   );
   
@@ -32,7 +33,7 @@ const fetchSearchSuggestions = async (
             const user = useUserStore.getState().user;
             const productResponse = user?._id 
               ? await fetchWithAuth(`${API_BASE_URL}/products/${suggestion._id}`)
-              : await fetch(`${API_BASE_URL}/products/${suggestion._id}`);
+              : await fetchPublic(`${API_BASE_URL}/products/${suggestion._id}`);
             
             if (productResponse.ok) {
               const productData = await productResponse.json();

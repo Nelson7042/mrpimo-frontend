@@ -1,6 +1,6 @@
 import React, { JSX, useState, useMemo } from 'react';
 import { Star, ChevronDown } from 'lucide-react';
-import { ProductType } from '@/types/product.type.ts_';
+import { ProductType } from '@/types/product.type';
 import { format } from 'date-fns';
 
 type ReviewsProps = {

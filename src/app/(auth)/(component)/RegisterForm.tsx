@@ -7,13 +7,12 @@ import {
 import FullButton from "@/components/FullButton";
 import { useLoginUser, useSignUp } from "@/hooks/mutations";
 import { useUserStore } from "@/stores/useUserStore";
-import { Eye, ChevronDown, Search, MapPin } from "lucide-react";
+import { Eye, ChevronDown, Search } from "lucide-react";
 import { Country } from "country-state-city";
 import { useRouter } from "next/navigation";
 import React, { useState, useRef, useEffect } from "react";
 import { FaEyeSlash } from "react-icons/fa";
 import { toast } from "react-toastify";
-import { getLocationWithFallback, type LocationData } from "@/utils/geolocation.util";
 
 interface LoginProps {
   setAuthState?: (authState: "login" | "recover" | "otp") => void;
@@ -42,6 +41,7 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
   const countryDropdownRef = useRef<HTMLDivElement>(null);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [isDetectingCountry, setIsDetectingCountry] = useState(true);
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
@@ -53,9 +53,33 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
 
   const { setUser } = useUserStore();
   const [isLoading, setIsLoading] = useState(false);
-  const [isCapturingLocation, setIsCapturingLocation] = useState(false);
-  const [locationData, setLocationData] = useState<LocationData | null>(null);
   const { mutate: signUpUser, isPending } = useSignUp();
+
+  // Detect user country from IP on mount
+  useEffect(() => {
+    const detectCountry = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/');
+        const data = await response.json();
+        
+        if (data.country_code) {
+          const detectedCountry = Country.getAllCountries().find(
+            (c) => c.isoCode === data.country_code
+          );
+          
+          if (detectedCountry) {
+            setSelectedCountry(detectedCountry);
+          }
+        }
+      } catch (error) {
+        // Silently fail, keep default country
+      } finally {
+        setIsDetectingCountry(false);
+      }
+    };
+
+    detectCountry();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -73,28 +97,6 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
-  }, []);
-
-  // Capture user location on component mount
-  useEffect(() => {
-    const captureLocation = async () => {
-      try {
-        setIsCapturingLocation(true);
-        const location = await getLocationWithFallback();
-        if (location) {
-          setLocationData(location);
-          console.log('📍 Location data captured:', location);
-        } else {
-          console.log('⚠️ No location data available');
-        }
-      } catch (error: any) {
-        console.warn('⚠️ Could not capture location data:', error.message);
-      } finally {
-        setIsCapturingLocation(false);
-      }
-    };
-
-    captureLocation();
   }, []);
 
   // Filter countries based on search query
@@ -150,9 +152,8 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setIsLoading(true);
-    // Perform validation and submit the form if valid
+    
     if (validateForm()) {
-      // Prepare signup data
       const signupData: any = {
         firstName,
         lastName,
@@ -162,43 +163,24 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
         role: "customer",
       };
 
-      // Add location data if available
-      if (locationData) {
-        signupData.locationData = {
-          coordinates: locationData.coordinates,
-          ipLocation: locationData.ipLocation,
-          source: locationData.source,
-        };
-        console.log('📍 Sending location data with signup:', signupData.locationData);
-      }
-
       // Submit the form
       signUpUser(
         signupData,
         {
           onSuccess: (data) => {
-            console.log('✅ Signup successful:', data);
-            console.log('📧 User email verified?:', data.user?.isEmailVerified);
-            
             toast.success(
               data.message || "Registration successful! Please verify your email.",
               toastConfigSuccess
             );
             setIsLoading(false);
             
-            // Only show OTP if email is not verified
             if (!data.user?.isEmailVerified && setAuthState) {
-              console.log('📱 Opening OTP modal - NOT setting user in store yet');
-              // Store user temporarily in localStorage for OTP modal to access
-              // Don't set in store yet to prevent redirects
               if (onUserPendingVerification) {
                 onUserPendingVerification(data.user);
               }
               localStorage.setItem('tempUserForVerification', JSON.stringify(data.user));
               setAuthState("otp");
             } else if (data.user?.isEmailVerified) {
-              console.log('✅ Email already verified, setting user and closing modal');
-              // Set user and close modal
               setUser(data.user);
               if (close) close();
             }
@@ -210,7 +192,6 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
         }
       );
     } else {
-      console.log("Form submission failed.");
       toast.error(
         "Form submission failed. Please ensure you provided the necessary fields",
         toastConfigError
@@ -220,23 +201,6 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-[10px]">
-      {/* Location Indicator */}
-      {isCapturingLocation && (
-        <div className="flex items-center gap-2 text-xs text-gray-600 bg-blue-50 px-3 py-2 rounded-md mb-2">
-          <MapPin className="w-4 h-4 animate-pulse text-blue-600" />
-          <span>Detecting your location for better shipping experience...</span>
-        </div>
-      )}
-      {locationData && !isCapturingLocation && (
-        <div className="flex items-center gap-2 text-xs text-green-600 bg-green-50 px-3 py-2 rounded-md mb-2">
-          <MapPin className="w-4 h-4" />
-          <span>
-            {locationData.source === 'gps' && 'GPS location detected - we\'ll create a shipping address for you'}
-            {locationData.source === 'ip' && `Location detected from IP (${locationData.ipLocation?.city}, ${locationData.ipLocation?.country})`}
-          </span>
-        </div>
-      )}
-      
       <div className="mb-[10px]">
         <label className="text-[14px] md:text-[14px] xl:text-[16px] font-normal leading-[24px] text-[#000000] mb-[8px]">
           First Name
@@ -320,11 +284,16 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
                 <span>{selectedCountry.flag}</span>
                 <span className="truncate">+{selectedCountry.phonecode}</span>
               </span>
-              <ChevronDown
-                className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
-                  isCountryDropdownOpen ? "rotate-180" : ""
-                }`}
-              />
+              {isDetectingCountry && (
+                <div className="w-3 h-3 border-2 border-blue-600 border-t-transparent rounded-full animate-spin flex-shrink-0" />
+              )}
+              {!isDetectingCountry && (
+                <ChevronDown
+                  className={`w-4 h-4 text-gray-400 transition-transform flex-shrink-0 ${
+                    isCountryDropdownOpen ? "rotate-180" : ""
+                  }`}
+                />
+              )}
             </button>
 
             {isCountryDropdownOpen && (

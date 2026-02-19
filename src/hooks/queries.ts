@@ -2,12 +2,13 @@ import { toastConfigError } from '@/app/config/toast.config';
 import { useUserStore } from '@/stores/useUserStore';
 import { AllProduct, API_BASE_URL, AProduct, AProductBySlug } from '@/utils/config';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchPublic } from '@/utils/fetchPublic';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'react-toastify';
 
 // Fetch categories
 const fetchCategories = async () => {
-  const response = await fetch(`${API_BASE_URL}/categories`);
+  const response = await fetchPublic(`${API_BASE_URL}/categories`);
   if (!response.ok) {
     throw new Error('Failed to fetch categories');
   }
@@ -29,7 +30,9 @@ export const useCategories = () => {
 
 // Fetch best deals
 const fetchBestDeals = async () => {
-  const response = await fetch(`${API_BASE_URL}/products/best-deals`);
+  // Use fetchPublic to send cookies (including currency preference)
+  // This allows the backend to determine the user's preferred currency
+  const response = await fetchPublic(`${API_BASE_URL}/products/best-deals`);
   if (!response.ok) {
     throw new Error('Failed to fetch best deals');
   }
@@ -68,7 +71,7 @@ export const useUserSubscriptions = () => {
 };
 
 const fetchProductBySlug = async (slug: string) => {
-  const response = await fetch(`${API_BASE_URL}/products/slug/${slug}`);
+  const response = await fetchPublic(`${API_BASE_URL}/products/slug/${slug}`);
   if (!response.ok) {
     throw new Error('Failed to fetch product');
   }
@@ -89,7 +92,7 @@ export const useFetchProductBySlug = (slug: string) => {
 
 const fetchProductById = async (productId: string) => {
   const user = useUserStore.getState().user;
-  const response = user?._id ? await fetchWithAuth(`${API_BASE_URL}/products/${productId}`) : await fetch(`${API_BASE_URL}/products/${productId}`);
+  const response = user?._id ? await fetchWithAuth(`${API_BASE_URL}/products/${productId}`) : await fetchPublic(`${API_BASE_URL}/products/${productId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch product');
   }
@@ -135,7 +138,7 @@ export const useFetchProductAnalytics = (
 };
 
 const fetchAllProducts = async () => {
-  const response = await fetch(`${API_BASE_URL}/products?page=1&limit=50`);
+  const response = await fetchPublic(`${API_BASE_URL}/products?page=1&limit=50`);
   if (!response.ok) {
     throw new Error('Failed to fetch products');
   }
@@ -167,7 +170,7 @@ const fetchProductsOnAuction = async (queryData: AuctionQueryDataType) => {
   if (queryData.status) params.append('status', queryData.status);
   if (queryData.categoryId) params.append('categoryId', queryData.categoryId);
 
-  const response = await fetch(`${API_BASE_URL}/products/auctions?${params.toString()}`);
+  const response = await fetchPublic(`${API_BASE_URL}/products/auctions?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch products on auction');
   }
@@ -379,7 +382,7 @@ export const useFetchVendorOrderMetrics = (vendorId: string) => {
 
 
 export const fetchAProducts = async (slug:string) => {
-  const response = await fetch(`${AProductBySlug}${slug}`);
+  const response = await fetchPublic(`${AProductBySlug}${slug}`);
   if (!response.ok) {
     throw new Error('Failed to fetch products');
   }
@@ -389,7 +392,7 @@ export const fetchAProducts = async (slug:string) => {
 
 
 const fetchAuctionProduct = async (productId: string) => {
-  const response = await fetch(`${API_BASE_URL}/products/${productId}/bids`);
+  const response = await fetchPublic(`${API_BASE_URL}/products/${productId}/bids`);
   if (!response.ok) {
     throw new Error('Failed to fetch product');
   }
@@ -408,7 +411,7 @@ export const useFetchAuctionProduct = (productId: string) => {
 };
 
 const fetchPlans = async () => {
-  const response = await fetch(`${API_BASE_URL}/subscriptions/plans`);
+  const response = await fetchPublic(`${API_BASE_URL}/subscriptions/plans`);
   if (!response.ok) {
     throw new Error('Failed to fetch plans');
   }

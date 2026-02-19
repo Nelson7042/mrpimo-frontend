@@ -32,3 +32,12 @@ export const useValidateCart = () => {
     enabled: false,
   });
 };
+
+export const useCalculateShipping = () => {
+  return useMutation({
+    mutationFn: (deliveryMethod: string) => checkoutService.calculateShipping(deliveryMethod),
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to calculate shipping');
+    },
+  });
+};

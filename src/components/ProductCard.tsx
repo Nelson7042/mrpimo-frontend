@@ -1,4 +1,4 @@
-import { ProductType } from '@/types/product.type.ts_';
+import { ProductType } from '@/types/product.type';
 import { Heart, Star } from 'lucide-react';
 import Link from 'next/link';
 import React, { useState } from 'react'
