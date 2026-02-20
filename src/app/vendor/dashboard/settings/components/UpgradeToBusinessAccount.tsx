@@ -3,8 +3,8 @@
 import React, { useState, useEffect } from "react";
 import { useVendorStore } from "@/stores/useVendorStore";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
-import { API_BASE_URL } from "@/constant";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/utils/config";
 
 export default function UpgradeToBusinessAccount() {
   const { vendor, setVendor } = useVendorStore();
