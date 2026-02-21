@@ -7,6 +7,7 @@
  * and maintains proper currency precision.
  */
 
+
 import { describe, it, expect } from 'vitest';
 import fc from 'fast-check';
 import { CartItem, CartSummary } from '@/types/product.type';
