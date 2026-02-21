@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ChevronDown, Search } from "lucide-react";
+import { ChevronDown, Search, TriangleAlert } from "lucide-react";
 import { useResponsive } from "@/hooks/useResponsive";
 
 type Props = {
@@ -20,6 +20,9 @@ const Select = (props: Props) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const {isMobileOrTablet} = useResponsive()
+
+  // Generate a unique field ID for scroll-to-error functionality
+  const fieldId = props.label?.toLowerCase().replace(/\s+/g, '-');
 
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -46,18 +49,20 @@ const Select = (props: Props) => {
   );
 
   return (
-    <div className={`flex flex-col gap-y-1 ${props.className}`}>
+    <div className={`flex flex-col gap-y-1 ${props.className}`} data-field-id={fieldId}>
       <div className="flex justify-between items-center">
         {props.label && <label className={`text-xs ${props.required ? "after:ml-0.5 after:text-red-500 after:content-['*'] after:text-lg after:leading-none after:align-top" : ""}`}>{props.label}</label>}
       </div>
       <div className="relative w-full" ref={dropdownRef}>
         <div
-          className={`border ${
-            props.error ? "border-red-500" : "border-gray-300"
-          } rounded-md px-3 py-2 flex justify-between items-center cursor-pointer text-xs focus:outline-none focus:ring-1 focus:ring-blue-500`}
+          className={`border rounded-md px-3 py-2 flex justify-between items-center cursor-pointer text-xs focus:outline-none transition-colors duration-200 ${
+            props.error 
+              ? "border-red-500 border-2 bg-red-50/30" 
+              : "border-gray-300 focus:ring-1 focus:ring-blue-500"
+          }`}
           onClick={() => setIsOpen(!isOpen)}
         >
-          <span className={``}>{props.value || props.placeholder || "Select an option"}</span>
+          <span className={`${!props.value ? "text-gray-500 italic" : ""}`}>{props.value || props.placeholder || "Select an option"}</span>
           <ChevronDown
             size={16}
             className={`transition-transform ${isOpen ? "rotate-180" : ""}`}
@@ -104,7 +109,10 @@ const Select = (props: Props) => {
       </div>
 
       {props.error && (
-        <span className="text-red-500 text-[10px]">{props.error}</span>
+        <div className="flex items-center gap-x-1 mt-0.5">
+          <TriangleAlert size={12} className="text-red-500 flex-shrink-0" />
+          <span className="text-red-500 text-[10px] font-medium">{props.error}</span>
+        </div>
       )}
       {props.helperText && !props.error && isMobileOrTablet && (
         <span className="text-blue-500 text-[10px] italic">{props.helperText}</span>

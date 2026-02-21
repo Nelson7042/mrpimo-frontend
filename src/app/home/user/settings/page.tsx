@@ -335,7 +335,7 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-1">
               <Label className="font-roboto text-xs text-gray-600">Credit Balance</Label>
               <p className="font-roboto font-semibold text-sm">
-                ₦ {profileData?.fiatWallet?.toLocaleString() || "0"}
+                {profileData?.fiatWallet?.currency || "₦"} {profileData?.fiatWallet?.balances?.available?.toLocaleString() || "0.00"}
               </p>
             </div>
           </div>
@@ -437,7 +437,7 @@ export default function SettingsPage() {
               <Label className="font-roboto text-xs">Credit Balance</Label>
               <div className="bg-[#E2E8F0] p-3 rounded mt-1">
                 <p className="font-roboto font-semibold text-sm">
-                  ₦ {profileData?.fiatWallet?.toLocaleString() || "0"}
+                  {profileData?.fiatWallet?.currency || "₦"} {profileData?.fiatWallet?.balances?.available?.toLocaleString() || "0.00"}
                 </p>
               </div>
             </div>

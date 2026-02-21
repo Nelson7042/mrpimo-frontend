@@ -31,8 +31,6 @@ const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
   }
 
   const totalAmount = vendorItems.reduce((sum, item) => {
-    // Use amountInVendorCurrency if available (it's already the total for this item)
-    // Otherwise fallback to vendorPrice * quantity
     const itemTotal = item.metadata?.amountInVendorCurrency || (item.vendorPrice || item.price) * item.quantity;
     return sum + itemTotal;
   }, 0);
@@ -43,61 +41,24 @@ const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
   return { totalAmount, totalItems, currency };
 };
 
-// Helper function to get currency symbol
-const getVendorCurrencySymbol = (currency: string): string => {
-  const currencySymbols: { [key: string]: string } = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'JPY': '¥',
-    'NGN': '₦',
-    'GHS': '₵',
-    'ZAR': 'R',
-    'KES': 'KSh',
-    'UGX': 'USh',
-    'TZS': 'TSh',
-    'RWF': 'RF',
-    'XOF': 'CFA',
-    'CNY': '¥',
-    'HKD': 'HK$',
-    'TWD': 'NT$',
-    'CAD': 'C$',
-    'AUD': 'A$',
-    'CHF': 'CHF',
-    'SEK': 'kr',
-    'NOK': 'kr',
-    'DKK': 'kr',
-  };
-
-  return currencySymbols[currency.toUpperCase()] || currency;
-};
-
 const RecentOrders = ({ currency }: { currency: string}) => {
   const { vendor } = useVendorStore();
   const { data: products } = useVendorProducts(vendor?._id!);
   const { data, isLoading: isOrderdsLoading } = useVendorOrders(vendor?._id!);
   const router = useRouter();
 
-  console.log("Data: ", data)
-
-  const calculateOrderAmount = (items: Item[]) => {
-    items.reduce((acc, item) => {
-      return acc + item.price * item.quantity;
-    }, 0);
-  };
-
   if (isOrderdsLoading) {
     return <RecentOrdersSkeleton />
   }
 
   return (
-    <div className="bg-white px-6 py-4 rounded-lg shadow-sm">
+    <div className="bg-white px-6 py-4 rounded-lg shadow-sm font-roboto">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="font-bold text-lg text-gray-600">
+        <h1 className="font-roboto font-bold text-base text-gray-600">
           Recent Orders</h1>
         {data && data.orders && data.orders?.length > 0 && (
           <button
-            className="flex cursor-pointer text-blue-600 text-sm items-center disabled:cursor-not-allowed"
+            className="font-roboto flex cursor-pointer text-blue-600 text-xs items-center disabled:cursor-not-allowed"
             disabled={isOrderdsLoading}
           >
             <div>View All</div>
@@ -113,25 +74,25 @@ const RecentOrders = ({ currency }: { currency: string}) => {
             <table className="min-w-full">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="font-roboto px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Order ID
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="font-roboto px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Customer
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="font-roboto px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="font-roboto px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="font-roboto px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Status
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="font-roboto px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Items
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="font-roboto px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
@@ -143,15 +104,15 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                     
                     return (
                       <tr key={order?._id}>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
                           {order?._id.length > 15
                             ? `${order._id.slice(0, 15)}...`
                             : order._id}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                           {order?.user?.profile?.firstName}
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                           {vendorTotals.totalAmount.toLocaleString("en-US", {
                             minimumFractionDigits: 2,
                             maximumFractionDigits: 2,
@@ -159,7 +120,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                           {vendorTotals.currency}
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                           {new Date(order?.createdAt).toLocaleString("en-US", {
                             year: "numeric",
                             month: "short",
@@ -172,7 +133,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
 
                         <td className="px-4 py-4 whitespace-nowrap">
                           <span
-                            className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                            className={`font-roboto px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                       ${
                         order?.status === "delivered"
                           ? "bg-green-100 text-green-800"
@@ -187,10 +148,10 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                               order?.status.slice(1)}
                           </span>
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                           {vendorTotals.totalItems} item(s)
                         </td>
-                        <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                           <button
                             onClick={() =>
                               router.push(`/vendor/dashboard/orders/${order._id}`)
@@ -219,9 +180,9 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                     className="bg-white border rounded-lg p-4 shadow-sm"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">{order.id}</span>
+                      <span className="font-roboto font-medium text-xs">{order.id}</span>
                       <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
+                        className={`font-roboto px-2 inline-flex text-xs leading-5 font-semibold rounded-full 
                   ${
                     order.status === "delivered"
                       ? "bg-green-100 text-green-800"
@@ -236,11 +197,11 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                           order.status.slice(1)}
                       </span>
                     </div>
-                    <div className="text-sm text-gray-500 mb-1">
+                    <div className="font-roboto text-xs text-gray-500 mb-1">
                       <span className="font-medium">Customer:</span>{" "}
                       {order?.user?.profile?.firstName}
                     </div>
-                    <div className="text-sm text-gray-500 mb-1">
+                    <div className="font-roboto text-xs text-gray-500 mb-1">
                       <span className="font-medium">Vendor Amount:</span>{" "}
                       {vendorTotals.totalAmount.toLocaleString("en-US", {
                         minimumFractionDigits: 2,
@@ -248,11 +209,11 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                       })}{" "}
                       {vendorTotals.currency}
                     </div>
-                    <div className="text-sm text-gray-500 mb-1">
+                    <div className="font-roboto text-xs text-gray-500 mb-1">
                       <span className="font-medium">Address:</span>{" "}
                       {order.address}
                     </div>
-                    <div className="text-sm text-gray-500 mb-1">
+                    <div className="font-roboto text-xs text-gray-500 mb-1">
                       <span className="font-medium">
                         {vendorTotals.totalItems} items
                       </span>
@@ -262,7 +223,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
                         onClick={() =>
                           router.push(`/vendor/dashboard/orders/${order._id}`)
                         }
-                        className="text-blue-600 hover:text-blue-900 flex items-center gap-1 text-sm"
+                        className="font-roboto text-blue-600 hover:text-blue-900 flex items-center gap-1 text-xs"
                       >
                         <FaEye size={14} /> View Details
                       </button>
@@ -275,11 +236,11 @@ const RecentOrders = ({ currency }: { currency: string}) => {
       )}
       {data && data.orders && data.orders?.length === 0 && (!products || products.length === 0) && (
         <div className="flex flex-col justify-center items-center gap-y-4 h-40">
-          <p className="font-semibold text-lg">No data available</p>
-          <p className="text-sm text-gray-500">Add a product to get started</p>
+          <p className="font-roboto font-semibold text-base">No data available</p>
+          <p className="font-roboto text-xs text-gray-500">Add a product to get started</p>
           <div className="">
             <button
-              className="bg-primary text-white px-4 py-2 rounded-lg flex gap-x-2 items-center hover:bg-blue-700 transition-colors cursor-pointer"
+              className="font-roboto bg-primary text-white px-4 py-2 rounded-lg flex gap-x-2 items-center hover:bg-blue-700 transition-colors cursor-pointer text-xs"
               onClick={() => router.push('/vendor/dashboard/products/create-product')}
             >
               Add Product
@@ -292,11 +253,11 @@ const RecentOrders = ({ currency }: { currency: string}) => {
       {data && data.orders && data.orders?.length === 0 && products?.length > 0 && (
         <div className="text-center py-10 px-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 animate-fade-in">
           <Box size={24} className="mx-auto text-gray-500 mb-2" />
-          <p className="text-lg font-semibold text-gray-700 mb-1">
+          <p className="font-roboto text-sm font-semibold text-gray-700 mb-1">
             No orders yet
           </p>
-          <p className="text-sm text-gray-500">
-            Keep an eye out—we’ll notify you when things get moving!
+          <p className="font-roboto text-xs text-gray-500">
+            Keep an eye out—we'll notify you when things get moving!
           </p>
         </div>
       )}

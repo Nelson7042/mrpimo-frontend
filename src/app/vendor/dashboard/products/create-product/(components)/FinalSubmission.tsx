@@ -8,9 +8,15 @@ import { toastConfigSuccess, toastConfigError } from '@/app/config/toast.config'
 import { CheckCircle, AlertCircle, Loader2, Save } from 'lucide-react';
 import { ProductFormValidator } from '@/utils/productFormValidation';
 import { DraftManager } from '@/utils/draftManager';
+import { extractApiError, getDisplayErrorMessage } from '@/utils/errorUtils';
 
 interface Props {
   onSaveDraft?: () => void;
+}
+
+interface BackendFieldError {
+  field: string;
+  message: string;
 }
 
 export default function FinalSubmission({ onSaveDraft }: Props) {
@@ -27,6 +33,7 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
   const deleteDraftMutation = useDeleteDraft();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [backendErrors, setBackendErrors] = useState<BackendFieldError[]>([]);
   const [validationSummary, setValidationSummary] = useState({
     isValid: false,
     errors: [] as string[],
@@ -48,6 +55,7 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
   const handleSubmit = async () => {
     try {
       setIsSubmitting(true);
+      setBackendErrors([]); // Clear previous backend errors
       
       // Map product details to backend schema
       const mappedData = mapProductDetailsToSchema();
@@ -92,7 +100,21 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
       router.push('/vendor/dashboard/products');
     } catch (error: any) {
       console.error('Error creating product:', error);
-      toast.error(error.message || 'Failed to create product. Please try again.', toastConfigError);
+      
+      // Extract error message from backend response
+      const parsedError = extractApiError(error, 'Failed to create product. Please try again.');
+      
+      // Display main error message in toast
+      toast.error(parsedError.message, toastConfigError);
+      
+      // Handle field-specific errors from backend
+      if (parsedError.fieldErrors && Object.keys(parsedError.fieldErrors).length > 0) {
+        const fieldErrorsList = Object.entries(parsedError.fieldErrors).map(([field, message]) => ({
+          field,
+          message: message as string
+        }));
+        setBackendErrors(fieldErrorsList);
+      }
     } finally {
       setIsSubmitting(false);
     }
@@ -107,18 +129,18 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
   };
 
   return (
-    <div className="p-6 bg-white rounded-lg shadow-sm">
-      <h2 className="text-2xl font-bold mb-6">Review & Submit Product</h2>
+    <div className="p-6 bg-white rounded-lg shadow-sm font-roboto">
+      <h2 className="text-2xl font-bold mb-6 font-roboto">Review & Submit Product</h2>
       
       {/* Completion Progress */}
       <div className="mb-6">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-lg font-semibold">Form Completion</h3>
-          <span className="text-sm text-gray-600">{completionPercentage}% Complete</span>
+          <h3 className="text-lg font-semibold font-roboto">Form Completion</h3>
+          <span className="text-sm text-gray-600 font-roboto">{completionPercentage}% Complete</span>
         </div>
         <div className="w-full bg-gray-200 rounded-full h-2">
           <div 
-            className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+            className="bg-[#002f7a] h-2 rounded-full transition-all duration-300" 
             style={{ width: `${completionPercentage}%` }}
           ></div>
         </div>
@@ -166,6 +188,30 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
           )}
         </div>
       </div>
+
+      {/* Backend Field-Specific Errors */}
+      {backendErrors.length > 0 && (
+        <div className="mb-6">
+          <div className="p-4 rounded-lg border bg-orange-50 border-orange-200">
+            <div className="flex items-center gap-2 mb-2">
+              <AlertCircle className="text-orange-600" size={20} />
+              <h3 className="font-semibold text-orange-800 font-roboto">
+                Server Validation Errors
+              </h3>
+            </div>
+            <p className="text-sm text-orange-700 mb-2 font-roboto">
+              The server returned the following field-specific errors:
+            </p>
+            <div className="space-y-1">
+              {backendErrors.map((error, index) => (
+                <p key={index} className="text-sm text-orange-700 font-roboto">
+                  • <span className="font-medium">{error.field}:</span> {error.message}
+                </p>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Product Summary */}
       <div className="mb-6 space-y-4">
@@ -255,7 +301,7 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
       <div className="flex gap-4 justify-end">
         <button
           onClick={handleSaveDraft}
-          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center gap-2"
+          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 flex items-center gap-2 font-roboto"
           disabled={isSubmitting}
         >
           <Save size={16} />
@@ -264,7 +310,7 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
         
         <button
           onClick={() => setStep(1)}
-          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+          className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 font-roboto"
           disabled={isSubmitting}
         >
           Back to Edit
@@ -273,7 +319,7 @@ export default function FinalSubmission({ onSaveDraft }: Props) {
         <button
           onClick={handleSubmit}
           disabled={!validationSummary.isValid || isSubmitting}
-          className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+          className="px-6 py-2 bg-[#002f7a] text-white rounded-md hover:bg-[#002f7a]/80 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 font-roboto"
         >
           {isSubmitting && <Loader2 className="animate-spin" size={16} />}
           {isSubmitting ? 'Creating Product...' : 'Create Product'}

@@ -147,18 +147,18 @@ const Page = () => {
   };
 
   return (
-    <div className="bg-[#f6f6f6] rounded-lg py-4 xl:p-6 min-h-screen font-light">
+    <div className="bg-[#f6f6f6] rounded-lg py-4 xl:p-6 min-h-screen font-roboto">
       <div className="px-2 md:px-3 lg:px-6 xl:px-5">
         <div className="hidden md:block md:mb-5 ">
           <div className="flex justify-between items-center">
             <div>
-              <h1 className="font-semibold text-xl">My messages</h1>
-              <p className="text-sm opacity-70">Everything is here!</p>
+              <h1 className="font-roboto font-semibold text-base">My messages</h1>
+              <p className="font-roboto text-xs opacity-70">Everything is here!</p>
             </div>
             <div className="flex gap-x-2 items-center border rounded-sm border-gray-400 p-2">
               <Search size={16}  className="text-gray-600" />
               <input
-                className="xl:w-md"
+                className="font-roboto xl:w-md text-xs"
                 type="search"
                 placeholder="Search Conversations"
               />
@@ -171,35 +171,35 @@ const Page = () => {
               isChatOpen ? "hidden lg:block" : "block"
             } mx-2 md:mx-0 lg:m-0 w-full lg:w-[45%] xl:w-[40%] border rounded-2xl lg:rounded-none  lg:p-2 bg-white`}
           >
-            <h1 className="hidden lg:block text-center text-sm font-semibold mb-2">
+            <h1 className="font-roboto hidden lg:block text-center text-xs font-semibold mb-2">
               Chats
             </h1>
             <div className="flex gap-x-2 items-center border rounded-sm border-gray-400 p-2 m-4 lg:m-2 md:hidden">
               <Search size={16}  className="text-gray-600" />
               <input
-                className="w-full"
+                className="font-roboto w-full text-xs"
                 type="search"
                 placeholder="Search Conversations"
               />
             </div>
             <div className="flex gap-x-4 w-full justify-between items-center px-3 md:mt-3 lg:mt-0 mb-4">
               <button
-                className={`${
+                className={`font-roboto ${
                   selectedButton === "All"
                     ? "bg-[#f5f9ff] border-blue-200"
                     : "bg-gray-50 hover:bg-gray-100 border-gray-300"
-                } p-2 rounded-md w-full border transition-colors cursor-pointer disabled:cursor-not-allowed`}
+                } p-2 rounded-md w-full border transition-colors cursor-pointer disabled:cursor-not-allowed text-xs`}
                 onClick={() => setSelectedButton("All")}
                 disabled={isLoading}
               >
                 All
               </button>
               <button
-                className={`${
+                className={`font-roboto ${
                   selectedButton === "Unread"
                     ? "bg-[#f5f9ff] border-blue-200"
                     : "bg-gray-50 hover:bg-gray-100 border-gray-300"
-                } p-2 rounded-md w-full border transition-colors cursor-pointer disabled:cursor-not-allowed`}
+                } p-2 rounded-md w-full border transition-colors cursor-pointer disabled:cursor-not-allowed text-xs`}
                 onClick={() => setSelectedButton("Unread")}
                 disabled={isLoading}
               >
@@ -228,10 +228,10 @@ const Page = () => {
                       />
                     </svg>
                   </div>
-                  <p className="text-gray-500 text-center">
+                  <p className="font-roboto text-gray-500 text-center text-xs">
                     No conversations yet
                   </p>
-                  <p className="text-gray-400 text-sm text-center mt-1">
+                  <p className="font-roboto text-gray-400 text-xs text-center mt-1">
                     Your customer messages will appear here
                   </p>
                 </div>
@@ -290,10 +290,10 @@ const Page = () => {
                       d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
                     />
                   </svg>
-                  <h3 className="text-lg font-medium text-gray-700 mb-2">
+                  <h3 className="font-roboto text-sm font-medium text-gray-700 mb-2">
                     No Conversation Selected
                   </h3>
-                  <p className="text-gray-500">
+                  <p className="font-roboto text-gray-500 text-xs">
                     Select a message from the list to view your conversation
                     history.
                   </p>

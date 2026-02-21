@@ -60,64 +60,57 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
   };
 
   const DescriptionTab = () => (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-4 ">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-2 md:gap-4">
       {/* Description Column */}
       <div className="lg:col-span-1 md:px-3">
-        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Description</h3>
-        <div className=" text-gray-600  text-sm md:text-base ">
-          <p>
-           {productData?.description}
-          </p>
-        
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Description</h3>
+        <div className="font-roboto text-gray-600 text-xs">
+          <p>{productData?.description}</p>
         </div>
       </div>
 
       {/* Features Column */}
       <div className="lg:col-span-1 md:px-3">
-        <h3 className="text-lg md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Features</h3>
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Features</h3>
         <div className="space-y-1 md:space-y-3">
           <div className="flex items-center gap-1 md:gap-3">
-            <Shield className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
-            <span className="text-gray-700">Free 1 Year Warranty</span>
+            <Shield className="h-4 w-4 text-orange-500" />
+            <span className="font-roboto text-xs text-gray-700">Free 1 Year Warranty</span>
           </div>
           <div className="flex items-center gap-1 md:gap-3">
-            <Truck className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
-            <span className="text-gray-700">
-              Safe Shipping & Fasted Delivery
-            </span>
+            <Truck className="h-4 w-4 text-orange-500" />
+            <span className="font-roboto text-xs text-gray-700">Safe Shipping & Fasted Delivery</span>
           </div>
           <div className="flex items-center gap-1 md:gap-3">
-            <Headphones className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
-            <span className="text-gray-700">24/7 Customer support</span>
+            <Headphones className="h-4 w-4 text-orange-500" />
+            <span className="font-roboto text-xs text-gray-700">24/7 Customer support</span>
           </div>
           <div className="flex items-center gap-1 md:gap-3">
-            <CreditCard className="h-4 w-4 md:w-5 md:h-5 text-orange-500" />
-            <span className="text-gray-700">Secure payment method</span>
+            <CreditCard className="h-4 w-4 text-orange-500" />
+            <span className="font-roboto text-xs text-gray-700">Secure payment method</span>
           </div>
         </div>
       </div>
 
       {/* Product Details Column */}
       <div className="lg:col-span-1 md:px-3">
-        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
-          Product Details
-        </h3>
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Product Details</h3>
         <div className="space-y-1 md:space-y-3">
           <div className="flex gap-1">
-            <span className="text-gray-600">Brand:</span>
-            <span className="text-gray-900 font-medium">{productData?.brand}</span>
+            <span className="font-roboto text-xs text-gray-600">Brand:</span>
+            <span className="font-roboto text-xs text-gray-900 font-medium">{productData?.brand}</span>
           </div>
           <div className="flex gap-1">
-            <span className="text-gray-600">Condition:</span>
-            <span className="text-gray-900 font-medium capitalize">{productData?.condition}</span>
+            <span className="font-roboto text-xs text-gray-600">Condition:</span>
+            <span className="font-roboto text-xs text-gray-900 font-medium capitalize">{productData?.condition}</span>
           </div>
           <div className="flex gap-1">
-            <span className="text-gray-600">SKU:</span>
-            <span className="text-gray-900 font-medium">{productData?.inventory?.sku}</span>
+            <span className="font-roboto text-xs text-gray-600">SKU:</span>
+            <span className="font-roboto text-xs text-gray-900 font-medium">{productData?.inventory?.sku}</span>
           </div>
           <div className="flex gap-1">
-            <span className="text-gray-600">Category:</span>
-            <span className="text-gray-900 font-medium">{productData?.category?.main?.name}</span>
+            <span className="font-roboto text-xs text-gray-600">Category:</span>
+            <span className="font-roboto text-xs text-gray-900 font-medium">{productData?.category?.main?.name}</span>
           </div>
         </div>
       </div>
@@ -128,12 +121,12 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Product Specifications */}
       <div className="md:px-3">
-        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Product Specifications</h3>
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Product Specifications</h3>
         <div className="space-y-1 md:space-y-3">
           {productData?.specifications?.map((spec) => (
             <div key={spec._id}>
-              <span className="font-medium text-gray-900">{spec.key}:</span>
-              <span className="text-gray-600 ml-2">{spec.value}</span>
+              <span className="font-roboto text-xs font-medium text-gray-900">{spec.key}:</span>
+              <span className="font-roboto text-xs text-gray-600 ml-2">{spec.value}</span>
             </div>
           ))}
         </div>
@@ -141,21 +134,21 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
 
       {/* Shipping Information */}
       <div className="md:px-3">
-        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Shipping Information</h3>
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Shipping Information</h3>
         <div className="space-y-1 md:space-y-3">
           <div>
-            <span className="font-medium text-gray-900">Weight:</span>
-            <span className="text-gray-600 ml-2">{productData?.shipping?.weight} {productData?.shipping?.unit}</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Weight:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.shipping?.weight} {productData?.shipping?.unit}</span>
           </div>
           <div>
-            <span className="font-medium text-gray-900">Dimensions:</span>
-            <span className="text-gray-600 ml-2">
+            <span className="font-roboto text-xs font-medium text-gray-900">Dimensions:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2">
               {productData?.shipping?.dimensions?.length} x {productData?.shipping?.dimensions?.width} x {productData?.shipping?.dimensions?.height} cm
             </span>
           </div>
           <div>
-            <span className="font-medium text-gray-900">Restrictions:</span>
-            <span className="text-gray-600 ml-2">{productData?.shipping?.restrictions?.join(', ')}</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Restrictions:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.shipping?.restrictions?.join(', ')}</span>
           </div>
         </div>
       </div>
@@ -166,52 +159,40 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 md:px-3">
       {/* Product Analytics */}
       <div>
-        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
-          Product Analytics
-        </h3>
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Product Analytics</h3>
         <div className="space-y-1 md:space-y-3">
-          {/* <div>
-            <span className="font-medium text-gray-900">Views:</span>
-            <span className="text-gray-600 ml-2">{productData?.analytics?.views?.toLocaleString()}</span>
-          </div> */}
           <div>
-            <span className="font-medium text-gray-900">Add to Cart:</span>
-            <span className="text-gray-600 ml-2">{productData?.analytics?.addToCart}</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Add to Cart:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.analytics?.addToCart}</span>
           </div>
           <div>
-            <span className="font-medium text-gray-900">Purchases:</span>
-            <span className="text-gray-600 ml-2">{productData?.analytics?.purchases}</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Purchases:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.analytics?.purchases}</span>
           </div>
-          {/* <div>
-            <span className="font-medium text-gray-900">Conversion Rate:</span>
-            <span className="text-gray-600 ml-2">{productData?.analytics?.conversionRate}%</span>
-          </div> */}
         </div>
       </div>
 
       {/* Listing Information */}
       <div>
-        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">
-          Listing Information
-        </h3>
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Listing Information</h3>
         <div className="space-y-1 md:space-y-3">
           <div>
-            <span className="font-medium text-gray-900">Listing Type:</span>
-            <span className="text-gray-600 ml-2 capitalize">{productData?.inventory?.listing?.type}</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Listing Type:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2 capitalize">{productData?.inventory?.listing?.type}</span>
           </div>
           <div>
-            <span className="font-medium text-gray-900">Status:</span>
-            <span className="text-gray-600 ml-2 capitalize">{productData?.status}</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Status:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2 capitalize">{productData?.status}</span>
           </div>
           <div>
-            <span className="font-medium text-gray-900">Featured:</span>
-            <span className="text-gray-600 ml-2">{productData?.isFeatured ? 'Yes' : 'No'}</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Featured:</span>
+            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.isFeatured ? 'Yes' : 'No'}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="font-medium text-gray-900">Rating:</span>
+            <span className="font-roboto text-xs font-medium text-gray-900">Rating:</span>
             <div className="flex items-center gap-1">
               <div className="flex">{renderStars(productData?.rating || 0)}</div>
-              <span className="text-sm text-gray-600 ml-1">
+              <span className="font-roboto text-xs text-gray-600 ml-1">
                 {productData?.rating || 0} ({productData?.reviews?.length || 0} reviews)
               </span>
             </div>
@@ -221,27 +202,27 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
 
       {/* Variants Information */}
       <div>
-        <h3 className="text-base md:text-xl font-bold text-gray-900 mb-2 md:mb-4">Available Variants</h3>
+        <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Available Variants</h3>
         <div className="space-y-1 md:space-y-3">
           {productData?.variants?.map((variant) => (
             <div key={variant._id}>
-              <h4 className="font-medium text-gray-900 mb-2">{variant.name}</h4>
+              <h4 className="font-roboto text-xs font-medium text-gray-900 mb-2">{variant.name}</h4>
               {variant.options?.map((option) => (
-                <div key={option._id} className="ml-4 text-sm space-y-1">
+                <div key={option._id} className="ml-4 space-y-1">
                   <div>
-                    <span className="text-gray-600">{getColorName(option.value)}:</span>
-                    <span className="text-gray-900 ml-2">
+                    <span className="font-roboto text-xs text-gray-600">{getColorName(option.value)}:</span>
+                    <span className="font-roboto text-xs text-gray-900 ml-2">
                       {(productData as any)?.priceInfo?.currencySymbol || '$'}
                       {(option.displayPrice || option.salePrice || option.price)?.toLocaleString()}
                     </span>
                     {option.salePrice && option.price !== option.salePrice && (
-                      <span className="text-gray-500 line-through ml-2">
+                      <span className="font-roboto text-xs text-gray-500 line-through ml-2">
                         {(productData as any)?.priceInfo?.currencySymbol || '$'}
                         {((option.price || 0) * ((productData as any)?.priceInfo?.exchangeRate || 1))?.toLocaleString()}
                       </span>
                     )}
                   </div>
-                  <div className="text-gray-600">Qty: {option.quantity}</div>
+                  <div className="font-roboto text-xs text-gray-600">Qty: {option.quantity}</div>
                 </div>
               ))}
             </div>
@@ -273,7 +254,7 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`pb-0.5 md:pb-1 px-1 font-medium text-base whitespace-nowrap transition-colors relative ${
+              className={`font-roboto pb-0.5 md:pb-1 px-1 font-medium text-xs whitespace-nowrap transition-colors relative ${
                 activeTab === tab.id
                   ? "text-gray-900 border-b-2 border-orange-400"
                   : "text-gray-500 hover:text-gray-700"

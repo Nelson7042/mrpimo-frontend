@@ -7,6 +7,7 @@ import { useResponsive } from "@/hooks/useResponsive";
 import { useCountries } from "@/hooks/useCountries";
 import { useCategories } from "@/hooks/queries";
 import ICategory from "@/types/category.type";
+import { scrollToFirstError } from "@/utils/scrollToError";
 
 type Props = {
   onSaveDraft?: () => void;
@@ -102,6 +103,9 @@ const ShippingDetails = (props: Props) => {
     // Update productDetails with current local state before validation completes
     if (Object.keys(newErrors).length === 0) {
       updateProductDetails("shippingDetails", shippingDetails);
+    } else {
+      // Scroll to first error when validation fails
+      scrollToFirstError();
     }
     
     return Object.keys(newErrors).length === 0;
@@ -159,8 +163,8 @@ const ShippingDetails = (props: Props) => {
   }, [shippingDetails, deepest]);
 
   return (
-    <div className="p-4 border border-gray-400 rounded-lg w-full">
-      <h1 className="text-[14px] mb-4 xl:text-center">Shipping Details</h1>
+    <div className="p-4 border border-gray-400 rounded-lg w-full font-roboto">
+      <h1 className="text-[14px] mb-4 xl:text-center font-roboto">Shipping Details</h1>
       {/* Available shipping methods */}
       <div className="flex flex-col gap-y-3">
         <Select

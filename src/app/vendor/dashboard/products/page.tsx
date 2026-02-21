@@ -262,7 +262,7 @@ const ProductsPage = () => {
               </div>
             </div>
             <p className="font-roboto text-[11px] md:text-xs text-[#323232]">
-              Welcome back, Bovie! Here's what is happening with your store
+              Welcome back, {vendor?.businessInfo?.name} Here's what is happening with your store
               today.
             </p>
           </div>
@@ -300,7 +300,7 @@ const ProductsPage = () => {
                   </div>
                   <input
                     type="search"
-                    className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500"
+                    className="font-roboto block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-md text-xs focus:outline-none focus:ring-1 focus:ring-blue-500"
                     placeholder="Search products"
                   />
                 </div>
@@ -308,7 +308,7 @@ const ProductsPage = () => {
                 <div className="col-span-2">
                   <input
                     type="date"
-                    className="w-full border border-gray-200 rounded-md px-3 py-2"
+                    className="font-roboto w-full border border-gray-200 rounded-md px-3 py-2 text-xs"
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                   />
@@ -321,7 +321,7 @@ const ProductsPage = () => {
                       setShowCategoryDropdown(!showCategoryDropdown)
                     }
                   >
-                    <span className="text-xs">Category</span>
+                    <span className="font-roboto text-xs">Category</span>
                     {!showCategoryDropdown ? (
                       <ChevronDown size={16} className="ml-2 text-gray-400" />
                     ) : (
@@ -335,13 +335,13 @@ const ProductsPage = () => {
                   {showCategoryDropdown && (
                     <div className="absolute mt-1 w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
                       <ul className="py-1">
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer text-xs">
                           All Categories
                         </li>
                         {categories.map((option: string) => (
                           <li
                             key={option}
-                            className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200"
+                            className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-200 text-xs"
                             onClick={() => {
                               setCategory(option);
                               setShowCategoryDropdown(false);
@@ -361,7 +361,7 @@ const ProductsPage = () => {
                     onClick={() => setShowStatusDropdown(!showStatusDropdown)}
                     disabled={activeTab !== "all"}
                   >
-                    <span className="text-xs">Status</span>
+                    <span className="font-roboto text-xs">Status</span>
                     {!showStatusDropdown ? (
                       <ChevronDown size={16} className="ml-2 text-gray-400" />
                     ) : (
@@ -375,18 +375,18 @@ const ProductsPage = () => {
                   {showStatusDropdown && (
                     <div className="absolute mt-1 w-40 md:w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10">
                       <ul className="py-1">
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer text-xs">
                           All Statuses
                         </li>
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200 text-xs">
                           <span className="w-3 h-3 rounded-full bg-blue-600 mr-2"></span>
                           Active
                         </li>
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200 text-xs">
                           <span className="w-3 h-3 rounded-full bg-yellow-500 mr-2"></span>
                           Draft
                         </li>
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center text-xs">
                           <span className="w-3 h-3 rounded-full bg-red-500 mr-2"></span>
                           Unavailable
                         </li>
@@ -400,7 +400,7 @@ const ProductsPage = () => {
                     className="flex items-center border border-gray-200 rounded-md px-3 py-2 cursor-pointer"
                     onClick={() => setShowFilterDropdown(!showFilterDropdown)}
                   >
-                    <span className="text-xs mr-2">Filter</span>
+                    <span className="font-roboto text-xs mr-2">Filter</span>
                     <Filter size={12} className="text-gray-400" />
                     {!showFilterDropdown ? (
                       <ChevronDown size={16} className="ml-2 text-gray-400" />
@@ -415,19 +415,19 @@ const ProductsPage = () => {
                   {showFilterDropdown && (
                     <div className="absolute mt-1 w-40 md:w-48 bg-white border border-gray-200 rounded-md shadow-lg z-10 ">
                       <ul className="py-1">
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer border-b">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer border-b text-xs">
                           Filter By
                         </li>
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200 text-xs">
                           Category
                         </li>
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200 text-xs">
                           Status
                         </li>
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center border-b border-gray-200 text-xs">
                           Date
                         </li>
-                        <li className="px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center">
+                        <li className="font-roboto px-4 py-2 hover:bg-gray-100 cursor-pointer flex items-center text-xs">
                           Recently Added
                         </li>
                       </ul>
@@ -441,28 +441,28 @@ const ProductsPage = () => {
                 <table className="min-w-full">
                   <thead>
                     <tr className="bg-[#f2f7ff] text-black">
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
                         Date
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
                         Name
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm ">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
                         Category
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
                         Price
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
                         Stock
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm whitespace-nowrap">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs whitespace-nowrap">
                         Accept Offer
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
                         Status
                       </th>
-                      <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase text-sm">
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
                         Actions
                       </th>
                     </tr>
@@ -470,7 +470,7 @@ const ProductsPage = () => {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {displayedProducts.map((product, index) => (
                       <tr key={index} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-900">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-900">
                           {product?.createdAt
                             ? new Date(product.createdAt).toLocaleDateString(
                                 "en-GB",
@@ -483,11 +483,11 @@ const ProductsPage = () => {
                             : "N/A"}
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
                           {product?.name}
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
                           <span className="">
                             {Array.isArray(product?.category?.sub) &&
                             product.category?.sub.length > 0
@@ -507,11 +507,11 @@ const ProductsPage = () => {
                           </span>
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-900">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-900">
                           <VariantPriceDisplay product={product} />
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-900">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-900">
                           {(() => {
                             const hasVariants =
                               product.variants && product.variants.length > 0;
@@ -537,7 +537,7 @@ const ProductsPage = () => {
                           })()}
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                           {product.inventory?.listing?.type === "instant" ? (
                             <div
                               className={`w-8 h-4 rounded-full flex items-center cursor-pointer ${
@@ -550,11 +550,11 @@ const ProductsPage = () => {
                               <div className="size-3 bg-white rounded-full mx-0.5" />
                             </div>
                           ) : (
-                            <p>N/A</p>
+                            <p className="font-roboto">N/A</p>
                           )}
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap">
                           <span
                             className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
                               product?.status || ""
@@ -565,7 +565,7 @@ const ProductsPage = () => {
                           </span>
                         </td>
 
-                        <td className="px-4 py-4 whitespace-nowrap relative">
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap relative">
                           <button
                             onClick={() => toggleDropdown(product?._id!)}
                             className="cursor-pointer"
@@ -576,7 +576,7 @@ const ProductsPage = () => {
                           {openDropdownId === product._id && (
                             <div className="absolute right-0 -mt-10 w-44 bg-white border border-gray-200 rounded-md shadow-lg z-10">
                               <div className="flex justify-between items-center px-2 py-1 border-b border-gray-200">
-                                <span className="text-sm font-medium">
+                                <span className="font-roboto text-xs font-medium">
                                   Actions
                                 </span>
                                 <button onClick={handleCloseDropdown}>
@@ -588,7 +588,7 @@ const ProductsPage = () => {
                               </div>
                               <ul className="">
                                 <li
-                                  className="p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center"
+                                  className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs"
                                   onClick={() =>
                                     router.push(
                                       `/vendor/dashboard/products/${product.slug}`
@@ -596,10 +596,10 @@ const ProductsPage = () => {
                                   }
                                 >
                                   <Eye size={14} />
-                                  <p className="text-xs">View</p>
+                                  <p className="font-roboto text-xs">View</p>
                                 </li>
                                  <li
-                                  className="p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center"
+                                  className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs"
                                   onClick={() =>
                                     router.push(
                                       `/vendor/dashboard/products/edit/${product.slug}`
@@ -607,16 +607,16 @@ const ProductsPage = () => {
                                   }
                                 >
                                   <Edit size={14} />
-                                  <p className="text-xs">Edit Product</p>
+                                  <p className="font-roboto text-xs">Edit Product</p>
                                 </li>
                                 <li
-                                  className="p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center"
+                                  className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs"
                                   onClick={() =>
                                     console.log("Delete", product?._id!)
                                   }
                                 >
                                   <Trash size={14} />
-                                  <p className="text-xs">Delete</p>
+                                  <p className="font-roboto text-xs">Delete</p>
                                 </li>
                               </ul>
                             </div>
@@ -636,7 +636,7 @@ const ProductsPage = () => {
                     className="bg-white border border-gray-300 rounded-lg p-4 shadow-md"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-medium">{product.name}</span>
+                      <span className="font-roboto font-medium text-xs">{product.name}</span>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
                           product.status || ""
@@ -757,8 +757,8 @@ const ProductsPage = () => {
                             index % 2 === 0 ? "bg-gray-50" : "bg-white"
                           } text-gray-500`}
                         >
-                          <span className="font-medium">{item.label}:</span>
-                          <span className="text-right text-gray-700">
+                          <span className="font-roboto font-medium">{item.label}:</span>
+                          <span className="font-roboto text-right text-gray-700">
                             {item.value}
                           </span>
                         </div>
@@ -767,7 +767,7 @@ const ProductsPage = () => {
                       {/* Accept Offer Toggle */}
                       {product.inventory?.listing?.type === "instant" && (
                         <div className="flex justify-between items-center px-2 py-2 text-xs bg-white text-gray-500">
-                          <span className="font-medium">Accept Offer:</span>
+                          <span className="font-roboto font-medium">Accept Offer:</span>
                           <div
                             className={`w-8 h-4 rounded-full flex items-center cursor-pointer ${
                               product.inventory.listing.instant?.acceptOffer
@@ -783,7 +783,7 @@ const ProductsPage = () => {
                     </div>
                     <div className="mt-2">
                       <button
-                        className="bg-primary text-white px-3 py-2 rounded-md text-sm"
+                        className="font-roboto bg-primary text-white px-3 py-2 rounded-md text-xs"
                         onClick={() =>
                           router.push(
                             `/vendor/dashboard/products/${product.slug}`
@@ -802,7 +802,7 @@ const ProductsPage = () => {
             <div className="mt-2 md:mt-0 px-4 py-5 bg-white border-t border-gray-200 sm:px-6 flex items-center justify-between">
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
-                  <p className="text-xs text-gray-700">
+                  <p className="font-roboto text-xs text-gray-700">
                     Showing{" "}
                     <span className="font-medium">
                       {(currentPage - 1) * itemsPerPage + 1}
@@ -829,7 +829,7 @@ const ProductsPage = () => {
                           : "text-gray-500 hover:bg-gray-50 cursor-pointer"
                       }`}
                     >
-                      <span className="sr-only">Previous</span>
+                      <span className="font-roboto sr-only">Previous</span>
                       <svg
                         className="h-5 w-5"
                         xmlns="http://www.w3.org/2000/svg"
@@ -849,7 +849,7 @@ const ProductsPage = () => {
                       pageNumber === "..." ? (
                         <span
                           key={`ellipsis-${index}`}
-                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-xs font-medium text-gray-700"
+                          className="font-roboto relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-xs font-medium text-gray-700"
                         >
                           ...
                         </span>
@@ -857,7 +857,7 @@ const ProductsPage = () => {
                         <button
                           key={`page-${pageNumber}`}
                           onClick={() => goToPage(pageNumber as number)}
-                          className={`relative inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-medium ${
+                          className={`font-roboto relative inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-medium ${
                             currentPage === pageNumber
                               ? "bg-blue-50 text-blue-600"
                               : "bg-white text-gray-700 hover:bg-gray-50"
@@ -877,7 +877,7 @@ const ProductsPage = () => {
                           : "text-gray-500 hover:bg-gray-50 cursor-pointer"
                       }`}
                     >
-                      <span className="sr-only">Next</span>
+                      <span className="font-roboto sr-only">Next</span>
                       <svg
                         className="h-5 w-5"
                         xmlns="http://www.w3.org/2000/svg"
@@ -907,9 +907,9 @@ const ProductsPage = () => {
                       : "text-gray-700 bg-white hover:bg-gray-50"
                   }`}
                 >
-                  Previous
+                  <span className="font-roboto">Previous</span>
                 </button>
-                <div className="text-xs text-gray-700">
+                <div className="font-roboto text-xs text-gray-700">
                   Page <span className="font-medium">{currentPage}</span> of{" "}
                   <span className="font-medium">{totalPages}</span>
                 </div>
@@ -922,7 +922,7 @@ const ProductsPage = () => {
                       : "text-gray-700 bg-white hover:bg-gray-50"
                   }`}
                 >
-                  Next
+                  <span className="font-roboto">Next</span>
                 </button>
               </div>
             </div>
@@ -932,7 +932,7 @@ const ProductsPage = () => {
             {vendorProducts && vendorProducts.length === 0 ? (
               <div className="bg-white rounded-lg shadow-sm flex flex-col gap-y-4 justify-center items-center p-2 h-[85%] xl:h-[92%] animate-fade-in-up">
                 <div className="flex gap-x-2 items-center">
-                  <p className="text-xl text-gray-600">No product listed</p>
+                  <p className="font-roboto text-sm  text-gray-600">No product listed</p>
                   <FolderMinus
                     size={32}
                     className="text-[#002f7a] animate-bounce-slow"
@@ -945,7 +945,7 @@ const ProductsPage = () => {
                       router.push("/vendor/dashboard/products/create-product");
                     }}
                   >
-                    <p className="whitespace-nowrap cursor-pointer">
+                    <p className="font-roboto whitespace-nowrap cursor-pointer text-xs md:text-sm">
                       Add Product
                     </p>
                     <Plus size={18} />
@@ -954,14 +954,14 @@ const ProductsPage = () => {
                     className="bg-green-600 text-white px-4 md:px-6 py-2 md:py-3 rounded-md flex gap-x-2 items-center cursor-pointer hover:bg-green-700 transition-all duration-300 transform hover:scale-[1.03] flex-1 md:flex-none justify-center"
                     onClick={() => setShowProductImport(true)}
                   >
-                    <p className="whitespace-nowrap cursor-pointer">Import</p>
+                    <p className="font-roboto whitespace-nowrap cursor-pointer text-xs md:text-sm">Import</p>
                     <Upload size={18} />
                   </button>
                 </div>
               </div>
             ) : (
               <div className="flex justify-center mt-20">
-                <p className="text-xl text-[#2563EB] font-semibold">
+                <p className="font-roboto text-lg md:text-xl text-[#2563EB] font-semibold">
                   Nothing to display
                 </p>
               </div>

@@ -5,6 +5,7 @@ import NavigationButtons from "./NavigationButtons";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import ColorPicker from "./ColorPicker";
+import { scrollToFirstError } from "@/utils/scrollToError";
 
 type Props = {
   onSaveDraft?: () => void;
@@ -115,6 +116,12 @@ const PricingInformation = (props: Props) => {
     updateProductDetails("pricingInformation", pricingInformation);
 
     const isValid = Object.keys(newErrors).length === 0;
+    
+    // Scroll to first error when validation fails
+    if (!isValid) {
+      scrollToFirstError();
+    }
+    
     return isValid;
   };
 
@@ -569,8 +576,8 @@ const PricingInformation = (props: Props) => {
   };
 
   return (
-    <div className="p-4 border border-gray-400 rounded-lg w-full">
-      <h1 className="text-[16px] mb-4 xl:text-center">Pricing Information</h1>
+    <div className="p-4 border border-gray-400 rounded-lg w-full font-roboto">
+      <h1 className="text-[16px] mb-4 xl:text-center font-roboto">Pricing Information</h1>
       <Select
         label="Listing Type"
         options={["Auction", "Instant Sale"]}

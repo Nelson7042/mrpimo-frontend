@@ -99,8 +99,8 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
     return (
       <div className="md:px-[42px] lg:px-[80px] px-4 mt-5 md:mt-7 lg:mt-8">
         <div className="text-center py-8">
-          <h2 className="text-2xl font-bold text-gray-900 mb-2">Reviews</h2>
-          <p className="text-gray-600">No reviews yet. Be the first to review this product!</p>
+          <h2 className="font-roboto text-sm font-bold text-gray-900 mb-2">Reviews</h2>
+          <p className="font-roboto text-xs text-gray-600">No reviews yet. Be the first to review this product!</p>
         </div>
       </div>
     );
@@ -111,35 +111,35 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
       <div className="">
         {/* Header */}
         <div className="mb-2 md:mb-4">
-          <h1 className="text-lg md:text-3xl font-bold text-gray-900">Reviews</h1>
+          <h1 className="font-roboto text-sm font-bold text-gray-900">Reviews</h1>
         </div>
 
         {/* Customer Reviews Summary */}
         <div className="mb-2 md:mb-4">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between md:mb-4">
-            <h2 className="text-sm md:text-lg font-semibold text-gray-900 mb-2 sm:mb-0">Customer reviews</h2>
+            <h2 className="font-roboto text-xs font-semibold text-gray-900 mb-2 sm:mb-0">Customer reviews</h2>
             <div className="flex items-center space-x-2">
               {renderOverallStars(reviewData.averageRating)}
-              <span className="text-sm md:text-lg font-medium text-gray-900">
+              <span className="font-roboto text-xs font-medium text-gray-900">
                 {reviewData.averageRating} out of 5
               </span>
             </div>
           </div>
           <div className="text-right">
-            <span className="text-xs md:text-sm text-gray-600">{reviewData.totalReviews} product feedback</span>
+            <span className="font-roboto text-xs text-gray-600">{reviewData.totalReviews} product feedback</span>
           </div>
         </div>
 
         {/* Feedback History */}
         <div className="mb-2 md:mb-4">
           <div className="flex flex-row items-center justify-between mb-6">
-            <h3 className="text-sm md:text-lg font-semibold text-gray-900 ">Feedback history</h3>
+            <h3 className="font-roboto text-xs font-semibold text-gray-900">Feedback history</h3>
             
             {/* Time Filter Dropdown */}
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-                className="flex items-center justify-between w-full sm:w-40 px-4 py-1 md:py-2 text-sm text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="font-roboto flex items-center justify-between w-full sm:w-40 px-4 py-1 text-xs text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none"
               >
                 <span>{selectedTimeFilter}</span>
                 <ChevronDown className="w-4 h-4 ml-2" />
@@ -154,7 +154,7 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
                         setSelectedTimeFilter(filter);
                         setIsDropdownOpen(false);
                       }}
-                      className="block w-full px-4 py-2 text-sm text-left text-gray-700 hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                      className="font-roboto block w-full px-4 py-2 text-xs text-left text-gray-700 hover:bg-gray-100"
                     >
                       {filter}
                     </button>
@@ -169,18 +169,18 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
             {reviewData.ratingBreakdown.map((item) => (
               <div key={item.stars} className="flex items-center space-x-2 md:space-x-4">
                 <div className="flex items-center space-x-1 w-6 md:w-12">
-                  <span className="text-sm text-gray-700">{item.stars}</span>
+                  <span className="font-roboto text-xs text-gray-700">{item.stars}</span>
                   <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
                 </div>
                 
-                <div className="flex-1 bg-gray-200 rounded-full h-1.5 md:h-2 max-w-md">
+                <div className="flex-1 bg-gray-200 rounded-full h-1.5 max-w-md">
                   <div
-                    className="bg-yellow-400 h-1.5 md:h-2 rounded-full transition-all duration-300"
+                    className="bg-yellow-400 h-1.5 rounded-full transition-all duration-300"
                     style={{ width: `${item.percentage}%` }}
                   ></div>
                 </div>
                 
-                <span className="text-sm text-gray-700 w-8 text-right">{item.percentage}%</span>
+                <span className="font-roboto text-xs text-gray-700 w-8 text-right">{item.percentage}%</span>
               </div>
             ))}
           </div>
@@ -194,14 +194,14 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
                 <div className="mb-2 sm:mb-0">
                   {renderStars(review.rating)}
                 </div>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-sm text-gray-600">
+                <div className="font-roboto flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs text-gray-600">
                   <span>By {review.author}</span>
                   <span className="hidden sm:inline">•</span>
                   <span>{review.date}</span>
                 </div>
               </div>
               
-              <p className="text-gray-800 leading-relaxed text-sm sm:text-base">
+              <p className="font-roboto text-xs text-gray-800 leading-relaxed">
                 {review.comment}
               </p>
             </div>

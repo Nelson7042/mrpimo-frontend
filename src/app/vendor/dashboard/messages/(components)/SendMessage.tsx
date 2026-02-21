@@ -32,7 +32,7 @@ const SendMessage = ({ userId, onSend }: { userId: string, onSend: (message: str
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           placeholder="Type a message..."
-          className="flex-1 border border-gray-300 rounded-full py-2 px-4 focus:outline-none focus:ring-1 focus:ring-blue-400"
+          className="font-roboto flex-1 border border-gray-300 rounded-full py-2 px-4 text-xs md:text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
         />
         <button 
           type="submit"

@@ -20,8 +20,8 @@ const ProductImages = (props: Props) => {
   const hasImages = productDetails.images && productDetails.images.length > 0;
 
   return (
-    <div className="p-4 border border-gray-400 rounded-lg w-full">
-      <h1 className="text-[16px] mb-4 xl:text-center">Product Images</h1>
+    <div className="p-4 border border-gray-400 rounded-lg w-full font-roboto">
+      <h1 className="text-[16px] mb-4 xl:text-center font-roboto">Product Images</h1>
       <div className="xl:w-3/4 mx-auto">
         <ImageUploader src="" />
       </div>

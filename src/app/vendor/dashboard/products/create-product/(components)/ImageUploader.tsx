@@ -2,8 +2,8 @@
 
 import React, { useState, useCallback, useRef, useEffect } from "react";
 import axios from "axios";
-import { motion } from "framer-motion";
-import { Images, Plus, X } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Images, Plus, X, Upload, CheckCircle, ImageIcon } from "lucide-react";
 import { toast } from "react-toastify";
 import {
   toastConfigError,
@@ -11,6 +11,9 @@ import {
 } from "@/app/config/toast.config";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { API_BASE_URL } from "@/utils/config";
+
+// Theme color constant
+const THEME_COLOR = "#002f7a";
 
 interface ImageUploaderProps {
   src: string;
@@ -25,8 +28,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
     productDetails?.images?.slice(1) || []
   );
   const [loading, setLoading] = useState(false);
+  const [additionalLoading, setAdditionalLoading] = useState<number | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const [additionalDragActive, setAdditionalDragActive] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [additionalUploadProgress, setAdditionalUploadProgress] = useState(0);
   const [formData, setFormData] = useState({
     videos: [] as File[],
   });
@@ -45,6 +51,16 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
       setDragActive(true);
     } else if (e.type === "dragleave") {
       setDragActive(false);
+    }
+  }, []);
+
+  const handleAdditionalDrag = useCallback((e: React.DragEvent<HTMLDivElement>) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setAdditionalDragActive(true);
+    } else if (e.type === "dragleave") {
+      setAdditionalDragActive(false);
     }
   }, []);
 
@@ -190,7 +206,8 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
         return;
       }
 
-      // Show preview immediately
+      // Show preview immediately with loading state
+      const tempIndex = additionalImages.length;
       const reader = new FileReader();
       reader.onloadend = () => {
         if (reader.result) {
@@ -199,15 +216,30 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
       };
       reader.readAsDataURL(file);
 
-      // Upload logic would go here
+      // Upload logic with progress tracking
+      setAdditionalLoading(tempIndex);
+      setAdditionalUploadProgress(0);
+      
       try {
         const formData = new FormData();
         formData.append("productImage", file);
 
         const response = await axios.post(
           `${API_BASE_URL}/products/upload`,
-          formData
+          formData,
+          {
+            onUploadProgress: (progressEvent) => {
+              if (progressEvent.total) {
+                const progress = Math.round(
+                  (progressEvent.loaded * 90) / progressEvent.total
+                );
+                setAdditionalUploadProgress(Math.min(progress, 90));
+              }
+            },
+          }
         );
+
+        setAdditionalUploadProgress(100);
 
         if (response.data.success) {
           // Get current additional images from context
@@ -236,9 +268,12 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
           "Error uploading additional image. Using local preview.",
           toastConfigError
         );
+      } finally {
+        setAdditionalLoading(null);
+        setAdditionalUploadProgress(0);
       }
     },
-    [additionalImages, updateProductDetails]
+    [additionalImages, updateProductDetails, productDetails.images]
   );
 
   const handleDrop = useCallback(
@@ -253,6 +288,20 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
       }
     },
     [handleImage]
+  );
+
+  const handleAdditionalDrop = useCallback(
+    (e: React.DragEvent<HTMLDivElement>) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setAdditionalDragActive(false);
+
+      const files = e.dataTransfer.files;
+      if (files) {
+        Array.from(files).forEach((file) => handleAdditionalImage(file));
+      }
+    },
+    [handleAdditionalImage]
   );
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -300,60 +349,79 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
 
   return (
     <div
-      className={`relative ${loading ? "pointer-events-none" : ""}`}
+      className={`relative font-roboto ${loading ? "pointer-events-none" : ""}`}
       onDragEnter={handleDrag}
     >
+      {/* Main Image Upload Section */}
       <div
-        className={`mt-1 flex gap-y-4 justify-center p-6 border-2 ${
+        className={`mt-1 flex gap-y-4 justify-center p-6 border-2 rounded-md transition-all duration-300 ${
           dragActive
-            ? "border-indigo-600 bg-indigo-50"
-            : "border-[#365aa4] border-dashed"
-        } rounded-md transition-colors duration-300 ${
-          errors.imagesError ? "border-red-500 border-dashed" : ""
-        }`}
+            ? "border-[#002f7a] bg-[#002f7a]/10 scale-[1.02] shadow-lg"
+            : "border-[#365aa4] border-dashed hover:border-[#002f7a] hover:bg-[#002f7a]/5"
+        } ${errors.imagesError ? "border-red-500 border-dashed" : ""}`}
       >
         <div className="space-y-1 w-full">
-          {preview ? (
-            <div className="relative h-48 w-full">
-              <motion.img
+          <AnimatePresence mode="wait">
+            {preview ? (
+              <motion.div
+                key="preview"
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                src={typeof preview === "string" ? preview : ""}
-                alt="Preview"
-                className="mx-auto w-full h-full object-contain object-center rounded-md p-2"
-              />
-              {!loading && (
-                <>
-                  <button
-                    onClick={() => {
-                      setPreview(null);
-                      updateProductDetails("images", []);
-                    }}
-                    className="absolute cursor-pointer top-0 right-0 -mt-2 -mr-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors duration-300"
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="relative h-48 w-full"
+              >
+                <img
+                  src={typeof preview === "string" ? preview : ""}
+                  alt="Preview"
+                  className="mx-auto w-full h-full object-contain object-center rounded-md p-2"
+                />
+                {!loading && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="absolute top-2 right-2 flex items-center gap-2"
                   >
-                    <svg
-                      className="h-4 w-4"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
+                    <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full flex items-center gap-1">
+                      <CheckCircle size={12} />
+                      Uploaded
+                    </span>
+                    <button
+                      onClick={() => {
+                        setPreview(null);
+                        updateProductDetails("images", []);
+                      }}
+                      className="cursor-pointer bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors duration-300 shadow-md"
                     >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M6 18L18 6M6 6l12 12"
-                      />
-                    </svg>
-                  </button>
-                </>
-              )}
-            </div>
-          ) : (
-            <>
-              <div className="bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer h-42 lg:h-60 w-full flex flex-col items-center justify-center rounded-lg gap-y-2">
+                      <X size={16} />
+                    </button>
+                  </motion.div>
+                )}
+              </motion.div>
+            ) : (
+              <motion.div
+                key="upload"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className={`bg-gray-100 transition-all cursor-pointer h-42 lg:h-60 w-full flex flex-col items-center justify-center rounded-lg gap-y-2 ${
+                  dragActive ? "bg-[#002f7a]/10" : "hover:bg-gray-200"
+                }`}
+              >
                 <div className="flex justify-center text-sm text-gray-400 w-full">
                   <label htmlFor="file-upload" className="cursor-pointer">
-                    <Plus size={30} className="" />
+                    <motion.div
+                      animate={dragActive ? { scale: 1.1, y: -5 } : { scale: 1, y: 0 }}
+                      transition={{ duration: 0.2 }}
+                      className={`p-4 rounded-full ${
+                        dragActive ? "bg-[#002f7a]/20" : "bg-gray-200"
+                      }`}
+                    >
+                      {dragActive ? (
+                        <Upload size={30} className="text-[#002f7a]" />
+                      ) : (
+                        <Plus size={30} className="text-gray-500" />
+                      )}
+                    </motion.div>
                     <input
                       id="file-upload"
                       name="file-upload"
@@ -366,78 +434,178 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
                     />
                   </label>
                 </div>
-                <p className="text-xs text-gray-400 text-center w-full">
-                  Click or drag to upload main image
+                <p className={`text-sm text-center w-full font-medium ${
+                  dragActive ? "text-[#002f7a]" : "text-gray-500"
+                }`}>
+                  {dragActive ? "Drop your image here!" : "Click or drag to upload main image"}
                 </p>
-              </div>
-            </>
-          )}
+                <p className="text-xs text-gray-400 text-center">
+                  Supports: JPEG, JPG, PNG (Max 10MB)
+                </p>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          
+          {/* Upload Progress Indicator */}
           {loading && (
-            <div className="mt-4">
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-4"
+            >
               <div className="relative pt-1">
                 <div className="flex mb-2 items-center justify-between">
-                  <span className="text-xs font-semibold inline-block text-[#2563eb]">
+                  <span className="text-xs font-semibold inline-block text-[#002f7a] flex items-center gap-2">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    >
+                      <Upload size={14} />
+                    </motion.div>
                     Uploading...
                   </span>
-                  <span className="text-xs font-semibold inline-block text-[#2563eb]">
+                  <span className="text-xs font-semibold inline-block text-[#002f7a]">
                     {uploadProgress}%
                   </span>
                 </div>
-                <div className="overflow-hidden h-2 mb-4 text-xs flex rounded bg-indigo-200">
+                <div className="overflow-hidden h-3 mb-4 text-xs flex rounded-full bg-[#002f7a]/20">
                   <motion.div
                     initial={{ width: 0 }}
                     animate={{ width: `${uploadProgress}%` }}
-                    transition={{ duration: 0.2 }}
-                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#2563eb]/90"
+                    transition={{ duration: 0.3, ease: "easeOut" }}
+                    className="shadow-none flex flex-col text-center whitespace-nowrap text-white justify-center bg-[#002f7a] rounded-full"
                   />
                 </div>
               </div>
-            </div>
+            </motion.div>
           )}
         </div>
       </div>
-      <div className="w-full mt-4">
-        <p className="text-sm text-gray-400 font-[400] mb-4">
-          Upload additional images
-        </p>
-        <div className="flex flex-row flex-wrap items-center gap-4 mb-2">
-          {additionalImages.map((img, index) => (
-            <div
-              key={index}
-              className="relative h-24 w-24 rounded-lg overflow-hidden border border-gray-200"
-            >
-              <img
-                src={img}
-                alt={`Additional product image ${index + 1}`}
-                className="h-full w-full object-cover object-center"
-              />
-              <button
-                onClick={() => removeAdditionalImage(index)}
-                className="absolute top-1 cursor-pointer right-1 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors duration-300"
+      {/* Additional Images Section */}
+      <div 
+        className="w-full mt-4"
+        onDragEnter={handleAdditionalDrag}
+        onDragLeave={handleAdditionalDrag}
+        onDragOver={handleAdditionalDrag}
+        onDrop={handleAdditionalDrop}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <p className="text-sm text-gray-500 font-medium flex items-center gap-2">
+            <ImageIcon size={16} className="text-[#002f7a]" />
+            Additional Images ({additionalImages.length}/5)
+          </p>
+          {additionalImages.length > 0 && (
+            <span className="text-xs text-gray-400">
+              Drag to reorder
+            </span>
+          )}
+        </div>
+        
+        <div 
+          className={`p-4 rounded-lg border-2 border-dashed transition-all duration-300 ${
+            additionalDragActive 
+              ? "border-[#002f7a] bg-[#002f7a]/10 scale-[1.01]" 
+              : "border-gray-300 hover:border-[#002f7a]/50"
+          }`}
+        >
+          <div className="flex flex-row flex-wrap items-center gap-4">
+            {/* Preview Thumbnails */}
+            <AnimatePresence>
+              {additionalImages.map((img, index) => (
+                <motion.div
+                  key={index}
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.8 }}
+                  transition={{ duration: 0.2 }}
+                  className="relative group"
+                >
+                  <div className="h-24 w-24 rounded-lg overflow-hidden border-2 border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+                    <img
+                      src={img}
+                      alt={`Additional product image ${index + 1}`}
+                      className="h-full w-full object-cover object-center"
+                    />
+                    {/* Upload progress overlay for this specific image */}
+                    {additionalLoading === index && (
+                      <div className="absolute inset-0 bg-black/50 flex flex-col items-center justify-center rounded-lg">
+                        <motion.div
+                          animate={{ rotate: 360 }}
+                          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        >
+                          <Upload size={20} className="text-white" />
+                        </motion.div>
+                        <span className="text-white text-xs mt-1">{additionalUploadProgress}%</span>
+                      </div>
+                    )}
+                  </div>
+                  {/* Image number badge */}
+                  <span className="absolute -top-2 -left-2 bg-[#002f7a] text-white text-xs w-5 h-5 rounded-full flex items-center justify-center font-medium">
+                    {index + 1}
+                  </span>
+                  {/* Remove button */}
+                  <button
+                    onClick={() => removeAdditionalImage(index)}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors duration-300 opacity-0 group-hover:opacity-100 shadow-md cursor-pointer"
+                  >
+                    <X size={12} />
+                  </button>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+            
+            {/* Add More Button */}
+            {additionalImages.length < 5 && (
+              <motion.div
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`h-24 w-24 rounded-lg border-2 border-dashed transition-all flex items-center justify-center ${
+                  additionalDragActive 
+                    ? "border-[#002f7a] bg-[#002f7a]/20" 
+                    : "border-[#365AA4] bg-gray-100 hover:bg-[#002f7a]/10 hover:border-[#002f7a]"
+                }`}
               >
-                <X size={12} />
-              </button>
-            </div>
-          ))}
-          <div className="h-24 w-24 rounded-lg border-2 hover:bg-gray-200 transition-colors border-dashed border-[#365AA4] bg-gray-100 flex items-center justify-center">
-            <label
-              htmlFor="additional-images"
-              className="cursor-pointer h-full w-full flex items-center justify-center"
-            >
-              <Plus size={30} className="text-gray-600" />
-              <input
-                id="additional-images"
-                name="additional-images"
-                type="file"
-                className="sr-only"
-                accept="image/*"
-                multiple
-                onChange={handleAdditionalImagesChange}
-                ref={additionalInputRef}
-                disabled={loading}
-              />
-            </label>
+                <label
+                  htmlFor="additional-images"
+                  className="cursor-pointer h-full w-full flex flex-col items-center justify-center gap-1"
+                >
+                  <Plus size={24} className={additionalDragActive ? "text-[#002f7a]" : "text-gray-500"} />
+                  <span className={`text-xs ${additionalDragActive ? "text-[#002f7a]" : "text-gray-400"}`}>
+                    {additionalDragActive ? "Drop here" : "Add more"}
+                  </span>
+                  <input
+                    id="additional-images"
+                    name="additional-images"
+                    type="file"
+                    className="sr-only"
+                    accept="image/*"
+                    multiple
+                    onChange={handleAdditionalImagesChange}
+                    ref={additionalInputRef}
+                    disabled={loading || additionalLoading !== null}
+                  />
+                </label>
+              </motion.div>
+            )}
           </div>
+          
+          {/* Empty state message */}
+          {additionalImages.length === 0 && !additionalDragActive && (
+            <p className="text-xs text-gray-400 text-center mt-2">
+              Drag and drop images here or click the + button
+            </p>
+          )}
+          
+          {/* Drag active message */}
+          {additionalDragActive && (
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="text-sm text-[#002f7a] text-center mt-2 font-medium"
+            >
+              Drop your images here!
+            </motion.p>
+          )}
         </div>
       </div>
       <div className="w-full mt-4 mb-3">

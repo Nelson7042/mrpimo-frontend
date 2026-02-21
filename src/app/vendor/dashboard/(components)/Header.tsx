@@ -17,7 +17,7 @@ const Header = (props: Props) => {
 
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b bg-white">
+    <header className="sticky top-0 z-50 w-full border-b bg-primary font-roboto">
       <div className="flex h-16 items-center justify-between px-4">
         {/* Mobile menu button */}
         <button
@@ -34,14 +34,19 @@ const Header = (props: Props) => {
           <div
             className={`${
               showSearch ? "flex" : "hidden md:flex"
-            } items-center border border-gray-200 rounded-lg px-3 py-2`}
+            } mx-auto bg-white py-[2px] md:py-[3px] rounded-[8px]`}
           >
-            <Search className="text-gray-400 mr-2" size={16} />
+            <button className="border-r px-2 md:px-3">
+              <Search className="w-5 h-5" color="black" />
+            </button>
             <input
               type="text"
               placeholder="Search..."
-              className="flex-1 outline-none text-sm"
+              className="font-roboto flex-1 border-0 px-2 md:px-3 outline-0 text-[#121212] text-sm"
             />
+            <button className="py-[8px] px-3 text-xs bg-primary text-white rounded-[8px] mr-1 hover:bg-blue-700">
+              Search
+            </button>
           </div>
         </div>
 
@@ -61,7 +66,7 @@ const Header = (props: Props) => {
 
           {/* KYC Status */}
           {vendor?.kycStatus === "pending" && (
-            <div className="hidden sm:block text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md">
+            <div className="font-roboto hidden sm:block text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded-md">
               Unverified
             </div>
           )}
@@ -70,7 +75,7 @@ const Header = (props: Props) => {
           <NotificationBell />
 
           {/* Business name - desktop only */}
-          <div className="hidden lg:block text-sm text-gray-600 max-w-32 truncate">
+          <div className="font-roboto hidden lg:block text-xs text-gray-200 max-w-32 truncate">
             {vendor?.businessInfo?.name}
           </div>
 
@@ -91,14 +96,19 @@ const Header = (props: Props) => {
       {/* Mobile search overlay */}
       {showSearch && (
         <div className="md:hidden border-t bg-white p-4">
-          <div className="flex items-center border border-gray-200 rounded-lg px-3 py-2">
-            <Search className="text-gray-400 mr-2" size={16} />
+          <div className="flex bg-white py-[2px] rounded-[8px] border border-gray-200">
+            <button className="border-r px-2 md:px-3">
+              <Search className="w-5 h-5" color="black" />
+            </button>
             <input
               type="text"
               placeholder="Search..."
-              className="flex-1 outline-none text-sm"
+              className="font-roboto flex-1 border-0 px-2 outline-0 text-[#121212] text-sm"
               autoFocus
             />
+            <button className="py-[8px] px-3 text-xs bg-primary text-white rounded-[8px] mr-1 hover:bg-blue-700">
+              Search
+            </button>
           </div>
         </div>
       )}

@@ -6,6 +6,8 @@ import { useResponsive } from "@/hooks/useResponsive";
 import Input from "@/components/Input";
 import VariantCombinationBuilder from "./VariantCombinationBuilder";
 import ColorPicker from "./ColorPicker";
+import { scrollToFirstError } from "@/utils/scrollToError";
+import { useVendorStore } from "@/stores/useVendorStore";
 
 type VariantOption = {
   value: string;
@@ -34,6 +36,28 @@ export default function ProductVariants({ onSaveDraft }: Props) {
   const [useCombinations, setUseCombinations] = useState(false);
   const { isMobileOrTablet } = useResponsive();
   const initialRenderRef = useRef(true);
+  const { vendor } = useVendorStore();
+
+  // Get vendor's currency symbol
+  const getVendorCurrencySymbol = () => {
+    const currency = vendor?.wallet?.currency || 'USD';
+    const currencySymbols: { [key: string]: string } = {
+      'USD': '$',
+      'EUR': '€',
+      'GBP': '£',
+      'NGN': '₦',
+      'ZAR': 'R',
+      'CAD': 'C$',
+      'AUD': 'A$',
+      'JPY': '¥',
+      'CNY': '¥',
+      'KES': 'KSh',
+      'GHS': '₵',
+    };
+    return currencySymbols[currency] || currency;
+  };
+
+  const vendorCurrencySymbol = getVendorCurrencySymbol();
 
   // Initialize variants from context if they exist - only on mount
   useEffect(() => {
@@ -222,7 +246,15 @@ export default function ProductVariants({ onSaveDraft }: Props) {
     });
 
     setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    
+    const isValid = Object.keys(newErrors).length === 0;
+    
+    // Scroll to first error when validation fails
+    if (!isValid) {
+      scrollToFirstError();
+    }
+    
+    return isValid;
   };
 
   // Add validation event listener
@@ -313,6 +345,7 @@ export default function ProductVariants({ onSaveDraft }: Props) {
           onCombinationsChange={handleCombinationsChange}
           initialCombinations={productDetails.combinations}
           initialDimensions={productDetails.variantDimensions}
+          currencySymbol={vendorCurrencySymbol}
         />
       ) : variants.length === 0 ? (
         <div className="text-center py-8 border border-dashed border-gray-300 rounded-md">
@@ -437,7 +470,7 @@ export default function ProductVariants({ onSaveDraft }: Props) {
                       <div className="w-[120px]">
                         <Input
                           id={`variant-${variantIndex}-option-${optionIndex}-price`}
-                          label="Price"
+                          label={`Price (${vendorCurrencySymbol})`}
                           type="number"
                           value={option.price.toString()}
                           onChange={(e) =>
@@ -459,7 +492,7 @@ export default function ProductVariants({ onSaveDraft }: Props) {
                       <div className="w-[120px]">
                         <Input
                           id={`variant-${variantIndex}-option-${optionIndex}-salePrice`}
-                          label="Sale Price"
+                          label={`Sale (${vendorCurrencySymbol})`}
                           type="number"
                           value={option.salePrice?.toString() || ""}
                           onChange={(e) =>

@@ -8,6 +8,7 @@ import { useCategories } from "@/hooks/queries";
 import ICategory from "@/types/category.type";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { useResponsive } from "@/hooks/useResponsive";
+import { scrollToFirstError } from "@/utils/scrollToError";
 
 type Props = {
   onSaveDraft?: () => void;
@@ -176,6 +177,9 @@ const ProductDetailForm = (props: Props) => {
           productDetail[key as keyof typeof productDetail]
         );
       });
+    } else {
+      // Scroll to first error when validation fails
+      scrollToFirstError();
     }
     return Object.keys(newErrors).length === 0;
   };
@@ -270,8 +274,8 @@ const ProductDetailForm = (props: Props) => {
   };
 
   return (
-    <div className="p-2 sm:p-4 border border-gray-400 rounded-lg w-full max-w-full overflow-x-hidden">
-      <h1 className="text-[16px] mb-4">Product details</h1>
+    <div className="p-2 sm:p-4 border border-gray-400 rounded-lg w-full max-w-full overflow-x-hidden font-roboto">
+      <h1 className="text-[16px] mb-4 font-roboto">Product details</h1>
       <form className="flex flex-col gap-y-3">
         <Input
           label="Product Name"

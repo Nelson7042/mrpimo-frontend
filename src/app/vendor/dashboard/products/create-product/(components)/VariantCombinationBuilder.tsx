@@ -21,12 +21,14 @@ interface Props {
   onCombinationsChange: (combinations: Combination[], dimensionNames: string[]) => void;
   initialCombinations?: Combination[];
   initialDimensions?: string[];
+  currencySymbol?: string;
 }
 
 export default function VariantCombinationBuilder({ 
   onCombinationsChange, 
   initialCombinations = [],
-  initialDimensions = []
+  initialDimensions = [],
+  currencySymbol = '$'
 }: Props) {
   const [dimensions, setDimensions] = useState<Dimension[]>([]);
   const [combinations, setCombinations] = useState<Combination[]>(initialCombinations);
@@ -263,7 +265,7 @@ export default function VariantCombinationBuilder({
                   </div>
                   <Input
                     id={`combo-${index}-price`}
-                    label="Price"
+                    label={`Price (${currencySymbol})`}
                     type="number"
                     value={combo.price.toString()}
                     onChange={(e) => updateCombination(index, 'price', e.target.value)}
@@ -271,7 +273,7 @@ export default function VariantCombinationBuilder({
                   />
                   <Input
                     id={`combo-${index}-salePrice`}
-                    label="Sale Price"
+                    label={`Sale (${currencySymbol})`}
                     type="number"
                     value={combo.salePrice?.toString() || ''}
                     onChange={(e) => updateCombination(index, 'salePrice', e.target.value)}

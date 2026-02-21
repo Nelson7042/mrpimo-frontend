@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { ClipLoader } from "react-spinners";
 import ProductPreviewModal from "@/components/ProductPreviewModal";
 import { useState } from "react";
+import { scrollToFirstError } from "@/utils/scrollToError";
 
 type NavigationButtonsProps = {
   onNext?: () => boolean | Promise<boolean>;
@@ -56,9 +57,13 @@ export default function NavigationButtons({
         const result = await Promise.resolve(onNext());
         if (result) {
           setStep(step + 1);
+        } else {
+          // Scroll to first error when validation fails
+          scrollToFirstError();
         }
       } catch (error) {
         console.error("Error in navigation:", error);
+        scrollToFirstError();
       }
     } else if (step < totalSteps) {
       setStep(step + 1);
@@ -105,12 +110,12 @@ export default function NavigationButtons({
     step === (isMobileOrTablet ? mobileTotalSteps : totalSteps);
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4 font-roboto">
       <div className="flex flex-col md:flex-row gap-y-3 gap-x-4 items-center justify-between py-4">
         <button
           onClick={handleBack}
           disabled={isFirstStep}
-          className={`flex items-center justify-center text-sm gap-x-2 border text-[#f6b76f] hover:bg-[#f6b76f] hover:text-white border-secondary w-xs px-4 py-2 rounded-md cursor-pointer transition duration-300 ease-in-out disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`flex items-center justify-center text-sm gap-x-2 border text-[#f6b76f] hover:bg-[#f6b76f] hover:text-white border-secondary w-xs px-4 py-2 rounded-md cursor-pointer transition duration-300 ease-in-out disabled:cursor-not-allowed disabled:opacity-50 font-roboto`}
         >
           <ArrowLeft size={16} className="" />
           <span>Back</span>
@@ -118,14 +123,14 @@ export default function NavigationButtons({
         <button
           onClick={() => onSaveDraft?.()}
           disabled={!productDetails || Object.keys(productDetails).length < 1}
-          className="text-sm w-xs text-primary bg-[#f6b76f] px-4 py-2 rounded-md cursor-pointer transition duration-300 ease-in-out hover:bg-[#f6b76f]/80 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="text-sm w-xs text-primary bg-[#f6b76f] px-4 py-2 rounded-md cursor-pointer transition duration-300 ease-in-out hover:bg-[#f6b76f]/80 disabled:opacity-50 disabled:cursor-not-allowed font-roboto"
         >
           Save to Draft
         </button>
         <button
           onClick={isLastStep ? handlePreviewClick : handleNext}
           disabled={nextDisabled}
-          className={`flex items-center justify-center gap-x-2 border hover:bg-[#2563eb]/80 bg-[#2563eb] w-xs text-gray-50 text-sm px-4 py-2 rounded-md cursor-pointer transition duration-300 ease-in-out ${
+          className={`flex items-center justify-center gap-x-2 border hover:bg-[#002f7a]/80 bg-[#002f7a] w-xs text-gray-50 text-sm px-4 py-2 rounded-md cursor-pointer transition duration-300 ease-in-out font-roboto ${
             nextDisabled ? "opacity-50 cursor-not-allowed" : ""
           }`}
         >

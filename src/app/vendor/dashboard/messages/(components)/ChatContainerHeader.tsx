@@ -20,14 +20,14 @@ const ProductDropdown = ({ currentProduct, currentGroup, onProductSwitch }: {
         className="flex items-center gap-2 hover:bg-blue-50 p-2 rounded-lg transition-colors"
       >
         <Package size={16} className="text-blue-600" />
-        <span className="font-semibold">{currentProduct?.name}</span>
+        <span className="font-roboto font-semibold text-xs md:text-sm">{currentProduct?.name}</span>
         <ChevronDown size={14} className={`transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       
       {isOpen && (
         <div className="absolute top-full left-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 min-w-64">
           <div className="p-2">
-            <div className="text-xs font-medium text-gray-500 mb-2 px-2">Switch Product Chat</div>
+            <div className="font-roboto text-xs font-medium text-gray-500 mb-2 px-2">Switch Product Chat</div>
             {currentGroup.productChats.map((productChat: any) => (
               <button
                 key={productChat.chatId}
@@ -42,8 +42,8 @@ const ProductDropdown = ({ currentProduct, currentGroup, onProductSwitch }: {
                 <div className="flex items-center gap-2">
                   <Package size={14} className="text-blue-600" />
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium text-xs md:text-sm truncate">{productChat.product.name}</p>
-                    <p className="text-xs text-gray-500 truncate">{productChat.lastMessage}</p>
+                    <p className="font-roboto font-medium text-xs md:text-sm truncate">{productChat.product.name}</p>
+                    <p className="font-roboto text-xs text-gray-500 truncate">{productChat.lastMessage}</p>
                   </div>
                 </div>
               </button>
@@ -83,20 +83,20 @@ const ChatContainerHeader = (props: Props) => {
                   </span>
                 </div>
             <div className="flex flex-col gap-y-1 items-start">
-              <h1 className="font-medium text-xs md:text-sm opacity-80">
+              <h1 className="font-roboto font-medium text-xs md:text-sm opacity-80">
                 {props.chat?.senderName}
               </h1>
               <div className="text-xs">
                 {props.chat?.onlineStatus ? (
                   <div className="relative">
-                    <p className="bg-green-100 text-green-800 p-1 px-2 rounded-md">
+                    <p className="font-roboto bg-green-100 text-green-800 p-1 px-2 rounded-md text-xs">
                       online
                     </p>
                     <div className="absolute size-2 rounded-full right-[-1] top-0 bg-green-500 animate-pulse" />
                   </div>
                 ) : (
                   <div className="relative opacit-70">
-                    <p className="bg-red-100 text-red-800 p-1 px-2 rounded-md">
+                    <p className="font-roboto bg-red-100 text-red-800 p-1 px-2 rounded-md text-xs">
                       offline
                     </p>
                     <div className="absolute size-2 rounded-full right-[-1] top-0 bg-red-500" />
@@ -124,7 +124,7 @@ const ChatContainerHeader = (props: Props) => {
             onClick={() =>
               props.setProductModal({ isOpen: true, product: props.product })
             }
-            className="text-blue-600 text-sm hover:underline"
+            className="font-roboto text-blue-600 text-xs md:text-sm hover:underline"
           >
             View Product Details
           </button>

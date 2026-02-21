@@ -18,9 +18,9 @@ type Props = {
 
 const AnalyticsCard = (props: Props) => {
   return (
-    <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full">
+    <div className="bg-white p-4 md:p-6 rounded-lg shadow-sm w-full font-roboto">
       <div className="flex justify-between items-center mb-4 md:mb-8">
-        <p className="font-roboto">{props.title}</p>
+        <p className="font-roboto text-xs">{props.title}</p>
         <svg
           width="20"
           height="16"
@@ -41,7 +41,7 @@ const AnalyticsCard = (props: Props) => {
         </svg>
       </div>
       <div className="flex flex-col gap-y-2">
-        <p className="font-roboto font-medium text-[#211f1f] text-2xl">
+        <p className="font-roboto font-medium text-[#211f1f] text-base">
           {props.currency && props.amount
             ? `${getCurrencySymbol(props.currency)} ${props.amount}`
             : props.value || 0}

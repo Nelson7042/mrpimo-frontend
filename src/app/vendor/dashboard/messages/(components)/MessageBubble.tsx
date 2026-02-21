@@ -36,8 +36,8 @@ const MessageBubble: React.FC<MessageProps> = ({ message, isSent, onMessageVisib
             : 'bg-gray-100 text-gray-800 rounded-tl-none'
         }`}
       >
-        <p className="text-sm">{message.message}</p>
-        <div className={`flex items-center justify-end gap-1 mt-1 text-xs ${isSent ? 'text-white/80' : 'text-gray-500'}`}>
+        <p className="font-roboto text-xs md:text-sm">{message.message}</p>
+        <div className={`font-roboto flex items-center justify-end gap-1 mt-1 text-xs ${isSent ? 'text-white/80' : 'text-gray-500'}`}>
           <span>{formatTime(new Date(message.createdAt))}</span>
           {isSent && (
             message.read ? (

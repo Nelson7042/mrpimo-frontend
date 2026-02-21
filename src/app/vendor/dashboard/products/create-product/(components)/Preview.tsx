@@ -1,64 +1,15 @@
-import React from "react";
-import { ArrowLeft, Heart, Star } from "lucide-react";
+import React, { useState } from "react";
+import { ArrowLeft, Heart, Star, MessageSquare, Package, Tag, Truck } from "lucide-react";
 import Image from "next/image";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { useUserStore } from "@/stores/useUserStore";
 import CategoryInfo from "./CategoryInfo";
 import { useVendorStore } from "@/stores/useVendorStore";
+import { NumericFormat } from "react-number-format";
+import VariantDisplay from "@/components/VariantDisplay";
 
 type Props = {
   onHide: () => void;
-};
-
-const previewData = {
-  product: {
-    name: "Samsung 98 inch Crystal UHD DU9000 4k Tizen OS Smart TV 2424 - Black, 98",
-    description:
-      "Samsung 98 inch Crystal Smart TV delivers stunning, vibrant visuals with smart connectivity, providing an immersive home entertainment experience for you and your family.",
-    seller: {
-      name: "Mr Johnson Ebuka",
-      category: "TV",
-      quantity_left: 12,
-      total_offers: 17,
-      price: "₦1,700,000",
-      sale_method: "Auction",
-      business_kind: "Wholesale",
-      colors_available: ["red", "blue", "black", "white"],
-    },
-    specifications: {
-      key_features: {
-        display: "Crystal UHD Display: Enjoy lifelike colours",
-        picture_enhancer:
-          "Supersize Picture Enhancer: Optimize picture quality",
-        motion_accelerator: "Motion Xcelerator: Smooth motion",
-        sound_enhancement: "Q-Symphony: Sound enhancement",
-        operating_system: "Samsung Tizen OS: Access to Applications",
-      },
-      display_and_audio: {
-        screen_size: "98 inches",
-        resolution: "4K Ultra HD (3840 × 2160)",
-        refresh_rate: "124Hz (Motion Xcelerator)",
-        sound_output: "24W (2 Channel)",
-        adaptive_sound: true,
-      },
-      smart_features: {
-        smart_things_compatible: "SmartThings Compatible: Smart device control",
-        voice_assistant: "Built-in Voice Assistant: Voice command",
-        multi_view: "Multi-View: Two video watch",
-        apple_airplay: "Apple Airplay: Good for streaming",
-        adaptive_sound: true,
-      },
-    },
-    images: [
-      "/images/smart-watch.png",
-      "/images/smart-watch.png",
-      "/images/smart-watch.png",
-      "/images/smart-watch.png",
-      "/images/smart-watch.png",
-      "/images/smart-watch.png",
-    ],
-    brand: "samsung",
-  },
 };
 
 type ImageProps = {
@@ -91,44 +42,38 @@ const ImageComp = ({
 };
 
 const StarRating = ({ rating }: { rating: number }) => {
-  // Calculate the decimal part for the partially filled star
   const decimalPart = rating % 1;
 
   return (
     <div className="flex items-center gap-1 mb-2">
       <div className="flex">
         {Array.from({ length: 5 }).map((_, index) => {
-          // Fully filled stars
           if (index < Math.floor(rating)) {
             return (
               <Star
                 key={index}
-                size={24}
+                size={20}
                 className="fill-yellow-400 text-yellow-400"
               />
             );
-          }
-          // Partially filled star (for the decimal part)
-          else if (index === Math.floor(rating) && decimalPart > 0) {
+          } else if (index === Math.floor(rating) && decimalPart > 0) {
             return (
               <div key={index} className="relative">
-                <Star size={24} className="text-gray-300" />
+                <Star size={20} className="text-gray-300" />
                 <div
                   className="absolute top-0 left-0 overflow-hidden"
                   style={{ width: `${decimalPart * 100}%` }}
                 >
-                  <Star size={24} className="fill-yellow-400 text-yellow-400" />
+                  <Star size={20} className="fill-yellow-400 text-yellow-400" />
                 </div>
               </div>
             );
-          }
-          // Empty stars
-          else {
-            return <Star key={index} size={24} className="text-gray-300" />;
+          } else {
+            return <Star key={index} size={20} className="text-gray-300" />;
           }
         })}
       </div>
-      <span className="text-xs ml-1 text-gray-600">
+      <span className="text-xs ml-1 text-gray-600 font-roboto">
         {rating.toFixed(1)} Seller Star Rating
       </span>
     </div>
@@ -145,428 +90,549 @@ export const ProductInfo = ({
   colour?: string
 }) => {
   return (
-    <div className="flex gap-x-2">
-      <p>{title}:</p>
-      {value && <p className="primary">{value}</p>}
-      {colour && (<div className="border border-gray-300 size-4" style={{ backgroundColor: colour }} />)}
+    <div className="flex gap-x-2 font-roboto">
+      <p className="text-gray-600">{title}:</p>
+      {value && <p className="text-[#002f7a] font-medium">{value}</p>}
+      {colour && (<div className="border border-gray-300 size-4 rounded-full" style={{ backgroundColor: colour }} />)}
     </div>
   );
 };
 
-const Button = ({
-  backgroundColor,
-  text,
-  borderColor,
-  textColor,
-}: {
-  backgroundColor: string;
-  text: string;
-  borderColor: string;
-  textColor: string;
-}) => {
-  return (
-    <button
-      className={`px-4 py-2 rounded-sm text-xs ${backgroundColor} border-${borderColor}-500 text-${textColor}-500 text-${textColor} w-full`}
-    >
-      {text}
-    </button>
-  );
+// Currency symbols mapping
+const CURRENCY_SYMBOLS: { [key: string]: string } = {
+  'USD': '$',
+  'EUR': '€',
+  'GBP': '£',
+  'NGN': '₦',
+  'ZAR': 'R',
+  'CAD': 'C$',
+  'AUD': 'A$',
+  'JPY': '¥',
+  'CNY': '¥'
 };
 
 const Preview = (props: Props) => {
-  const [activeTab, setActiveTab] = React.useState("Specifications");
+  const [activeTab, setActiveTab] = useState("Specifications");
+  const [selectedImage, setSelectedImage] = useState(0);
+  const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string }>({});
 
   const { productDetails } = useProductListing();
   const { vendor } = useVendorStore();
+  const { user } = useUserStore();
+
+  // Get user's currency preference for display
+  const getUserCurrency = () => {
+    const currency = user?.preferences?.currency || 'NGN';
+    return CURRENCY_SYMBOLS[currency] || '₦';
+  };
+
+  // Get the base price based on listing type
+  const getBasePrice = () => {
+    if (productDetails?.pricingInformation?.listingType === 'auction') {
+      return productDetails.pricingInformation.auction?.startPrice || 0;
+    }
+    
+    // For instant sale, check for sale price first
+    if (productDetails?.pricingInformation?.instantSale?.salePrice > 0) {
+      return productDetails.pricingInformation.instantSale.salePrice;
+    }
+    
+    return productDetails?.pricingInformation?.instantSale?.price || 0;
+  };
+
+  // Get original price for discount display
+  const getOriginalPrice = () => {
+    if (productDetails?.pricingInformation?.instantSale?.salePrice > 0) {
+      return productDetails.pricingInformation.instantSale.price;
+    }
+    return null;
+  };
+
+  // Calculate discount percentage
+  const getDiscountPercentage = () => {
+    const originalPrice = getOriginalPrice();
+    const salePrice = productDetails?.pricingInformation?.instantSale?.salePrice;
+    if (originalPrice && salePrice && originalPrice > salePrice) {
+      return Math.round((1 - salePrice / originalPrice) * 100);
+    }
+    return 0;
+  };
+
+  // Get total quantity from variants or store quantity
+  const getTotalQuantity = () => {
+    if (productDetails?.variants?.length > 0) {
+      return productDetails.variants.reduce((sum: number, variant: any) => {
+        return sum + (variant.options?.reduce((optSum: number, option: any) => 
+          optSum + (option.inventory || option.quantity || 0), 0) || 0);
+      }, 0);
+    }
+    return productDetails?.pricingInformation?.storeQuantity || 0;
+  };
+
+  // Get selected variant price
+  const getSelectedVariantPrice = () => {
+    if (productDetails?.variants?.length > 0 && Object.keys(selectedOptions).length > 0) {
+      for (const variant of productDetails.variants) {
+        const selectedOptionId = selectedOptions[variant._id || variant.id || variant.name];
+        if (selectedOptionId) {
+          const option = variant.options?.find((opt: any) => 
+            (opt._id || opt.id || opt.value) === selectedOptionId
+          );
+          if (option?.price) {
+            return option.price;
+          }
+        }
+      }
+    }
+    return getBasePrice();
+  };
+
+  const currentImages = productDetails.images || [];
+  const hasVariants = productDetails?.variants?.length > 0;
+  const isAuction = productDetails?.pricingInformation?.listingType === 'auction';
+  const discountPercentage = getDiscountPercentage();
 
   return (
-    <div className="bg-white rounded-xl pb-4">
+    <div className="bg-white rounded-xl pb-4 font-roboto">
+      {/* Header */}
       <div className="p-4 flex justify-between items-center border-b border-gray-300">
         <div className="flex gap-x-2 items-center text-gray-500">
           <ArrowLeft
             size={16}
-            className="cursor-pointer hover:text-red-800"
+            className="cursor-pointer hover:text-[#002f7a]"
             onClick={props.onHide}
           />
-          <p className="text-sm">Preview product</p>
+          <p className="text-sm font-roboto">Preview product</p>
         </div>
+        <span className="text-xs text-gray-400 font-roboto">This is how buyers will see your product</span>
       </div>
-      {/* Preview */}
-      <div className="px-2 py-0.5 pb-4 flex flex-col w-full gap-y-0.25">
-        <div className="grid grid-cols-2 lg:gap-x-10 xl:gap-15 border border-gray-300 p-4 pb-15 gap-y-5 ">
-          <div className="col-span-2 lg:col-span-1 ">
-            <div className="flex-col">
-              {productDetails.images && productDetails.images.length > 0 && (
-                <ImageComp
-                  containerStyle="h-auto w-full bg-white border border-gray-100 p-2 flex items-center justify-center shadow-md"
-                  height={300}
-                  width={300}
-                  imageStyle="object-contain w-full h-auto max-h-[300px]"
-                  imageSrc={productDetails.images[0]}
+
+      {/* Main Preview Content */}
+      <div className="px-4 py-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-10 border border-gray-200 rounded-lg p-4 lg:p-6">
+          {/* Left Column - Images */}
+          <div className="space-y-4">
+            {/* Main Image */}
+            <div className="relative bg-gradient-to-br from-gray-50 to-gray-100 rounded-xl h-64 md:h-80 lg:h-96 flex items-center justify-center overflow-hidden border border-gray-200">
+              {currentImages.length > 0 ? (
+                <Image
+                  src={currentImages[selectedImage]}
+                  alt={productDetails?.productName || "Product"}
+                  width={400}
+                  height={400}
+                  className="max-h-full max-w-full object-contain p-4"
+                  style={{ width: 'auto', height: 'auto' }}
+                />
+              ) : (
+                <div className="text-gray-400 font-roboto">No image available</div>
+              )}
+              
+              {/* Discount Badge */}
+              {discountPercentage > 0 && (
+                <div className="absolute top-3 left-3 bg-green-500 text-white px-2 py-1 rounded text-xs font-medium">
+                  -{discountPercentage}% OFF
+                </div>
+              )}
+              
+              {/* Wishlist Icon */}
+              <div className="absolute top-3 right-3 p-2 bg-white rounded-full shadow-md">
+                <Heart className="w-5 h-5 text-gray-400" />
+              </div>
+            </div>
+
+            {/* Thumbnail Images */}
+            {currentImages.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-2">
+                {currentImages.map((image: string, index: number) => (
+                  <button
+                    key={index}
+                    onClick={() => setSelectedImage(index)}
+                    className={`flex-shrink-0 w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden border-2 transition-all duration-200 ${
+                      selectedImage === index
+                        ? "border-[#002f7a] ring-2 ring-blue-200"
+                        : "border-gray-200 hover:border-gray-300"
+                    }`}
+                  >
+                    <Image
+                      src={image}
+                      alt={`Thumbnail ${index + 1}`}
+                      width={80}
+                      height={80}
+                      className="w-full h-full object-cover"
+                    />
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Product Details */}
+          <div className="space-y-4">
+            {/* Rating */}
+            <StarRating rating={4.5} />
+
+            {/* Product Name */}
+            <h1 className="text-xl md:text-2xl font-bold text-gray-900 font-roboto">
+              {productDetails?.productName || "Product Name"}
+            </h1>
+
+            {/* Description */}
+            <p className="text-sm text-gray-600 leading-relaxed font-roboto">
+              {productDetails?.description || "No description provided"}
+            </p>
+
+            {/* Product Info Grid */}
+            <div className="grid grid-cols-2 gap-3 text-sm border-b border-gray-200 pb-4">
+              <ProductInfo
+                title="Seller"
+                value={vendor?.businessInfo?.name || "Not specified"}
+              />
+              <ProductInfo
+                title="Brand"
+                value={productDetails?.brandName || "Not specified"}
+              />
+              <ProductInfo
+                title="Condition"
+                value={productDetails?.condition || "Not specified"}
+              />
+              <ProductInfo
+                title="Quantity"
+                value={getTotalQuantity()}
+              />
+              {productDetails?.color && (
+                <ProductInfo
+                  title="Color"
+                  colour={productDetails.color}
                 />
               )}
-              <div className="flex flex-wrap mt-1"></div>
-              <div className="flex flex-wrap mt-1 gap-2">
-                {productDetails.images &&
-                  productDetails.images.length > 0 &&
-                  productDetails.images.map((image: string, index: number) => (
-                    <div key={index}>
-                      {index > 0 && (
-                        <ImageComp
-                          containerStyle="h-auto w-24 bg-white border border-gray-300 p-2 flex items-center justify-center"
-                          height={60}
-                          width={60}
-                          imageStyle="object-contain w-full h-auto max-h-[80px]"
-                          imageSrc={image}
-                          key={index}
-                        />
-                      )}
-                    </div>
-                  ))}
+              <div className="col-span-2">
+                <CategoryInfo 
+                  subCategory={
+                    productDetails?.subCategory5 || 
+                    productDetails?.subCategory4 || 
+                    productDetails?.subCategory3 || 
+                    productDetails?.subCategory2 || 
+                    productDetails?.subCategory
+                  } 
+                />
               </div>
             </div>
-          </div>
-          <div className="col-span-2 lg:col-span-1">
-            <StarRating rating={4.5} />
-            <div className="mt-5">
-              <h1 className="text-xl font-semibold">
-                {productDetails?.productName}
-              </h1>
-              <p className="text-xs font-light mt-4">
-                {productDetails?.description}
-              </p>
-              <div className="flex flex-col gap-y-4 mt-4">
-                <div className="flex text-xs justify-between items-center">
-                  <ProductInfo
-                    title={"Seller"}
-                    value={vendor?.businessInfo?.name || "Not specified"}
-                  />
-                  <ProductInfo
-                    title={"Brand"}
-                    value={productDetails?.brandName || "Not specified"}
-                  />
-                </div>
-                <div className="flex text-xs justify-between items-center">
-                  <ProductInfo
-                    title={"Color"}
-                    colour={productDetails?.color || ""}
-                  />
-                  <ProductInfo
-                    title={"Condition"}
-                    value={productDetails?.condition || "Not specified"}
-                  />
-                </div>
-                <div className="flex text-xs justify-between items-center">
-                  <CategoryInfo subCategory={productDetails?.subCategory5 || productDetails?.subCategory4 || productDetails?.subCategory3 || productDetails?.subCategory2 || productDetails?.subCategory} />
-                </div>
-                <div className="flex text-xs justify-between items-center">
-                  {productDetails?.pricingInformation?.instantSale && (
-                    <div className="flex flex-col">
-                      {productDetails.pricingInformation.instantSale.salePrice > 0 ? (
-                        <>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <p className="text-2xl text-primary">
-                              ₦{productDetails.pricingInformation.instantSale.salePrice}
-                            </p>
-                            <p className="text-lg line-through text-gray-500">
-                              ₦{productDetails.pricingInformation.instantSale.price}
-                            </p>
-                            {productDetails.pricingInformation.instantSale.price > 0 && (
-                              <span className="bg-green-100 text-green-800 text-xs px-2 py-0.5 rounded">
-                                {Math.round((1 - productDetails.pricingInformation.instantSale.salePrice / 
-                                  productDetails.pricingInformation.instantSale.price) * 100)}% OFF
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500">Sale price</p>
-                        </>
-                      ) : productDetails.pricingInformation.instantSale.price > 0 && (
-                        <>
-                          <p className="text-2xl">
-                            ₦{productDetails.pricingInformation.instantSale.price}
-                          </p>
-                          <p className="text-xs text-gray-500">Buy now</p>
-                        </>
-                      )}
-                    </div>
-                  )}
-                  {productDetails?.pricingInformation?.auction?.startPrice > 0 && (
-                    <div className="flex flex-col">
-                      <p className="text-2xl">
-                        ₦{productDetails.pricingInformation.auction.startPrice}
-                      </p>
-                      <p className="text-xs text-gray-500">Starting bid</p>
-                    </div>
-                  )}
-                  <div className="bg-orange-50 flex justify-center items-center px-2 py-1 rounded-lg">
-                    <Heart size={28} className="text-orange-400" />
-                  </div>
-                </div>
-                <div className="mt-5">
-                  <div className="grid grid-cols-12 gap-2">
-                    <div className="col-span-12 md:col-span-3">
-                      <button
-                        className={`px-4 py-2 rounded-sm text-xs border border-[#F6B76F] text-[#F6B76F] w-full`}
-                      >
-                        Message
-                      </button>
-                    </div>
-                    <div className="col-span-12 md:col-span-6">
-                      <Button
-                        backgroundColor="bg-primary"
-                        text="Buy Now"
-                        textColor="white"
-                        borderColor=""
+
+            {/* Variants Section */}
+            {hasVariants && !isAuction && (
+              <div className="border-b border-gray-200 pb-4">
+                <VariantDisplay
+                  variants={productDetails.variants}
+                  selectedOptions={selectedOptions}
+                  onOptionChange={(variantId, optionId) => {
+                    setSelectedOptions(prev => ({
+                      ...prev,
+                      [variantId]: optionId
+                    }));
+                  }}
+                  currencySymbol={getUserCurrency()}
+                  priceInfo={{
+                    exchangeRate: 1,
+                    currencySymbol: getUserCurrency()
+                  }}
+                />
+              </div>
+            )}
+
+            {/* Price Section */}
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex flex-col">
+                <div className="flex items-center gap-3">
+                  <span className="text-2xl md:text-3xl font-bold text-gray-900">
+                    <NumericFormat
+                      value={getSelectedVariantPrice()}
+                      displayType="text"
+                      thousandSeparator={true}
+                      prefix={getUserCurrency()}
+                      decimalScale={2}
+                      fixedDecimalScale={true}
+                    />
+                  </span>
+                  {getOriginalPrice() && (
+                    <span className="text-lg text-gray-400 line-through">
+                      <NumericFormat
+                        value={getOriginalPrice()}
+                        displayType="text"
+                        thousandSeparator={true}
+                        prefix={getUserCurrency()}
+                        decimalScale={2}
+                        fixedDecimalScale={true}
                       />
-                    </div>
-                    <div className="col-span-12 md:col-span-3">
-                      <Button
-                        backgroundColor="bg-secondary"
-                        text="Add To Cart"
-                        textColor="black"
-                        borderColor=""
-                      />
-                    </div>
-                  </div>
+                    </span>
+                  )}
+                </div>
+                <span className="text-xs text-gray-500 font-roboto">
+                  {isAuction ? 'Starting bid' : 'Buy now price'}
+                </span>
+              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="bg-orange-50 flex justify-center items-center px-3 py-2 rounded-lg cursor-pointer hover:bg-orange-100 transition-colors">
+                  <Heart size={24} className="text-orange-400" />
+                </div>
+                <div className="flex items-center gap-2 text-gray-500 cursor-pointer hover:text-[#002f7a] transition-colors">
+                  <MessageSquare size={20} className="text-orange-300" />
+                  <span className="text-sm font-roboto">Message</span>
                 </div>
               </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="grid grid-cols-12 gap-2 pt-2">
+              <button className="col-span-12 md:col-span-3 px-4 py-3 rounded-lg text-sm border-2 border-[#F6B76F] text-[#F6B76F] hover:bg-[#F6B76F] hover:text-white transition-colors font-roboto font-medium">
+                Message
+              </button>
+              <button className="col-span-12 md:col-span-6 px-4 py-3 rounded-lg text-sm bg-[#002f7a] text-white hover:bg-[#001f5a] transition-colors font-roboto font-medium">
+                {isAuction ? 'Place Bid' : 'Buy Now'}
+              </button>
+              <button className="col-span-12 md:col-span-3 px-4 py-3 rounded-lg text-sm bg-[#F6B76F] text-white hover:bg-[#e5a65e] transition-colors font-roboto font-medium">
+                Add To Cart
+              </button>
             </div>
           </div>
         </div>
-        <div className="border border-gray-300 mt-0.5">
-          <div className="flex justify-center items-center gap-x-2 border-b border-gray-300 py-2 text-sm text-gray-400">
-            <button
-              onClick={() => setActiveTab("Description")}
-              className={`px-2 py-1 ${
-                activeTab === "Description"
-                  ? "border-b-2 border-[#F6B76F] text-[#211F1F]"
-                  : ""
-              }`}
-            >
-              Description
-            </button>
-            <button
-              onClick={() => setActiveTab("Specifications")}
-              className={`px-2 py-1 ${
-                activeTab === "Specifications"
-                  ? "border-b-2 border-[#F6B76F] text-[#211F1F]"
-                  : ""
-              }`}
-            >
-              Specifications
-            </button>
-            <button
-              onClick={() => setActiveTab("Additional Information")}
-              className={`px-2 py-1 ${
-                activeTab === "Additional Information"
-                  ? "border-b-2 border-[#F6B76F] text-[#211F1F]"
-                  : ""
-              }`}
-            >
-              Additional Information
-            </button>
+
+        {/* Tabs Section */}
+        <div className="border border-gray-200 rounded-lg mt-4">
+          {/* Tab Headers */}
+          <div className="flex justify-center items-center gap-x-4 border-b border-gray-200 py-3 text-sm text-gray-400 overflow-x-auto">
+            {['Description', 'Specifications', 'Variants', 'Additional Information'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab)}
+                className={`px-3 py-1 whitespace-nowrap font-roboto transition-colors ${
+                  activeTab === tab
+                    ? "border-b-2 border-[#F6B76F] text-gray-900 font-medium"
+                    : "hover:text-gray-600"
+                }`}
+              >
+                {tab}
+              </button>
+            ))}
           </div>
-          <div className="grid grid-cols-12 mt-4 p-4 gap-2">
+
+          {/* Tab Content */}
+          <div className="p-4 md:p-6">
             {activeTab === "Description" && (
-              <div className="col-span-12 p-2">
-                <p className="text-sm whitespace-pre-line">
-                  {productDetails?.description}
+              <div className="space-y-4">
+                <p className="text-sm whitespace-pre-line text-gray-700 font-roboto leading-relaxed">
+                  {productDetails?.description || "No description provided"}
                 </p>
                 {productDetails?.conditionDescription && (
-                  <>
-                    <h4 className="text-sm font-semibold mt-4">
+                  <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+                    <h4 className="text-sm font-semibold text-gray-900 font-roboto flex items-center gap-2">
+                      <Tag size={16} className="text-[#002f7a]" />
                       Condition Description
                     </h4>
-                    <p className="text-sm whitespace-pre-line">
+                    <p className="text-sm text-gray-600 mt-2 font-roboto">
                       {productDetails.conditionDescription}
                     </p>
-                  </>
+                  </div>
                 )}
               </div>
             )}
 
             {activeTab === "Specifications" && (
-              <>
-                <div className="col-span-12 md:col-span-6 lg:col-span-4 p-2 md:[&:not(:nth-child(2n))]:border-r lg:[&:not(:nth-child(3n))]:border-r border-gray-200">
-                  <h4 className="text-sm font-semibold">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {/* Product Specifications */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900 font-roboto flex items-center gap-2">
+                    <Package size={16} className="text-[#002f7a]" />
                     Product Specifications
                   </h4>
-                  <>
-                    {productDetails?.productSpecifications &&
-                      Object.entries(productDetails.productSpecifications).map(
+                  {productDetails?.productSpecifications &&
+                  Object.keys(productDetails.productSpecifications).length > 0 ? (
+                    <div className="space-y-2">
+                      {Object.entries(productDetails.productSpecifications).map(
                         ([key, value], index) => (
-                          <div key={index} className="flex gap-x-2 mt-2">
-                            <p className="text-xs text-gray-500">
-                              <span className="text-gray-800 font-semibold">
-                                {key}:
-                              </span>{" "}
-                              <span className="text-[10px] ml-2">
-                                {String(value)}
-                              </span>
-                            </p>
+                          <div key={index} className="flex justify-between text-sm py-1 border-b border-gray-100">
+                            <span className="text-gray-600 font-roboto">{key}</span>
+                            <span className="text-gray-900 font-medium font-roboto">{String(value)}</span>
                           </div>
                         )
                       )}
-                    {(!productDetails?.productSpecifications ||
-                      Object.keys(productDetails.productSpecifications)
-                        .length === 0) && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        No specifications added
-                      </p>
-                    )}
-                  </>
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 font-roboto">No specifications added</p>
+                  )}
                 </div>
-                <div className="col-span-12 md:col-span-6 lg:col-span-4 p-2 md:[&:not(:nth-child(2n))]:border-r lg:[&:not(:nth-child(3n))]:border-r border-gray-200">
-                  <h4 className="text-sm font-semibold">
+
+                {/* Additional Specifications */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900 font-roboto">
                     Additional Specifications
                   </h4>
-                  <>
-                    {productDetails?.additionalSpecifications &&
-                      Object.entries(
-                        productDetails.additionalSpecifications
-                      ).map(([key, value], index) => (
-                        <div key={index} className="flex gap-x-2 mt-2">
-                          <p className="text-xs text-gray-500">
-                            <span className="text-gray-800 font-semibold ">
-                              {key}:
-                            </span>{" "}
-                            <span className="text-[10px] ml-2">
-                              {String(value)}
-                            </span>
-                          </p>
-                        </div>
-                      ))}
-                    {(!productDetails?.additionalSpecifications ||
-                      Object.keys(productDetails.additionalSpecifications)
-                        .length === 0) && (
-                      <p className="text-xs text-gray-500 mt-2">
-                        No additional specifications added
-                      </p>
-                    )}
-                  </>
-                </div>
-                <div className="col-span-12 md:col-span-6 lg:col-span-4 p-2">
-                  <h4 className="text-sm font-semibold">Variants</h4>
-                  <>
-                    {productDetails?.variants &&
-                    productDetails.variants.length > 0 ? (
-                      productDetails.variants.map(
-                        (variant: any, index: number) => (
-                          <div key={index} className="mt-2">
-                            <p className="text-xs font-semibold">
-                              {variant.name}
-                            </p>
-                            <div className="ml-2">
-                              {variant.options.map(
-                                (option: any, optIndex: number) => (
-                                  <div
-                                    key={optIndex}
-                                    className="text-[10px] text-gray-500 mt-1"
-                                  >
-                                    {option.value}: ₦{option.price} (Stock:{" "}
-                                    {option.inventory})
-                                  </div>
-                                )
-                              )}
-                            </div>
+                  {productDetails?.additionalSpecifications &&
+                  Object.keys(productDetails.additionalSpecifications).length > 0 ? (
+                    <div className="space-y-2">
+                      {Object.entries(productDetails.additionalSpecifications).map(
+                        ([key, value], index) => (
+                          <div key={index} className="flex justify-between text-sm py-1 border-b border-gray-100">
+                            <span className="text-gray-600 font-roboto">{key}</span>
+                            <span className="text-gray-900 font-medium font-roboto">{String(value)}</span>
                           </div>
                         )
-                      )
-                    ) : (
-                      <p className="text-xs text-gray-500 mt-2">
-                        No variants specified
-                      </p>
-                    )}
-                  </>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 font-roboto">No additional specifications added</p>
+                  )}
                 </div>
-              </>
+
+                {/* Quick Info */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900 font-roboto">
+                    Quick Info
+                  </h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm py-1 border-b border-gray-100">
+                      <span className="text-gray-600 font-roboto">Brand</span>
+                      <span className="text-gray-900 font-medium font-roboto">{productDetails?.brandName || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm py-1 border-b border-gray-100">
+                      <span className="text-gray-600 font-roboto">Condition</span>
+                      <span className="text-gray-900 font-medium font-roboto">{productDetails?.condition || 'N/A'}</span>
+                    </div>
+                    <div className="flex justify-between text-sm py-1 border-b border-gray-100">
+                      <span className="text-gray-600 font-roboto">Stock</span>
+                      <span className="text-gray-900 font-medium font-roboto">{getTotalQuantity()} units</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === "Variants" && (
+              <div className="space-y-4">
+                <h4 className="text-sm font-semibold text-gray-900 font-roboto">
+                  Available Variants
+                </h4>
+                {hasVariants ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    {productDetails.variants.map((variant: any, index: number) => (
+                      <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                        <h5 className="text-sm font-semibold text-[#002f7a] font-roboto mb-3">
+                          {variant.name}
+                        </h5>
+                        <div className="space-y-2">
+                          {variant.options?.map((option: any, optIndex: number) => (
+                            <div
+                              key={optIndex}
+                              className="flex justify-between items-center text-sm py-2 px-3 bg-white rounded border border-gray-100"
+                            >
+                              <div className="flex items-center gap-2">
+                                {option.value?.startsWith('#') ? (
+                                  <div 
+                                    className="w-4 h-4 rounded-full border border-gray-300" 
+                                    style={{ backgroundColor: option.value }}
+                                  />
+                                ) : null}
+                                <span className="text-gray-700 font-roboto">{option.value}</span>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-medium text-gray-900">
+                                  <NumericFormat
+                                    value={option.price || 0}
+                                    displayType="text"
+                                    thousandSeparator={true}
+                                    prefix={getUserCurrency()}
+                                    decimalScale={2}
+                                    fixedDecimalScale={true}
+                                  />
+                                </div>
+                                <div className="text-xs text-gray-500 font-roboto">
+                                  Stock: {option.inventory || option.quantity || 0}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-sm text-gray-500 font-roboto">No variants specified for this product</p>
+                )}
+              </div>
             )}
 
             {activeTab === "Additional Information" && (
-              <div className="col-span-12 p-2">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <h4 className="text-sm font-semibold">Shipping Details</h4>
-                    {productDetails?.shippingDetails ? (
-                      <div className="mt-2">
-                        {Object.entries(productDetails.shippingDetails).map(
-                          ([key, value], index) => (
-                            <div key={index} className="flex gap-x-2 mt-1">
-                              <p className="text-xs text-gray-500">
-                                <span className="text-gray-800 font-semibold">
-                                  {key}:
-                                </span>{" "}
-                                <span className="text-[10px] ml-2">
-                                  {typeof value === "object" &&
-                                  value !== null ? (
-                                    <div className="ml-2">
-                                      {Object.entries(value).map(
-                                        ([subKey, subValue], subIndex) =>
-                                          subValue !== null &&
-                                          subValue !== undefined &&
-                                          subValue !== "" && (
-                                            <div
-                                              key={subIndex}
-                                              className="text-[10px] text-gray-500"
-                                            >
-                                              {subKey}: {String(subValue)}
-                                            </div>
-                                          )
-                                      )}
-                                    </div>
-                                  ) : (
-                                    String(value)
-                                  )}
-                                </span>
-                              </p>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-500 mt-2">
-                        No shipping details added
-                      </p>
-                    )}
-                  </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Shipping Details */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900 font-roboto flex items-center gap-2">
+                    <Truck size={16} className="text-[#002f7a]" />
+                    Shipping Details
+                  </h4>
+                  {productDetails?.shippingDetails ? (
+                    <div className="space-y-2 bg-gray-50 rounded-lg p-4">
+                      {Object.entries(productDetails.shippingDetails).map(
+                        ([key, value], index) => (
+                          <div key={index} className="text-sm">
+                            <span className="text-gray-600 font-roboto font-medium">{key}: </span>
+                            {typeof value === "object" && value !== null ? (
+                              <div className="ml-4 mt-1 space-y-1">
+                                {Object.entries(value).map(
+                                  ([subKey, subValue], subIndex) =>
+                                    subValue !== null &&
+                                    subValue !== undefined &&
+                                    subValue !== "" && (
+                                      <div key={subIndex} className="text-xs text-gray-500 font-roboto">
+                                        {subKey}: {String(subValue)}
+                                      </div>
+                                    )
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-gray-900 font-roboto">{String(value)}</span>
+                            )}
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 font-roboto">No shipping details added</p>
+                  )}
+                </div>
 
-                  <div>
-                    <h4 className="text-sm font-semibold">SEO Information</h4>
-                    {productDetails?.seoSettings ? (
-                      <div className="mt-2">
-                        {Object.entries(productDetails.seoSettings).map(
-                          ([key, value], index) => (
-                            <div key={index} className="flex gap-x-2 mt-1">
-                              <p className="text-xs text-gray-500">
-                                <span className="text-gray-800 font-semibold">
-                                  {key}:
-                                </span>{" "}
-                                <span className="text-[10px] ml-2">
-                                  {String(value)}
-                                </span>
-                              </p>
-                            </div>
-                          )
-                        )}
-                      </div>
-                    ) : (
-                      <p className="text-xs text-gray-500 mt-2">
-                        No SEO information added
-                      </p>
-                    )}
-                  </div>
+                {/* SEO Information */}
+                <div className="space-y-3">
+                  <h4 className="text-sm font-semibold text-gray-900 font-roboto">
+                    SEO Information
+                  </h4>
+                  {productDetails?.seoSettings ? (
+                    <div className="space-y-2 bg-gray-50 rounded-lg p-4">
+                      {Object.entries(productDetails.seoSettings).map(
+                        ([key, value], index) => (
+                          <div key={index} className="text-sm py-1">
+                            <span className="text-gray-600 font-roboto font-medium">{key}: </span>
+                            <span className="text-gray-900 font-roboto">{String(value)}</span>
+                          </div>
+                        )
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-gray-500 font-roboto">No SEO information added</p>
+                  )}
                 </div>
               </div>
             )}
           </div>
         </div>
       </div>
-      <div className="text-center md:text-end w-full">
+
+      {/* Footer */}
+      <div className="text-center md:text-end w-full px-4">
         <button
-          className="w-1/2 border border-secondary p-1 text-sm text-[#F6B76F] mx-2 hover:cursor-pointer hover:text-gray-50 hover:bg-[#F6B76F] "
+          className="w-full md:w-auto px-8 border-2 border-[#002f7a] p-2 text-sm text-[#002f7a] rounded-lg hover:cursor-pointer hover:text-white hover:bg-[#002f7a] transition-colors font-roboto font-medium"
           onClick={props.onHide}
         >
-          Back
+          Back to Edit
         </button>
       </div>
     </div>

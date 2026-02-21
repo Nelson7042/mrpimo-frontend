@@ -1,4 +1,4 @@
-import { useMutation, UseMutationResult } from "@tanstack/react-query";
+import { useMutation, UseMutationResult, useQueryClient } from "@tanstack/react-query";
 import { toast } from "react-toastify";
 import { User } from "@/types/user.type";
 import { toastConfigError } from "@/app/config/toast.config";
@@ -455,8 +455,12 @@ const saveDraft = async (draft: any): Promise<{ message: string }> => {
 };
 
 export const useSaveDraft = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: saveDraft,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+    },
   });
 };
 
@@ -479,11 +483,12 @@ export const useDeleteDraft = (): UseMutationResult<
   Error,               
   string               
 > => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deleteDraft,
-    onSettled: () => {
-      console.log("Delete draft mutation settled");
-    }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+    },
   });
 };
 
@@ -501,8 +506,13 @@ const toggleHelpful = async ({ productId, reviewId }: { productId: string; revie
 };
 
 export const useToggleHelpful = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: toggleHelpful,
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({ queryKey: ['vendorReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['product', productId] });
+    },
   });
 };
 
@@ -534,8 +544,14 @@ const addVendorResponse = async ({
 };
 
 export const useAddVendorResponse = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: addVendorResponse,
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({ queryKey: ['vendorReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorReviewAnalytics'] });
+      queryClient.invalidateQueries({ queryKey: ['product', productId] });
+    },
   });
 };
 
@@ -543,12 +559,12 @@ export const useAddVendorResponse = () => {
 const makeBid = async (
   userId: string,
   productId: string,
-  maxBid: number
-): Promise<{ message: string; currentAmountUsd: number; userBidUsd: number }> => {
+  amount: number
+): Promise<{ message: string; bidAmountUSD: number; isWinning: boolean; success: boolean }> => {
   const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}/bids`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, maxBid }),
+    body: JSON.stringify({ userId, amount }),
   });
 
   if (!response.ok) {
@@ -561,9 +577,14 @@ const makeBid = async (
 };
 
 export const useMakeBid = () => {
+  const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, userId, maxBid }: { productId: string; userId: string; maxBid: number }) =>
-      makeBid(userId, productId, maxBid),
+    mutationFn: ({ productId, userId, amount }: { productId: string; userId: string; amount: number }) =>
+      makeBid(userId, productId, amount),
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({ queryKey: ['auctionProduct', productId] });
+      queryClient.invalidateQueries({ queryKey: ['productsOnAuction'] });
+    },
   });
 };
 
@@ -586,12 +607,21 @@ const updateDraft = async ({ id, draft }: { id: string; draft: any }): Promise<{
 };
 
 export const useUpdateDraft = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: updateDraft,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['drafts'] });
+    },
   });
 };
 
 // Create product mutation
+interface CreateProductError extends Error {
+  fieldErrors?: Record<string, string>;
+  code?: string;
+}
+
 const createProduct = async (productData: any): Promise<{ product: any; message: string }> => {
   const response = await fetchWithAuth(
     `${API_BASE_URL}/products`,
@@ -603,15 +633,44 @@ const createProduct = async (productData: any): Promise<{ product: any; message:
 
   if (!response.ok) {
     const errorData = await response.json();
-    throw new Error(errorData.message || "Failed to create product");
+    // Create error with additional properties for field-specific errors
+    const error = new Error(errorData.message || errorData.error || "Failed to create product") as CreateProductError;
+    error.fieldErrors = errorData.errors || errorData.details;
+    error.code = errorData.code;
+    throw error;
   }
 
   return response.json();
 };
 
 export const useCreateProduct = () => {
+  const queryClient = useQueryClient();
+  
   return useMutation({
     mutationFn: createProduct,
+    onSuccess: () => {
+      // Invalidate product list queries
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['bestDeals'] });
+      queryClient.invalidateQueries({ queryKey: ['productsByCategory'] });
+      queryClient.invalidateQueries({ queryKey: ['productsOnAuction'] });
+      // Invalidate vendor analytics queries
+      queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
+    },
+    onError: (error: CreateProductError) => {
+      // Display backend error message in toast notification
+      const errorMessage = error.message || 'Failed to create product';
+      toast.error(errorMessage, toastConfigError);
+      
+      // Log field-specific errors for debugging
+      if (error.fieldErrors) {
+        console.error('Field validation errors:', error.fieldErrors);
+      }
+    },
   });
 };
 
@@ -641,8 +700,12 @@ const createAdvertisement = async (data: {
 };
 
 export const useCreateAdvertisement = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createAdvertisement,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['advertisements'] });
+    },
   });
 };
 
@@ -872,8 +935,13 @@ const createBuyNowOrder = async (data: {
 };
 
 export const useCreateBuyNowOrder = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createBuyNowOrder,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendorOrders'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
+    },
   });
 };
 

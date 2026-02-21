@@ -26,13 +26,13 @@ const SalesOverview = (props: Props) => {
   );
 
   return (
-    <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm font-light">
+    <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm font-roboto">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-3">
-        <h1 className="font-semibold text-lg text-gray-600">
+        <h1 className="font-roboto font-semibold text-base text-gray-600">
           Sales Overview
         </h1>
         <select
-          className="border rounded-md px-2 md:px-3 py-1 text-sm font-light bg-gray-100 text-gray-600 outline-none w-full sm:w-auto cursor-pointer disabled:opacity-50"
+          className="font-roboto border rounded-md px-2 md:px-3 py-1 text-xs bg-gray-100 text-gray-600 outline-none w-full sm:w-auto cursor-pointer disabled:opacity-50"
           value={timeRange}
           onChange={(e) => setTimeRange(e.target.value)}
           disabled={isLoading}
@@ -50,23 +50,23 @@ const SalesOverview = (props: Props) => {
           </div>
         )}
         <div className="bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Total Sales</p>
+          <p className="font-roboto text-xs text-gray-500">Total Sales</p>
           {data?.analytics && (
-            <p className="text-xl font-semibold">
+            <p className="font-roboto text-base font-semibold">
               {getCurrencySymbol(data?.analytics?.currency)}
               {data?.analytics?.totalSales?.toFixed(2) || "0.00"}
             </p>
           )}
         </div>
         <div className="bg-green-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500">Orders</p>
-          <p className="text-xl font-semibold">
+          <p className="font-roboto text-xs text-gray-500">Orders</p>
+          <p className="font-roboto text-base font-semibold">
             {data?.analytics?.totalOrders || 0}
           </p>
         </div>
         <div className="bg-purple-50 p-4 rounded-lg">
-          <p className="text-sm text-gray-500 ">Avg. Order Value</p>
-          <p className="text-xl font-semibold">
+          <p className="font-roboto text-xs text-gray-500">Avg. Order Value</p>
+          <p className="font-roboto text-base font-semibold">
             {data?.analytics?.averageOrdersPerDay}
           </p>
         </div>
@@ -102,10 +102,10 @@ const SalesOverview = (props: Props) => {
         <div className="text-center py-6 md:py-10 px-4 animate-fade-in">
           {!isLoading && (
             <>
-              <p className="text-base md:text-lg font-semibold text-gray-700 mb-1">
+              <p className="font-roboto text-sm font-semibold text-gray-700 mb-1">
                 No sales made yet
               </p>
-              <p className="text-sm text-gray-500">
+              <p className="font-roboto text-xs text-gray-500">
                 Keep an eye out—we’ll notify you when things get moving!
               </p>
             </>

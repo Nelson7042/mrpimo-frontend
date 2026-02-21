@@ -88,13 +88,13 @@ const SalesActivity = () => {
   }, [socket]);
 
   return (
-    <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm">
+    <div className="bg-white px-4 md:px-6 py-4 rounded-lg shadow-sm font-roboto">
       <div className="flex justify-between items-center ">
-        <h1 className="font-bold text-lg text-gray-600">
+        <h1 className="font-roboto font-bold text-base text-gray-600">
           Sales Activity
         </h1>
         {activityFeed && activityFeed.length > 0 && (
-          <button className="flex cursor-pointer text-blue-600 text-sm items-center ">
+          <button className="font-roboto flex cursor-pointer text-blue-600 text-xs items-center ">
             <div>View All</div>
             <ArrowRight size={16} className="ml-1" />
           </button>
@@ -109,11 +109,11 @@ const SalesActivity = () => {
             >
               <ActivityIcon type={activity.case} />
               <div>
-                <h3 className="font-medium text-sm">{activity.title}</h3>
-                <p className="text-gray-500 text-xs mt-1">
+                <h3 className="font-roboto font-medium text-xs">{activity.title}</h3>
+                <p className="font-roboto text-gray-500 text-xs mt-1">
                   {activity.message}
                 </p>
-                <p className="text-gray-400 text-xs whitespace-nowrap">
+                <p className="font-roboto text-gray-400 text-xs whitespace-nowrap">
                   {formatDistanceToNow(new Date(activity?.createdAt!), {
                     addSuffix: true,
                   })}
@@ -124,10 +124,10 @@ const SalesActivity = () => {
         </div>
       ) : (
         <div className="text-center py-10 px-4 animate-fade-in">
-          <p className="text-lg font-semibold text-gray-700 mb-1">
+          <p className="font-roboto text-sm font-semibold text-gray-700 mb-1">
             No sales made yet
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="font-roboto text-xs text-gray-500">
             Keep an eye out—we’ll notify you when things get moving!
           </p>
         </div>

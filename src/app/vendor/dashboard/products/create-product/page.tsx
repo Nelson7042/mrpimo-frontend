@@ -27,6 +27,9 @@ import Drafts from "./(components)/Drafts";
 import { useSaveDraft } from "@/hooks/mutations";
 import ProductVariants from "./(components)/ProductVariants";
 import FinalSubmission from "./(components)/FinalSubmission";
+import { scrollToFirstError } from "@/utils/scrollToError";
+import AutoSaveIndicator from "./(components)/AutoSaveIndicator";
+import { useVendorStore } from "@/stores/useVendorStore";
 
 type Props = {};
 
@@ -42,9 +45,12 @@ const Page = (props: Props) => {
     message: "",
     action: () => {},
   });
+  const [showDraftRestoreModal, setShowDraftRestoreModal] = useState(false);
+  const [pendingDraft, setPendingDraft] = useState<any>(null);
   const router = useRouter();
   const { mutate: saveDraftToServer } = useSaveDraft();
   useCategories();
+  const {vendor} = useVendorStore();
 
   const {
     step,
@@ -57,10 +63,46 @@ const Page = (props: Props) => {
     validateCurrentStep,
     validationResults,
     completionPercentage,
-    isLoading: contextLoading
+    isLoading: contextLoading,
+    // Auto-save status
+    autoSaveStatus,
+    lastSavedAt,
+    isDirty,
+    // Draft restoration
+    restoreFromDraft,
+    checkForExistingDraft,
   } = useProductListing();
 
   const { isMobile, isTablet, isMobileOrTablet } = useResponsive();
+
+  // Check for existing draft on page load
+  useEffect(() => {
+    const existingDraft = checkForExistingDraft();
+    if (existingDraft && existingDraft.productDetails) {
+      // Only show restore modal if draft has meaningful data
+      const hasData = existingDraft.productDetails.productName || 
+                      existingDraft.productDetails.brandName || 
+                      existingDraft.productDetails.description;
+      if (hasData) {
+        setPendingDraft(existingDraft);
+        setShowDraftRestoreModal(true);
+      }
+    }
+  }, [checkForExistingDraft]);
+
+  const handleRestoreDraft = () => {
+    if (pendingDraft) {
+      restoreFromDraft(pendingDraft);
+      toast.success("Draft restored successfully", toastConfigSuccess);
+    }
+    setShowDraftRestoreModal(false);
+    setPendingDraft(null);
+  };
+
+  const handleDiscardDraft = () => {
+    setShowDraftRestoreModal(false);
+    setPendingDraft(null);
+  };
 
   const handleSaveDraft = async () => {
     try {
@@ -154,6 +196,12 @@ const Page = (props: Props) => {
 
     const isValid = validation.isValid && Object.keys(imageErrors).length === 0;
     console.log('Step 1 Final Validation Result:', isValid);
+    
+    // Scroll to first error if validation fails
+    if (!isValid) {
+      scrollToFirstError();
+    }
+    
     return isValid;
   };
 
@@ -170,6 +218,12 @@ const Page = (props: Props) => {
     }
 
     console.log('Step 2 Final Validation Result:', validation.isValid);
+    
+    // Scroll to first error if validation fails
+    if (!validation.isValid) {
+      scrollToFirstError();
+    }
+    
     return validation.isValid;
   };
 
@@ -182,6 +236,12 @@ const Page = (props: Props) => {
     document.dispatchEvent(new CustomEvent("validateShipping"));
 
     console.log('Step 3 Final Validation Result:', validation.isValid);
+    
+    // Scroll to first error if validation fails
+    if (!validation.isValid) {
+      scrollToFirstError();
+    }
+    
     return validation.isValid;
   };
 
@@ -308,13 +368,13 @@ const Page = (props: Props) => {
   };
 
   return (
-    <div className="bg-[#f6f6f6] max-w-full overflow-x-hidden min-h-screen">
+    <div className="bg-[#f6f6f6] max-w-full overflow-x-hidden min-h-screen font-roboto">
       <div className="p-2 sm:p-4 xl:p-10">
         <div className="flex flex-col-reverse lg:flex-row justify-between items-start md:items-center mb-5 gap-x-4">
           <div className="w-full">
-            <div className="flex overflow-x-auto scrollbar-hide gap-x-2 lg:gap-x-4 items-center text-[#b5b4b4] mb-1">
+            <div className="flex overflow-x-auto scrollbar-hide gap-x-2 lg:gap-x-4 items-center text-[#b5b4b4] mb-1 font-roboto">
               <div
-                className={`text-sm md:text-lg whitespace-nowrap border-r pr-2 md:pr-4 cursor-pointer ${
+                className={`text-sm md:text-lg whitespace-nowrap border-r pr-2 md:pr-4 cursor-pointer font-roboto ${
                   activeTab === "drafts" ? "text-[#002f7a] font-semibold" : ""
                 }`}
                 onClick={() => setActiveTab("drafts")}
@@ -322,7 +382,7 @@ const Page = (props: Props) => {
                 Drafts
               </div>
               <div
-                className={`text-sm md:text-lg whitespace-nowrap px-2 md:px-4 cursor-pointer ${
+                className={`text-sm md:text-lg whitespace-nowrap px-2 md:px-4 cursor-pointer font-roboto ${
                   activeTab === "addProduct"
                     ? "text-[#002f7a] font-semibold"
                     : ""
@@ -333,11 +393,18 @@ const Page = (props: Props) => {
               </div>
             </div>
             <p className="font-roboto text-xs md:text-sm text-[#323232]">
-              Welcome back, Bovie! Here's what is happening with your store
+              Welcome back, {vendor?.businessInfo?.name}! Here's what is happening with your store
               today.
             </p>
           </div>
           <div className="flex justify-end gap-x-4 items-center h-[10%] w-full lg:mt-4">
+            {activeTab === "addProduct" && !showPreview && (
+              <AutoSaveIndicator 
+                status={autoSaveStatus} 
+                lastSaved={lastSavedAt} 
+                isDirty={isDirty} 
+              />
+            )}
             {activeTab === "addProduct" && !showPreview && <Navigator />}
             {activeTab === "addProduct" && !showPreview && <Stepper />}
           </div>
@@ -346,7 +413,7 @@ const Page = (props: Props) => {
           <>
             {showPreview && <Preview onHide={handleHidePreviewClicked} />}
             {showForm && (
-              <div className="bg-white rounded-xl">
+              <div className="bg-white rounded-xl font-roboto">
                 <div className="p-4 flex justify-between items-center border-b border-gray-300">
                   <div className="flex gap-x-2 items-center text-gray-500">
                     <ArrowLeft
@@ -362,10 +429,10 @@ const Page = (props: Props) => {
                       }}
                       className="cursor-pointer hover:text-red-800"
                     />
-                    <p className="text-sm">Add new product</p>
+                    <p className="text-sm font-roboto">Add new product</p>
                   </div>
                   <p
-                    className="text-sm primary cursor-pointer hover:underline"
+                    className="text-sm text-[#002f7a] cursor-pointer hover:underline font-roboto"
                     onClick={handleShowPreviewClicked}
                   >
                     See live preview
@@ -394,6 +461,66 @@ const Page = (props: Props) => {
         >
           <p>{modalConfig.message}</p>
         </Modal>
+
+        {/* Draft Restore Modal */}
+        {showDraftRestoreModal && pendingDraft && (
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full shadow-lg mx-4 font-roboto">
+              <h3 className="text-lg font-semibold mb-2 text-[#002f7a]">
+                Restore Draft?
+              </h3>
+              <p className="text-gray-600 mb-4 text-sm">
+                We found an unsaved draft from{" "}
+                <span className="font-medium">
+                  {new Date(pendingDraft.lastUpdated).toLocaleDateString()} at{" "}
+                  {new Date(pendingDraft.lastUpdated).toLocaleTimeString([], {
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </p>
+              {pendingDraft.productDetails?.productName && (
+                <div className="bg-gray-50 rounded-md p-3 mb-4">
+                  <p className="text-sm text-gray-500">Product name:</p>
+                  <p className="font-medium text-gray-800">
+                    {pendingDraft.productDetails.productName}
+                  </p>
+                  {pendingDraft.completionPercentage !== undefined && (
+                    <div className="mt-2">
+                      <div className="flex justify-between text-xs text-gray-500 mb-1">
+                        <span>Completion</span>
+                        <span>{pendingDraft.completionPercentage}%</span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-1.5">
+                        <div
+                          className="bg-[#002f7a] h-1.5 rounded-full transition-all"
+                          style={{ width: `${pendingDraft.completionPercentage}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              <p className="text-gray-500 text-xs mb-4">
+                Would you like to continue where you left off?
+              </p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={handleDiscardDraft}
+                  className="px-4 py-2 border border-gray-300 rounded-md text-gray-600 hover:bg-gray-50 transition text-sm"
+                >
+                  Start Fresh
+                </button>
+                <button
+                  onClick={handleRestoreDraft}
+                  className="px-4 py-2 bg-[#002f7a] text-white rounded-md hover:bg-[#001f5a] transition text-sm"
+                >
+                  Restore Draft
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

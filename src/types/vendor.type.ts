@@ -105,6 +105,9 @@ export interface IVendor {
     lastBulkUpload?: Date;
     analyticsViews: number;
     lastAnalyticsView?: Date;
+    // Order fulfillment tracking for personal accounts
+    totalFulfilledOrders?: number;
+    lastOrderFulfilled?: Date;
   };
   settings: {
     autoAcceptOrders: boolean;

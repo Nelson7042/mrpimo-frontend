@@ -80,11 +80,15 @@ type ReviewType = {
 };
 
 type BidType = {
+  _id?: string;
+  productId?: string;
   userId: string;
   maxAmount: number;
   currentAmount: number;
+  currency: string;
+  isWinning: boolean;
   createdAt: Date;
-  isWinning?: boolean;
+  updatedAt?: Date;
 };
 
 type OfferType = {

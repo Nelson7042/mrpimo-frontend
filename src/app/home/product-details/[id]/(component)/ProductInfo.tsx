@@ -575,7 +575,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       await makeBidMutation.mutateAsync({
         productId: productData._id,
         userId: user._id,
-        maxBid: bidAmount
+        amount: bidAmount
       });
       toast.success("Bid placed successfully!");
       setIsBidModalOpen(false);
@@ -646,10 +646,10 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       <div className="p-3 md:p-5 lg:p-6 md:border rounded-lg border-[#ADADAD4D]">
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="font-roboto text-base font-semibold text-gray-900 mb-2">
               Product Unavailable
             </h2>
-            <p className="text-gray-600">
+            <p className="font-roboto text-xs text-gray-600">
               This product is currently out of stock.
             </p>
           </div>
@@ -659,7 +659,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   }
 
   return (
-    <div className=" md:p-5 lg:p-6   md:border rounded-tl-lg rounded-tr-lg border-[#ADADAD4D]">
+    <div className="font-roboto md:p-5 lg:p-6 md:border rounded-tl-lg rounded-tr-lg border-[#ADADAD4D]">
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8">
         {/* Product Images Section */}
         <div className="space-y-4 lg:col-span-2">
@@ -708,24 +708,24 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
         <div className="space-y-4 lg:space-y-6 lg:col-span-3">
           <div className="flex items-center gap-2">
             <div className="flex">{renderStars(productData?.rating || 0)}</div>
-            <span className="text-sm font-medium text-gray-700">
+            <span className="font-roboto text-xs font-medium text-gray-700">
               {productData?.rating} Seller Star Rating
             </span>
           </div>
 
           {/* Product Title */}
-          <h1 className="text-lg md:text-xl lg:text-2xl font-bold text-gray-900">
+          <h1 className="font-roboto text-base md:text-lg lg:text-xl font-bold text-gray-900">
             {productData?.name}
           </h1>
 
           {/* Description */}
-          <p className="text-gray-600 text-xs md:text-sm leading-relaxed">
+          <p className="font-roboto text-gray-600 text-xs leading-relaxed">
             {productData?.description}
           </p>
 
           {/* Product Details Grid */}
           <div className="space-y-3 border-b border-gray-400 pb-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
+            <div className="font-roboto grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <div className="flex justify-between sm:flex-col">
                 <span className="text-gray-600">Category:</span>
                 <span className="text-blue-600 font-medium">
@@ -763,7 +763,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                 <div className="flex justify-between sm:flex-col">
                   <span className="text-gray-600">Total Bids:</span>
                   <span className="font-medium">
-                    {bids ? bids.length : 0}
+                    {bids ? ((bids as any)?.bids?.length || 0) : 0}
                   </span>
                 </div>
               ) : acceptOffer &&
@@ -869,7 +869,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                       <div>
                         <div className="space-y-1">
                           <div className="flex items-center gap-2">
-                            <div className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">
+                            <div className="font-roboto text-lg md:text-xl lg:text-2xl font-semibold text-gray-900">
                               <NumericFormat
                                 value={getSelectedOptionPrice()}
                                 displayType={"text"}
@@ -881,7 +881,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                             </div>
                             {hasDiscount && (
                               <>
-                                <div className="text-sm md:text-base text-gray-400 line-through">
+                                <div className="font-roboto text-xs md:text-sm text-gray-400 line-through">
                                   <NumericFormat
                                     value={price}
                                     displayType={"text"}
@@ -901,7 +901,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                             )}
                           </div>
                           {quantity > 1 && (
-                            <div className="text-sm text-gray-600">
+                            <div className="font-roboto text-xs text-gray-600">
                               Total:{" "}
                               <NumericFormat
                                 value={getTotalPrice()}
@@ -924,47 +924,59 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                   })()
                 ) : saleType === "auction" ? (
                   (() => {
-                    const winningBid = bids?.find(
+                    const bidsFromApi = (bids as any)?.bids || [];
+                    const auctionInfoApi = (bids as any)?.auctionInfo;
+                    const winningBid = bidsFromApi.find(
                       (bid: any) => bid.isWinning
                     );
-                    const highestBid =
-                      winningBid?.currentAmount || auction?.startBidPrice || 0;
+                    // auctionInfo.startBidPrice is already in USD from backend
+                    const highestBidUSD = winningBid
+                      ? winningBid.currentAmount
+                      : auctionInfoApi?.startBidPrice || 0;
                     const isAuctionStarted = auction?.isStarted;
-                    const userCurrency =
-                      (productData as any)?.priceInfo?.currency || "USD";
-                    const convertedAmount =
-                      (productData as any)?.priceInfo?.displayPrice ||
-                      highestBid;
-                    const currencySymbol =
-                      (productData as any)?.priceInfo?.currencySymbol || "$";
+
+                    // For local currency equivalent:
+                    // - If there's a winning bid (USD), use USD→user rate from priceInfo
+                    // - If no bids, use exact vendor start price × vendorToUserRate
+                    const usdToUserRate = (bids as any)?.priceInfo?.exchangeRate || 1;
+                    const v2uRate = auctionInfoApi?.vendorToUserRate || 1;
+                    const vendorStartBid = auctionInfoApi?.vendorStartBidPrice || 0;
+                    const localEquivalent = winningBid
+                      ? highestBidUSD * usdToUserRate
+                      : vendorStartBid * v2uRate;
+                    const userCurrencyCode = (bids as any)?.priceInfo?.userCurrency || "USD";
+                    const currSymbol = (bids as any)?.priceInfo?.displayCurrency || "$";
+                    const isNonUSD = userCurrencyCode.toUpperCase() !== "USD";
 
                     return (
                       <div>
                         <div className="flex items-center gap-2">
-                          <div className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">
+                          <div className="font-roboto text-lg md:text-xl lg:text-2xl font-semibold text-gray-900">
                             <NumericFormat
-                              value={highestBid}
+                              value={highestBidUSD}
                               displayType={"text"}
                               thousandSeparator={true}
                               prefix="$"
                               decimalScale={2}
                               fixedDecimalScale={true}
                             />
+                            <span className="text-sm ml-1">USD</span>
                           </div>
-                          {userCurrency !== "USD" && (
-                            <div className="text-sm text-gray-500">
-                              ≈{" "}
-                              <NumericFormat
-                                value={convertedAmount}
-                                displayType={"text"}
-                                thousandSeparator={true}
-                                prefix={currencySymbol}
-                                decimalScale={2}
-                                fixedDecimalScale={true}
-                              />
-                            </div>
-                          )}
                         </div>
+                        {isNonUSD && (
+                          <div className="font-roboto text-xs text-gray-500">
+                            ≈{" "}
+                            <NumericFormat
+                              value={localEquivalent}
+                              displayType={"text"}
+                              thousandSeparator={true}
+                              prefix={currSymbol}
+                              decimalScale={2}
+                              fixedDecimalScale={true}
+                            />
+                            {" "}{userCurrencyCode}
+                          </div>
+                        )}
                         <div className="text-xs md:text-sm text-gray-500">
                           {isAuctionStarted ? "Bid now" : "Buy now"}
                         </div>
@@ -973,7 +985,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                   })()
                 ) : (
                   <div>
-                    <div className="text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900">
+                    <div className="font-roboto text-lg md:text-xl lg:text-2xl font-semibold text-gray-900">
                       <NumericFormat
                         value={(productData as any)?.priceInfo?.displayPrice}
                         displayType={"text"}
@@ -1011,7 +1023,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                       productData?.variants?.[0]?.id
                     }
                   />
-                  <span className="text-gray-600 text-sm">Add to Wishlist</span>
+                  <span className="font-roboto text-gray-600 text-xs">Add to Wishlist</span>
                 </div>
               )}
               {productData?.inventory?.listing?.type !== "auction" &&
@@ -1029,7 +1041,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     >
                       <Tag className="w-5 h-5 text-yellow-300" />
                     </div>
-                    <span className="text-gray-600 text-sm">Make Offer</span>
+                    <span className="font-roboto text-gray-600 text-xs">Make Offer</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
@@ -1043,7 +1055,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     >
                       <MessageSquare className="w-5 h-5 text-orange-300" />
                     </div>
-                    <span className="text-gray-600 text-sm">
+                    <span className="font-roboto text-gray-600 text-xs">
                       Message Seller
                     </span>
                   </div>
@@ -1062,14 +1074,14 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
               <button
                 onClick={handleMessageSeller}
                 disabled={isJoiningChat}
-                className="bg-white border-2 border-orange-300 text-orange-300 px-4 py-3 rounded-lg font-medium hover:bg-orange-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2 cursor-pointer"
+                className="font-roboto bg-white border-2 border-orange-300 text-orange-300 px-4 py-2 rounded-lg text-xs font-medium hover:bg-orange-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2 cursor-pointer"
               >
                 {isJoiningChat ? "Joining..." : "Message"}
               </button>
               <button
                 onClick={handleBuyNow}
                 disabled={isBuyingNow || getSelectedOptionStock() === 0}
-                className="bg-blue-600 text-white px-4 py-3 rounded-lg font-medium hover:bg-blue-700 transition-colors sm:col-span-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className="font-roboto bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors sm:col-span-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
               >
                 {isBuyingNow ? (
                   <>
@@ -1085,7 +1097,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
               <button
                 onClick={handleAddToCart}
                 disabled={isLoading || getSelectedOptionStock() === 0}
-                className="bg-orange-400 text-white px-4 py-3 rounded-lg font-medium hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2 cursor-pointer"
+                className="font-roboto bg-orange-400 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-orange-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2 cursor-pointer"
               >
                 {isLoading
                   ? "Adding..."
@@ -1103,7 +1115,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     isBuyingNow ||
                     productData.inventory.listing.auction?.isExpired
                   }
-                  className={`w-full px-4 py-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2
+                  className={`font-roboto w-full px-4 py-2 rounded-lg text-xs font-medium transition-colors flex items-center justify-center gap-2
                       ${
                         isBuyingNow ||
                         productData.inventory.listing.auction?.isExpired
@@ -1129,7 +1141,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                   productData.inventory.listing.auction?.isExpired ||
                   !productData.inventory.listing.auction?.isStarted
                 }
-                className={`w-full px-4 py-3 rounded-lg font-medium transition-colors 
+                className={`font-roboto w-full px-4 py-2 rounded-lg text-xs font-medium transition-colors 
                 ${
                   isLoading ||
                   productData.inventory.listing.auction?.isExpired ||

@@ -1,6 +1,28 @@
 import { API_BASE_URL } from './config';
 import { fetchWithAuth } from './fetchWithAuth';
 
+/**
+ * Interface for API error with field-specific errors
+ */
+interface ApiError extends Error {
+  fieldErrors?: Record<string, string>;
+  code?: string;
+}
+
+/**
+ * Helper function to extract error from response and throw with proper message
+ */
+async function handleApiResponse<T>(response: Response, defaultErrorMessage: string): Promise<T> {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    const error = new Error(errorData.message || errorData.error || defaultErrorMessage) as ApiError;
+    error.fieldErrors = errorData.errors || errorData.details;
+    error.code = errorData.code;
+    throw error;
+  }
+  return response.json();
+}
+
 export interface VendorAnalytics {
   dashboard: {
     salesTotal: {
@@ -62,10 +84,7 @@ export interface VendorOrder {
 export const vendorService = {
   async getAnalytics(vendorId: string, range = "7days") {
     const response = await fetchWithAuth(`${API_BASE_URL}/dashboard/vendors/${vendorId}/analytics?range=${range}`);
-    if (!response.ok) {
-      throw new Error('Failed to fetch vendor analytics');
-    }
-    return response.json();
+    return handleApiResponse(response, 'Failed to fetch vendor analytics');
   },
 
   async getOrders(vendorId: string, page = 1, limit = 10, status?: string) {
@@ -76,14 +95,15 @@ export const vendorService = {
     });
     
     const response = await fetchWithAuth(`${API_BASE_URL}/vendor/${vendorId}/orders?${params}`);
-    return response.json();
+    return handleApiResponse(response, 'Failed to fetch vendor orders');
   },
 
   async updateOrderStatus(orderId: string, status: string) {
-    return fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/status`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}/status`, {
       method: 'PATCH',
       body: JSON.stringify({ status }),
     });
+    return handleApiResponse(response, 'Failed to update order status');
   },
 
   async getProducts(vendorId: string, page = 1, limit = 10) {
@@ -92,27 +112,31 @@ export const vendorService = {
       limit: limit.toString(),
     });
     
-    return fetchWithAuth(`${API_BASE_URL}/vendor/${vendorId}/products?${params}`);
+    const response = await fetchWithAuth(`${API_BASE_URL}/vendor/${vendorId}/products?${params}`);
+    return handleApiResponse(response, 'Failed to fetch vendor products');
   },
 
   async createProduct(productData: any) {
-    return fetchWithAuth(`${API_BASE_URL}/products`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/products`, {
       method: 'POST',
       body: JSON.stringify(productData),
     });
+    return handleApiResponse(response, 'Failed to create product');
   },
 
   async updateProduct(productId: string, productData: any) {
-    return fetchWithAuth(`${API_BASE_URL}/products/${productId}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}`, {
       method: 'PUT',
       body: JSON.stringify(productData),
     });
+    return handleApiResponse(response, 'Failed to update product');
   },
 
   async deleteProduct(productId: string) {
-    return fetchWithAuth(`${API_BASE_URL}/products/${productId}`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}`, {
       method: 'DELETE',
     });
+    return handleApiResponse(response, 'Failed to delete product');
   },
 
   async getPayouts(vendorId: string, page = 1, limit = 10) {
@@ -121,13 +145,15 @@ export const vendorService = {
       limit: limit.toString(),
     });
     
-    return fetchWithAuth(`${API_BASE_URL}/vendor-payouts/${vendorId}?${params}`);
+    const response = await fetchWithAuth(`${API_BASE_URL}/vendor-payouts/${vendorId}?${params}`);
+    return handleApiResponse(response, 'Failed to fetch vendor payouts');
   },
 
   async requestPayout(amount: number, method: string) {
-    return fetchWithAuth(`${API_BASE_URL}/vendor-payouts/request`, {
+    const response = await fetchWithAuth(`${API_BASE_URL}/vendor-payouts/request`, {
       method: 'POST',
       body: JSON.stringify({ amount, method }),
     });
+    return handleApiResponse(response, 'Failed to request payout');
   }
 };

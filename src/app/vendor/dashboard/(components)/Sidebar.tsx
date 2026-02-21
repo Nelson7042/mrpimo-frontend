@@ -2,6 +2,7 @@
 import { Icon } from "@iconify/react";
 import { Store } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
+import Image from "next/image";
 
 const navItems = [
   {
@@ -74,7 +75,7 @@ const NavigationItem = ({
       onClick={onClick}
       className={`w-full flex items-center px-3 py-2 text-sm rounded-lg transition-colors ${
         isActive
-          ? "bg-blue-50 text-blue-700 font-medium"
+          ? "bg-primary text-white font-medium"
           : "text-gray-600 hover:bg-gray-100 font-normal"
       }`}
     >
@@ -114,13 +115,24 @@ export default function Sidebar({
 
       {/* Sidebar */}
       <div
-        className={`fixed top-0 left-0 z-50 h-full w-56 bg-white border-r transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
+        className={`fixed top-0 left-0 z-50 h-full w-56 bg-white  transform transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0 ${
           isOpen ? "translate-x-0" : "-translate-x-full"
         }`}
       >
         {/* Logo section */}
-        <div className="flex items-center justify-between h-16 px-3 border-b">
-          <h1 className="text-xl font-semibold text-[#211F1F]">Mprimo</h1>
+        <div className="flex items-center justify-between h-16 px-3 border-b bg-primary">
+          <button 
+            onClick={() => router.push("/home")}
+            className="hover:opacity-80 transition-opacity"
+          >
+            <Image
+              src="/images/mprimo-logo2.png"
+              alt="Mprimo Logo"
+              width={100}
+              height={32}
+              className="h-8 w-auto"
+            />
+          </button>
           <button
             onClick={onClose}
             className="lg:hidden p-2 rounded-md hover:bg-gray-100"

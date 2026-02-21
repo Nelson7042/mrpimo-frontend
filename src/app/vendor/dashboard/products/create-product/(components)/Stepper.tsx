@@ -3,13 +3,16 @@ import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import { motion, AnimatePresence } from "framer-motion";
 
+// Theme color constant
+const THEME_COLOR = "#002f7a";
+
 export default function Stepper() {
   const { step, totalSteps, mobileTotalSteps } = useProductListing();
   const { isMobileOrTablet } = useResponsive();
   const steps = isMobileOrTablet ? Array.from({ length: mobileTotalSteps }, (_, i) => `Step ${i + 1}`) : Array.from({ length: totalSteps }, (_, i) => `Step ${i + 1}`);
 
   return (
-    <div className="flex items-center justify-between gap-x-2 relative">
+    <div className="flex items-center justify-between gap-x-2 relative font-roboto">
       {steps.map((label, index) => {
         const isActive = index + 1 === step;
         const isCompleted = index + 1 < step;
@@ -38,7 +41,7 @@ export default function Stepper() {
                   isCompleted
                     ? "bg-green-500"
                     : isActive
-                    ? "bg-blue-500"
+                    ? "bg-[#002f7a]"
                     : "bg-gray-300"
                 } ${isActive ? "w-10" : "w-8"}`}
               />

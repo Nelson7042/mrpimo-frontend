@@ -85,8 +85,8 @@ const SeoAndMetaSettings = (props: Props) => {
   };
 
   return (
-    <div className="p-4 border border-gray-400 rounded-lg w-full">
-      <h1 className="text-[14px] mb-4 xl:text-center">Seo and Metadata</h1>
+    <div className="p-4 border border-gray-400 rounded-lg w-full font-roboto">
+      <h1 className="text-[14px] mb-4 xl:text-center font-roboto">Seo and Metadata</h1>
       {/* Available shipping methods */}
       <div className="flex flex-col gap-y-3">
         <Input

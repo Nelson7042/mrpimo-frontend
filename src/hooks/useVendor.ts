@@ -51,8 +51,17 @@ export const useCreateProduct = () => {
     mutationFn: (productData: any) => vendorService.createProduct(productData),
     onSuccess: () => {
       toast.success('Product created successfully');
+      // Invalidate product list queries
       queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['bestDeals'] });
+      queryClient.invalidateQueries({ queryKey: ['productsByCategory'] });
+      queryClient.invalidateQueries({ queryKey: ['productsOnAuction'] });
+      // Invalidate vendor analytics queries
       queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to create product');
@@ -66,10 +75,21 @@ export const useUpdateProduct = () => {
   return useMutation({
     mutationFn: ({ productId, productData }: { productId: string; productData: any }) =>
       vendorService.updateProduct(productId, productData),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
       toast.success('Product updated successfully');
+      // Invalidate product list queries
       queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['bestDeals'] });
+      queryClient.invalidateQueries({ queryKey: ['productsByCategory'] });
+      queryClient.invalidateQueries({ queryKey: ['productsOnAuction'] });
+      // Invalidate specific product queries
+      queryClient.invalidateQueries({ queryKey: ['product', variables.productId] });
+      // Invalidate vendor analytics queries
+      queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to update product');
@@ -84,8 +104,17 @@ export const useDeleteProduct = () => {
     mutationFn: (productId: string) => vendorService.deleteProduct(productId),
     onSuccess: () => {
       toast.success('Product deleted successfully');
+      // Invalidate product list queries
       queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['bestDeals'] });
+      queryClient.invalidateQueries({ queryKey: ['productsByCategory'] });
+      queryClient.invalidateQueries({ queryKey: ['productsOnAuction'] });
+      // Invalidate vendor analytics queries
       queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to delete product');

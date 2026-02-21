@@ -5,6 +5,7 @@ import {
   ChevronDown,
   LogOut,
   LayoutDashboard,
+  Wallet,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +24,7 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { SearchSuggestion } from "@/types/search.types";
 import { useWishlist } from "@/hooks/useWishlist";
 import { useUserStore } from "@/stores/useUserStore";
+import { useUserProfile } from "@/hooks/useUser";
 import { useCartSync } from "@/hooks/useCartSync";
 import { useRouter } from "next/navigation";
 import { useVendorStore } from "@/stores/useVendorStore";
@@ -33,6 +35,7 @@ import dynamic from "next/dynamic";
 import { useLogoutUser } from "@/hooks/mutations";
 import { resetAllStores } from "@/stores/resetStore";
 import { toast } from "react-toastify";
+import { convertFromUSD, getCurrencySymbol } from "@/utils/currencyService";
 
 // Dynamically import the vendor modal to avoid SSR issues
 const VendorRegistrationModal = dynamic(
@@ -49,6 +52,7 @@ const Header = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [convertedBalance, setConvertedBalance] = useState<number | null>(null);
   const profileModalRef = useRef<HTMLDivElement>(null);
   const cartLength = useCartLength();
   const router = useRouter();
@@ -57,6 +61,7 @@ const Header = () => {
   const { openModal } = useAuthModalStore();
   const { user } = useUserStore();
   const { vendor } = useVendorStore();
+  const { data: profileData } = useUserProfile(!!user);
   const debouncedQuery = useDebounce(searchQuery, 300);
   const { data: suggestionsData } = useSearchSuggestions(debouncedQuery, 5);
   const { setAuthType } = useAuthModalStore();
@@ -65,6 +70,25 @@ const Header = () => {
   useCartSync();
 
   const logoutMutation = useLogoutUser();
+
+  // Convert wallet balance to user's currency
+  useEffect(() => {
+    const convertBalance = async () => {
+      const balanceUSD = profileData?.fiatWallet?.balances?.available || 0;
+      const userCurrency = user?.preferences?.currency || 'USD';
+      
+      if (balanceUSD > 0 && userCurrency !== 'USD') {
+        const converted = await convertFromUSD(balanceUSD, userCurrency);
+        setConvertedBalance(converted);
+      } else {
+        setConvertedBalance(balanceUSD);
+      }
+    };
+    
+    if (profileData?.fiatWallet?.balances?.available !== undefined) {
+      convertBalance();
+    }
+  }, [profileData?.fiatWallet?.balances?.available, user?.preferences?.currency]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -247,7 +271,14 @@ const Header = () => {
               </button>
 
               {showProfileModal && user && (
-                <div className="absolute right-0 top-full mt-2 w-44 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                <div className="absolute right-0 top-full mt-2 w-52 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                  {/* Wallet Balance */}
+                  <div className="px-4 py-2 border-b border-gray-100">
+                    <p className="text-xs text-gray-500">Wallet Balance</p>
+                    <p className="text-sm font-semibold text-gray-900">
+                      {getCurrencySymbol(user?.preferences?.currency || 'USD')} {convertedBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                    </p>
+                  </div>
                   <button
                     onClick={() => {
                       setShowProfileModal(false);
@@ -257,6 +288,16 @@ const Header = () => {
                   >
                     <LayoutDashboard className="w-4 h-4" />
                     Dashboard
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowProfileModal(false);
+                      router.push("/home/user/wallet");
+                    }}
+                    className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <Wallet className="w-4 h-4" />
+                    My Wallet
                   </button>
                   <button
                     onClick={() => {

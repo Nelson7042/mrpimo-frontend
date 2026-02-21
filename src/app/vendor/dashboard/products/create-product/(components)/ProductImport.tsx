@@ -112,13 +112,13 @@ export default function ProductImport({ onClose }: Props) {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 font-roboto">
       <div className="bg-white rounded-lg p-6 max-w-4xl max-h-[90vh] overflow-y-auto w-full mx-4">
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">Import Products</h2>
+          <h2 className="text-2xl font-bold text-[#002f7a] font-roboto">Import Products</h2>
           <button
             onClick={onClose}
-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
+            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400 transition-colors font-roboto"
           >
             Cancel
           </button>
@@ -135,10 +135,10 @@ export default function ProductImport({ onClose }: Props) {
             <button
               key={key}
               onClick={() => setActiveTab(key as ImportType)}
-              className={`flex items-center gap-2 px-4 py-2 border-b-2 ${
+              className={`flex items-center gap-2 px-4 py-2 border-b-2 font-roboto transition-colors ${
                 activeTab === key
-                  ? 'border-blue-500 text-blue-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700'
+                  ? 'border-[#002f7a] text-[#002f7a] font-medium'
+                  : 'border-transparent text-gray-500 hover:text-[#002f7a]'
               }`}
             >
               <Icon size={16} />
@@ -154,23 +154,23 @@ export default function ProductImport({ onClose }: Props) {
               <div className="flex gap-2 mb-4">
                 <button
                   onClick={() => downloadTemplate('csv')}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#002f7a] text-white rounded-md hover:bg-[#002f7a]/80 transition-colors font-roboto"
                 >
                   <Download size={16} />
                   Download CSV Template
                 </button>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Upload CSV File</label>
+                <label className="block text-sm font-medium mb-2 font-roboto">Upload CSV File</label>
                 <input
                   ref={fileInputRef}
                   type="file"
                   accept=".csv"
                   onChange={handleFileSelect}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-roboto focus:border-[#002f7a] focus:ring-1 focus:ring-[#002f7a] outline-none"
                 />
                 {selectedFile && (
-                  <p className="text-sm text-gray-600 mt-2">Selected: {selectedFile.name}</p>
+                  <p className="text-sm text-gray-600 mt-2 font-roboto">Selected: {selectedFile.name}</p>
                 )}
               </div>
             </div>
@@ -181,22 +181,22 @@ export default function ProductImport({ onClose }: Props) {
               <div className="flex gap-2 mb-4">
                 <button
                   onClick={() => downloadTemplate('json')}
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600"
+                  className="flex items-center gap-2 px-4 py-2 bg-[#002f7a] text-white rounded-md hover:bg-[#002f7a]/80 transition-colors font-roboto"
                 >
                   <Download size={16} />
                   Download JSON Template
                 </button>
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Upload JSON File</label>
+                <label className="block text-sm font-medium mb-2 font-roboto">Upload JSON File</label>
                 <input
                   type="file"
                   accept=".json"
                   onChange={handleFileSelect}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-roboto focus:border-[#002f7a] focus:ring-1 focus:ring-[#002f7a] outline-none"
                 />
                 {selectedFile && (
-                  <p className="text-sm text-gray-600 mt-2">Selected: {selectedFile.name}</p>
+                  <p className="text-sm text-gray-600 mt-2 font-roboto">Selected: {selectedFile.name}</p>
                 )}
               </div>
             </div>
@@ -205,22 +205,22 @@ export default function ProductImport({ onClose }: Props) {
           {activeTab === 'shopify' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Store URL</label>
+                <label className="block text-sm font-medium mb-2 font-roboto">Store URL</label>
                 <input
                   type="text"
                   value={shopifyCredentials.storeUrl}
                   onChange={(e) => setShopifyCredentials({ ...shopifyCredentials, storeUrl: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-roboto focus:border-[#002f7a] focus:ring-1 focus:ring-[#002f7a] outline-none"
                   placeholder="your-store.myshopify.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">API Key</label>
+                <label className="block text-sm font-medium mb-2 font-roboto">API Key</label>
                 <input
                   type="password"
                   value={shopifyCredentials.apiKey}
                   onChange={(e) => setShopifyCredentials({ ...shopifyCredentials, apiKey: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-roboto focus:border-[#002f7a] focus:ring-1 focus:ring-[#002f7a] outline-none"
                   placeholder="Your Shopify API key"
                 />
               </div>
@@ -230,32 +230,32 @@ export default function ProductImport({ onClose }: Props) {
           {activeTab === 'woocommerce' && (
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium mb-2">Store URL</label>
+                <label className="block text-sm font-medium mb-2 font-roboto">Store URL</label>
                 <input
                   type="text"
                   value={wooCredentials.storeUrl}
                   onChange={(e) => setWooCredentials({ ...wooCredentials, storeUrl: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-roboto focus:border-[#002f7a] focus:ring-1 focus:ring-[#002f7a] outline-none"
                   placeholder="https://your-store.com"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Consumer Key</label>
+                <label className="block text-sm font-medium mb-2 font-roboto">Consumer Key</label>
                 <input
                   type="text"
                   value={wooCredentials.apiKey}
                   onChange={(e) => setWooCredentials({ ...wooCredentials, apiKey: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-roboto focus:border-[#002f7a] focus:ring-1 focus:ring-[#002f7a] outline-none"
                   placeholder="Your WooCommerce consumer key"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium mb-2">Consumer Secret</label>
+                <label className="block text-sm font-medium mb-2 font-roboto">Consumer Secret</label>
                 <input
                   type="password"
                   value={wooCredentials.apiSecret}
                   onChange={(e) => setWooCredentials({ ...wooCredentials, apiSecret: e.target.value })}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 font-roboto focus:border-[#002f7a] focus:ring-1 focus:ring-[#002f7a] outline-none"
                   placeholder="Your WooCommerce consumer secret"
                 />
               </div>
@@ -266,14 +266,14 @@ export default function ProductImport({ onClose }: Props) {
         <div className="flex justify-end gap-2">
           <button
             onClick={onClose}
-            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50"
+            className="px-6 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors font-roboto"
           >
             Cancel
           </button>
           <button
             onClick={handleImport}
             disabled={importMutation.isPending}
-            className="px-6 py-2 bg-green-500 text-white rounded-md hover:bg-green-600 disabled:opacity-50 flex items-center gap-2"
+            className="px-6 py-2 bg-[#002f7a] text-white rounded-md hover:bg-[#002f7a]/80 disabled:opacity-50 flex items-center gap-2 transition-colors font-roboto"
           >
             <Upload size={16} />
             {importMutation.isPending ? 'Importing...' : 'Import Products'}

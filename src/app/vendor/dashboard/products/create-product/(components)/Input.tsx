@@ -34,12 +34,16 @@ const Input: React.FC<Props> = ({
   min,
 }) => {
   const { isMobileOrTablet } = useResponsive();
+  
+  // Generate a unique field ID for scroll-to-error functionality
+  const fieldId = id || label?.toLowerCase().replace(/\s+/g, '-');
+  
   return (
-    <div className={`flex flex-col gap-y-1 ${className}`}>
+    <div className={`flex flex-col gap-y-1 ${className}`} data-field-id={fieldId}>
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-x-1">
           {label && (
-            <label htmlFor={id} className={` text-xs ${required ? "after:ml-0.5 after:text-red-500 after:content-['*'] after:text-lg after:leading-none after:align-top" : ""}`}>
+            <label htmlFor={fieldId} className={` text-xs ${required ? "after:ml-0.5 after:text-red-500 after:content-['*'] after:text-lg after:leading-none after:align-top" : ""}`}>
               {label}
             </label>
           )}
@@ -55,33 +59,42 @@ const Input: React.FC<Props> = ({
       </div>
       {type === "textarea" ? (
         <textarea
-          id={id}
+          id={fieldId}
           value={value}
           onChange={onChange}
           required={required}
           placeholder={placeholder}
-          className={`border border-gray-300 text-xs rounded-md px-3 py-2 focus:outline-none placeholder:text-gray-500 placeholder:italic ${descritpionHeight} focus:ring-1 focus:ring-blue-500 ${
-            error ? "border-red-500" : ""
+          className={`border text-xs rounded-md px-3 py-2 focus:outline-none placeholder:text-gray-500 placeholder:italic ${descritpionHeight} transition-colors duration-200 ${
+            error 
+              ? "border-red-500 border-2 bg-red-50/30 focus:ring-1 focus:ring-red-500" 
+              : "border-gray-300 focus:ring-1 focus:ring-blue-500"
           }`}
         />
       ) : (
         <input
           type={type || "text"}
-          id={id}
+          id={fieldId}
           value={value}
           onChange={onChange}
           required={required}
           placeholder={placeholder}
           min={type === "datetime-local" ? min : undefined}
-          className={`border border-gray-300 rounded-md text-xs px-3 py-2 focus:outline-none focus:ring-1 focus:ring-blue-500 placeholder:text-gray-500 placeholder:italic ${
-            error ? "border-red-500" : ""
+          className={`border rounded-md text-xs px-3 py-2 focus:outline-none placeholder:text-gray-500 placeholder:italic transition-colors duration-200 ${
+            error 
+              ? "border-red-500 border-2 bg-red-50/30 focus:ring-1 focus:ring-red-500" 
+              : "border-gray-300 focus:ring-1 focus:ring-blue-500"
           }`}
         />
       )}
       {helperText && !error && isMobileOrTablet && (
         <div className="text-[10px] text-blue-500 italic">{helperText}</div>
       )}
-      {error && <span className="text-red-500 text-[10px]">{error}</span>}
+      {error && (
+        <div className="flex items-center gap-x-1 mt-0.5">
+          <TriangleAlert size={12} className="text-red-500 flex-shrink-0" />
+          <span className="text-red-500 text-[10px] font-medium">{error}</span>
+        </div>
+      )}
     </div>
   );
 };

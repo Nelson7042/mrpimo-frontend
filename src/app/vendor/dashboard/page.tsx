@@ -8,13 +8,14 @@ import SalesOverviewSkeleton from "./(components)/skeletons/SalesOverviewSkeleto
 import SalesActivity from "./(components)/SalesActivity";
 import SalesActivitySkeleton from "./(components)/skeletons/SalesActivitySkeleton";
 import RecentOrders from "./(components)/RecentOrders";
-import RecentOrdersSkeleton from "./(components)/skeletons/RecentOrdersSkeleton";
 import { useSocket } from "@/hooks/useSocket";
 import { useUserNotifications, useVendorAnalytics } from "@/hooks/queries";
-import Link from "next/link";
 import { useVendorStore } from "@/stores/useVendorStore";
 import KycModal from "@/components/KycModal";
 import KybModal from "@/components/KybModal";
+import OrderLimitIndicator from "@/components/vendor/OrderLimitIndicator";
+import OrderLimitWarningBanner from "@/components/vendor/OrderLimitWarningBanner";
+import OrderLimitUpgradeModal from "@/components/vendor/OrderLimitUpgradeModal";
 
 type Props = {};
 
@@ -23,7 +24,20 @@ const Page = (props: Props) => {
   const socket = useSocket();
   const { data, isLoading } = useVendorAnalytics(vendor?._id!);
   const [showKybModal, setShowKybModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [isWarningBannerDismissed, setIsWarningBannerDismissed] = useState(false);
   const isPersonalAccount = vendor?.accountType === 'personal';
+  
+  // Order fulfillment data for personal accounts
+  const fulfilledOrders = vendor?.analytics?.totalFulfilledOrders || 0;
+  const PERSONAL_ACCOUNT_ORDER_LIMIT = 100;
+  
+  // Auto-show upgrade modal when limit is reached for personal accounts
+  useEffect(() => {
+    if (isPersonalAccount && fulfilledOrders >= PERSONAL_ACCOUNT_ORDER_LIMIT) {
+      setShowUpgradeModal(true);
+    }
+  }, [isPersonalAccount, fulfilledOrders]);
   
   // For business accounts, check both KYC and KYB status
   // For personal accounts, only check KYC status
@@ -65,15 +79,34 @@ const Page = (props: Props) => {
     };
   }, [socket, vendor]);
 
-  
+  // Handle upgrade to business account
+  const handleUpgradeClick = () => {
+    setShowUpgradeModal(true);
+  };
+
+  const handleUpgrade = () => {
+    // Navigate to settings page for account upgrade
+    window.location.href = '/vendor/dashboard/settings?tab=subscription';
+  };
 
   return (
     <div className="bg-[#f6f6f6] font-roboto">
       <div className="p-4 md:p-10">
-        <h1 className="font-bold text-xl mb-2">Dashboard</h1>
-        <p className="mb-3 md:mb-5 text-sm">
-          {`Hey ${vendor?.businessInfo?.name}, welcome back! Let’s take a look at what’s going on in your store today.`}
+        <h1 className="font-roboto font-bold text-base mb-2">Dashboard</h1>
+        <p className="font-roboto mb-3 md:mb-5 text-xs">
+          {`Hey ${vendor?.businessInfo?.name}, welcome back! Let's take a look at what's going on in your store today.`}
         </p>
+        
+        {/* Order Limit Warning Banner - Only for personal accounts approaching limit (80+) */}
+        {isPersonalAccount && (
+          <OrderLimitWarningBanner
+            accountType="personal"
+            fulfilledOrders={fulfilledOrders}
+            onUpgradeClick={handleUpgradeClick}
+            onDismiss={() => setIsWarningBannerDismissed(true)}
+            isDismissed={isWarningBannerDismissed}
+          />
+        )}
         
         {needsVerification && (
           <div className="">
@@ -84,10 +117,10 @@ const Page = (props: Props) => {
                   ? 'bg-red-50 border-red-200'
                   : 'bg-[#f1f1f1] border-[#e1e1e1]'
             }`}>
-              <h2 className="font-bold text-lg mb-2">
+              <h2 className="font-roboto font-bold text-base mb-2">
                 {isPersonalAccount ? 'KYC' : (vendor?.kycStatus === 'verified' ? 'KYB (Business)' : 'KYC/KYB')} Verification
               </h2>
-              <p className="text-sm mb-4">
+              <p className="font-roboto text-xs mb-4">
                 {verificationStatus === 'requires_review' 
                   ? 'Your verification is under review. An administrator will review your information shortly.'
                   : verificationStatus === 'rejected'
@@ -98,7 +131,7 @@ const Page = (props: Props) => {
                 }
               </p>
               {verificationStatus !== 'requires_review' && (
-                <button onClick={() => setShowKybModal(true)} className="text-blue-600 underline text-sm">
+                <button onClick={() => setShowKybModal(true)} className="font-roboto text-blue-600 underline text-xs">
                   {verificationStatus === 'rejected' ? 'Retry' : verificationStatus === 'pending' ? 'Continue' : 'Start'} {isPersonalAccount ? 'KYC' : (vendor?.kycStatus === 'verified' ? 'KYB' : 'KYC/KYB')} Process
                 </button>
               )}
@@ -135,6 +168,17 @@ const Page = (props: Props) => {
           )}
         </div>
 
+        {/* Order Limit Indicator - Only for personal accounts */}
+        {isPersonalAccount && (
+          <div className="mb-5">
+            <OrderLimitIndicator
+              accountType="personal"
+              fulfilledOrders={fulfilledOrders}
+              onUpgradeClick={handleUpgradeClick}
+            />
+          </div>
+        )}
+
         {/* Sales Overview & Activity */}
         <div className="grid grid-cols-1 xl:grid-cols-12 gap-4 mb-5">
           <div className="col-span-1 xl:col-span-8">
@@ -153,10 +197,21 @@ const Page = (props: Props) => {
         <RecentOrders currency={vendorCurrency} />
       </div>
 
+      {/* KYC/KYB Modal */}
       {isPersonalAccount ? (
         <KycModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
       ) : (
         <KybModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
+      )}
+
+      {/* Order Limit Upgrade Modal - Only for personal accounts */}
+      {isPersonalAccount && (
+        <OrderLimitUpgradeModal
+          isOpen={showUpgradeModal}
+          onClose={() => setShowUpgradeModal(false)}
+          onUpgrade={handleUpgrade}
+          fulfilledOrders={fulfilledOrders}
+        />
       )}
     </div>
   );

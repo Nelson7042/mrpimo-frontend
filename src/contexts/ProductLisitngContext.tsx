@@ -1,9 +1,10 @@
 "use client";
-import { createContext, useContext, useState, ReactNode, useEffect, useCallback } from "react";
+import { createContext, useContext, useState, ReactNode, useEffect, useCallback, useRef } from "react";
 import { ProductFormValidator, ValidationResult } from "@/utils/productFormValidation";
 import { DraftManager } from "@/utils/draftManager";
 import { useSaveDraft, useUpdateDraft } from "@/hooks/mutations";
 import { toast } from "react-toastify";
+import { AutoSaveStatus } from "@/app/vendor/dashboard/products/create-product/(components)/AutoSaveIndicator";
 
 type AttributeOption = string;
 
@@ -37,6 +38,14 @@ type ProductListingContextType = {
   setAutoSaveEnabled: (enabled: boolean) => void;
   completionPercentage: number;
   isLoading: boolean;
+  // Auto-save status tracking
+  autoSaveStatus: AutoSaveStatus;
+  lastSavedAt: Date | null;
+  isDirty: boolean;
+  setIsDirty: (dirty: boolean) => void;
+  // Draft restoration
+  restoreFromDraft: (draft: any) => void;
+  checkForExistingDraft: () => any | null;
 };
 
 const ProductListingContext = createContext<ProductListingContextType | undefined>(undefined);
@@ -55,6 +64,12 @@ export const ProductListingProvider = ({ children }: { children: ReactNode }) =>
   });
   const [autoSaveEnabled, setAutoSaveEnabled] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Auto-save status tracking
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>("idle");
+  const [lastSavedAt, setLastSavedAt] = useState<Date | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
+  const previousProductDetailsRef = useRef<Record<string, any>>({});
 
   const saveDraftMutation = useSaveDraft();
   const updateDraftMutation = useUpdateDraft();
@@ -99,6 +114,7 @@ export const ProductListingProvider = ({ children }: { children: ReactNode }) =>
   const saveDraftEnhanced = useCallback(async (showToast = true) => {
     try {
       setIsLoading(true);
+      setAutoSaveStatus("saving");
       
       const draftData = DraftManager.prepareDraftData(draftId, productDetails, step);
       
@@ -121,8 +137,13 @@ export const ProductListingProvider = ({ children }: { children: ReactNode }) =>
         
         toast.success('Draft saved to server');
       }
+      
+      setAutoSaveStatus("saved");
+      setLastSavedAt(new Date());
+      setIsDirty(false);
     } catch (error: any) {
       console.error('Failed to save draft:', error);
+      setAutoSaveStatus("error");
       if (showToast) {
         toast.error(error.message || 'Failed to save draft to server');
       }
@@ -131,17 +152,69 @@ export const ProductListingProvider = ({ children }: { children: ReactNode }) =>
     }
   }, [draftId, productDetails, step, saveDraftMutation, updateDraftMutation]);
 
-  // Auto-save to localStorage only
+  // Track changes to mark form as dirty
   useEffect(() => {
-    if (autoSaveEnabled && (productDetails.productName || productDetails.brandName)) {
-      const interval = setInterval(() => {
+    const hasData = productDetails.productName || productDetails.brandName || productDetails.description;
+    const hasChanged = JSON.stringify(productDetails) !== JSON.stringify(previousProductDetailsRef.current);
+    
+    if (hasData && hasChanged) {
+      setIsDirty(true);
+      previousProductDetailsRef.current = { ...productDetails };
+    }
+  }, [productDetails]);
+
+  // Auto-save to localStorage every 30 seconds when form is dirty
+  useEffect(() => {
+    if (!autoSaveEnabled) return;
+    
+    const hasData = productDetails.productName || productDetails.brandName || productDetails.description;
+    if (!hasData || !isDirty) return;
+
+    const interval = setInterval(async () => {
+      try {
+        setAutoSaveStatus("saving");
         const draftData = DraftManager.prepareDraftData(draftId, productDetails, step);
         DraftManager.saveLocalDraft(draftData);
-      }, 30000); // 30 seconds
+        setAutoSaveStatus("saved");
+        setLastSavedAt(new Date());
+        setIsDirty(false);
+      } catch (error) {
+        console.error('Auto-save failed:', error);
+        setAutoSaveStatus("error");
+      }
+    }, 30000); // 30 seconds
 
-      return () => clearInterval(interval);
+    return () => clearInterval(interval);
+  }, [draftId, autoSaveEnabled, productDetails, step, isDirty]);
+
+  // Check for existing draft on mount
+  const checkForExistingDraft = useCallback(() => {
+    const localDrafts = DraftManager.getLocalDrafts();
+    if (localDrafts.length > 0) {
+      // Return the most recent draft
+      const sortedDrafts = localDrafts.sort((a, b) => 
+        new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime()
+      );
+      return sortedDrafts[0];
     }
-  }, [draftId, autoSaveEnabled, productDetails, step]);
+    return null;
+  }, []);
+
+  // Restore from draft
+  const restoreFromDraft = useCallback((draft: any) => {
+    if (draft && draft.productDetails) {
+      setProductDetails(draft.productDetails);
+      setDraftId(draft.draftId);
+      if (draft.step) {
+        setStep(draft.step);
+      }
+      if (draft.lastUpdated) {
+        setLastSavedAt(new Date(draft.lastUpdated));
+      }
+      setIsDirty(false);
+      setAutoSaveStatus("saved");
+    }
+  }, []);
 
   const updateProductDetails = (key: string, value: any) => {
     setProductDetails(prev => ({ ...prev, [key]: value }));
@@ -171,6 +244,14 @@ export const ProductListingProvider = ({ children }: { children: ReactNode }) =>
         setAutoSaveEnabled,
         completionPercentage,
         isLoading: isLoading || saveDraftMutation.isPending || updateDraftMutation.isPending,
+        // Auto-save status tracking
+        autoSaveStatus,
+        lastSavedAt,
+        isDirty,
+        setIsDirty,
+        // Draft restoration
+        restoreFromDraft,
+        checkForExistingDraft,
       }}
     >
       {children}

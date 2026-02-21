@@ -13,6 +13,13 @@ import {
   Trophy,
   ChevronLeft,
   ChevronRight,
+  LogIn,
+  LogOut,
+  MapPin,
+  Bell,
+  Mail,
+  Lock,
+  User,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -178,7 +185,11 @@ export default function DashboardPage() {
   // Activity icon helper
   const getActivityIcon = (activityText: string) => {
     const text = (activityText || "").toLowerCase();
-    if (text.includes("order") || text.includes("purchased")) {
+    if (text.includes("login") || text.includes("logged in")) {
+      return <LogIn className="w-5 h-5 text-green-600" />;
+    } else if (text.includes("logout") || text.includes("logged out")) {
+      return <LogOut className="w-5 h-5 text-gray-600" />;
+    } else if (text.includes("order") || text.includes("purchased")) {
       return <ShoppingCart className="w-5 h-5 text-green-600" />;
     } else if (text.includes("bid")) {
       return <Gavel className="w-5 h-5 text-purple-600" />;
@@ -186,9 +197,54 @@ export default function DashboardPage() {
       return <Tag className="w-5 h-5 text-orange-600" />;
     } else if (text.includes("won")) {
       return <Trophy className="w-5 h-5 text-yellow-600" />;
+    } else if (text.includes("address")) {
+      return <MapPin className="w-5 h-5 text-blue-600" />;
+    } else if (text.includes("notification")) {
+      return <Bell className="w-5 h-5 text-purple-600" />;
+    } else if (text.includes("email")) {
+      return <Mail className="w-5 h-5 text-blue-600" />;
+    } else if (text.includes("password")) {
+      return <Lock className="w-5 h-5 text-red-600" />;
+    } else if (text.includes("profile")) {
+      return <User className="w-5 h-5 text-blue-600" />;
     } else {
       return <FileText className="w-5 h-5 text-blue-600" />;
     }
+  };
+
+  // Format activity text to be more human-readable
+  const formatActivityText = (activity: string): string => {
+    if (!activity) return "Unknown activity";
+    
+    // Map of activity codes to human-readable text
+    const activityMap: { [key: string]: string } = {
+      "user_login": "Logged in",
+      "user_logout": "Logged out",
+      "address_added": "Added new address",
+      "address_modified": "Updated address",
+      "address_deleted": "Deleted address",
+      "order_created": "Placed an order",
+      "notification_preferences_updated": "Updated notification settings",
+      "email_change_initiated": "Initiated email change",
+      "password_changed": "Changed password",
+      "profile_updated": "Updated profile",
+    };
+
+    // Check if it's a known activity code
+    const lowerActivity = activity.toLowerCase();
+    for (const [code, text] of Object.entries(activityMap)) {
+      if (lowerActivity.includes(code.toLowerCase())) {
+        return text;
+      }
+    }
+
+    // If it starts with "User logged", it's already formatted
+    if (activity.startsWith("User logged")) {
+      return activity.replace("User logged in", "Logged in").replace("User logged out", "Logged out");
+    }
+
+    // Return as-is if no mapping found
+    return activity;
   };
 
   return (
@@ -421,21 +477,20 @@ export default function DashboardPage() {
                       const location = metadata.location || 'Unknown';
                       const deviceType = metadata.device || 'desktop';
                       
-                    
+                      // Use browser/os from metadata if available (backend now stores these)
+                      // Otherwise parse from user agent
+                      let browser = metadata.browser;
+                      let os = metadata.os;
                       
-                      // Parse browser and OS from user agent
-                      const { browser, os } = parseUserAgent(userAgent);
-                      
-                      console.log('🌐 Parsed User Agent:', {
-                        browser,
-                        os,
-                        originalUserAgent: userAgent,
-                      });
+                      if (!browser || !os) {
+                        const parsed = parseUserAgent(userAgent);
+                        browser = browser || parsed.browser;
+                        os = os || parsed.os;
+                      }
                       
                       // Extract base activity (remove the old "from X on Y with Z" part)
                       const baseActivity = activity.activity?.split(' from ')[0] || activity.activity;
-                      
-                    
+                      const formattedActivity = formatActivityText(baseActivity);
 
                       return (
                         <tr
@@ -450,10 +505,10 @@ export default function DashboardPage() {
                               {getActivityIcon(baseActivity)}
                               <div className="flex flex-col">
                                 <span className="font-roboto text-xs font-medium">
-                                  {`${baseActivity} from ${location} on ${deviceType}`}
+                                  {formattedActivity}
                                 </span>
                                 <span className="font-roboto text-[10px] text-gray-500">
-                                  {browser} • {os} • {deviceType} • {location}
+                                  {location} • {browser} on {os} ({deviceType})
                                 </span>
                                 <div className="font-roboto sm:hidden text-[10px] text-gray-500 mt-1">
                                   {activityTime} • {activityDateStr}

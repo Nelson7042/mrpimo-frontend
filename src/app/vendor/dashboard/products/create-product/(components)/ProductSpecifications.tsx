@@ -10,6 +10,7 @@ import Modal from "@/components/Modal";
 import { useResponsive } from "@/hooks/useResponsive";
 import { useCategories } from "@/hooks/queries";
 import ICategory from "@/types/category.type";
+import { scrollToFirstError } from "@/utils/scrollToError";
 
 type Attribute = {
   name: string;
@@ -310,6 +311,11 @@ export default function ProductSpecifications(props: Props) {
     setAdditionalSpecifications(updatedAdditionalSpecs);
     updateProductDetails("additionalSpecifications", updatedAdditionalSpecs);
     
+    // Scroll to first error when validation fails
+    if (!isValid) {
+      scrollToFirstError();
+    }
+    
     return isValid;
   };
 
@@ -339,8 +345,8 @@ export default function ProductSpecifications(props: Props) {
 
   const renderOnMobileOrTablet = () => {
     return (
-      <div className="p-2 sm:p-4 border border-gray-400 rounded-lg w-full">
-        <h1 className="text-[16px] mb-4">Product Specifications</h1>
+      <div className="p-2 sm:p-4 border border-gray-400 rounded-lg w-full font-roboto">
+        <h1 className="text-[16px] mb-4 font-roboto">Product Specifications</h1>
         <div className="grid grid-cols-2 items-center gap-4">
           {visibleAttributes.map((attr: Attribute) => (
             <div key={attr.name} className="col-span-2 md:col-span-1">
@@ -539,9 +545,9 @@ export default function ProductSpecifications(props: Props) {
           <div className="flex flex-col justify-between" key={formIndex}>
             <div
               key={formIndex}
-              className="p-4 border border-gray-400 rounded-lg mb-6"
+              className="p-4 border border-gray-400 rounded-lg mb-6 font-roboto"
             >
-              <h1 className="text-[16px] mb-4">
+              <h1 className="text-[16px] mb-4 font-roboto">
                 {formIndex === 0
                   ? "Product Specifications"
                   : `Product Specifications page - ${formIndex + 1}`}

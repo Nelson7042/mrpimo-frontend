@@ -82,7 +82,7 @@ const fetchProductBySlug = async (slug: string) => {
 
 export const useFetchProductBySlug = (slug: string) => {
   return useQuery({
-    queryKey: ['product', slug],
+    queryKey: ['product-slug', slug],
     queryFn: () => fetchProductBySlug(slug),
     enabled: !!slug,
     refetchOnWindowFocus: false,
@@ -184,7 +184,9 @@ export const useProductsOnAuction = (queryData: AuctionQueryDataType) => {
   return useQuery({
     queryKey: ['productsOnAuction', queryData],
     queryFn: () => fetchProductsOnAuction(queryData),
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 30 * 1000, // refetch every 30s for live auction data
     retry: 1,
   });
 };
@@ -405,7 +407,9 @@ export const useFetchAuctionProduct = (productId: string) => {
     queryKey: ['auctionProduct', productId],
     queryFn: () => fetchAuctionProduct(productId),
     enabled: !!productId,
-    refetchOnWindowFocus: false,
+    staleTime: 0,
+    refetchOnWindowFocus: true,
+    refetchInterval: 15 * 1000, // refetch every 15s for live bid updates
     retry: 1
   });
 };
