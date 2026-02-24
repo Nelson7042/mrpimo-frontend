@@ -29,8 +29,9 @@ export default function UpgradeToBusinessAccount() {
       postalCode: "",
     },
   });
-  
 
+
+  
   // Pre-fill existing address when modal opens
   useEffect(() => {
     if (isModalOpen && existingAddress) {
