@@ -30,6 +30,8 @@ export default function UpgradeToBusinessAccount() {
     },
   });
 
+
+  
   // Pre-fill existing address when modal opens
   useEffect(() => {
     if (isModalOpen && existingAddress) {
