@@ -40,6 +40,16 @@ export interface IClientShipment {
       amount: number;
       currency: string;
     };
+    fulfillmentMethod?: "pickup" | "dropoff";
+    tempCode?: string;
+    vendorPickupCost?: number;
+    dropoffPrice?: number;
+    pickupPrice?: number;
+    experienceCentre?: {
+      id: number;
+      name: string;
+      address: string;
+    };
   };
   deliveryAddress: {
     street: string;

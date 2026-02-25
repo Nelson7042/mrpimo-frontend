@@ -9,6 +9,9 @@ import {
   ArrowLeft,
   ChevronDown,
   ChevronUp,
+  Package,
+  Copy,
+  MapPin,
 } from "lucide-react";
 import { useOrderById } from "@/hooks/queries";
 import { useParams, useRouter } from "next/navigation";
@@ -18,6 +21,9 @@ import { getCurrencySymbol } from "@/utils/currency";
 import { useUpdateOrderStatus } from "@/hooks/useVendor";
 import { useEffect } from "react";
 import { useVendorStore } from "@/stores/useVendorStore";
+import FulfillmentActionPanel from "@/components/vendor/FulfillmentActionPanel";
+import { IClientShipment } from "@/types/order.type";
+import { toast } from "react-hot-toast";
 
 // Helper function to calculate vendor-specific totals
 const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
@@ -97,7 +103,7 @@ export default function OrderDetailsPage() {
   const params = useParams();
   const router = useRouter();
   const orderId = params.orderId as string;
-  const { data: order, isLoading } = useOrderById(orderId);
+  const { data: order, isLoading, refetch } = useOrderById(orderId);
   const { listedProducts } = useProductStore();
   const updateOrderStatusMutation = useUpdateOrderStatus();
   const { vendor } = useVendorStore();
@@ -416,6 +422,121 @@ export default function OrderDetailsPage() {
           );
         })}
       </section>
+
+      {/* Shipment Fulfillment Section */}
+      {order?.shipments && order.shipments.length > 0 && (
+        <section className="mb-4">
+          <h2 className="text-lg font-semibold mt-4 mb-2 border-b border-gray-200 pb-2">
+            <Package className="h-5 w-5 text-gray-600 mr-1 inline-block" />{" "}
+            Shipment Details
+          </h2>
+
+          {order.shipments.map((shipment: IClientShipment, index: number) => {
+            // Only show shipments belonging to this vendor
+            if (shipment.vendorId?._id !== vendor?._id) return null;
+
+            const shippingStatus = shipment.shipping?.status?.toLowerCase();
+            const fulfillmentMethod = shipment.shipping?.fulfillmentMethod;
+            const showFulfillmentPanel = shippingStatus === "pending" || shippingStatus === "processing";
+            const isDropoffPreparing = shippingStatus === "preparing_shipment" && fulfillmentMethod === "dropoff";
+            const isPickupCompleted = shippingStatus === "preparing_shipment" && fulfillmentMethod === "pickup";
+
+            return (
+              <div key={shipment._id} className="mb-4">
+                {order.shipments.length > 1 && (
+                  <p className="text-sm font-medium text-gray-700 mb-2">
+                    Shipment {index + 1}
+                  </p>
+                )}
+
+                {/* Show FulfillmentActionPanel for pending/processing shipments */}
+                {showFulfillmentPanel && (
+                  <FulfillmentActionPanel
+                    orderId={orderId}
+                    shipment={shipment}
+                    vendorId={vendor?._id || ""}
+                    onFulfillmentComplete={() => refetch()}
+                  />
+                )}
+
+                {/* Show waybill for pickup shipments in preparing_shipment status */}
+                {isPickupCompleted && shipment.shipping?.waybill && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 space-y-2">
+                    <p className="text-xs text-blue-700 font-medium">
+                      Pickup — GIGL will send a rider to your location
+                    </p>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs text-gray-500">Waybill Number</p>
+                        <p className="text-lg font-bold text-gray-900">
+                          {shipment.shipping.waybill}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard.writeText(shipment.shipping.waybill!);
+                          toast.success("Waybill copied to clipboard");
+                        }}
+                        className="p-2 hover:bg-blue-100 rounded-md transition-colors"
+                        aria-label="Copy waybill number"
+                      >
+                        <Copy className="h-4 w-4 text-blue-600" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Show tempCode and Experience Centre for dropoff shipments in preparing_shipment status */}
+                {isDropoffPreparing && (
+                  <div className="space-y-3">
+                    {shipment.shipping?.tempCode && (
+                      <div className="bg-green-50 border border-green-200 rounded-xl p-4 space-y-2">
+                        <p className="text-xs text-green-700 font-medium">
+                          Dropoff — Present this code at the Experience Centre
+                        </p>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-xs text-gray-500">Temp Code</p>
+                            <p className="text-2xl font-bold text-gray-900 tracking-wider">
+                              {shipment.shipping.tempCode}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => {
+                              navigator.clipboard.writeText(shipment.shipping.tempCode!);
+                              toast.success("Temp code copied to clipboard");
+                            }}
+                            className="p-2 hover:bg-green-100 rounded-md transition-colors"
+                            aria-label="Copy temp code"
+                          >
+                            <Copy className="h-4 w-4 text-green-600" />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    {shipment.shipping?.experienceCentre && (
+                      <div className="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                        <div className="flex items-start gap-2">
+                          <MapPin className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+                          <div>
+                            <p className="text-xs text-gray-500 mb-1">Drop off at</p>
+                            <p className="text-sm font-medium text-gray-900">
+                              {shipment.shipping.experienceCentre.name}
+                            </p>
+                            <p className="text-xs text-gray-600">
+                              {shipment.shipping.experienceCentre.address}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </section>
+      )}
 
       <section className="space-y-4 w-full">
         <h2 className="text-lg font-semibold">

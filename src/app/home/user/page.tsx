@@ -20,6 +20,9 @@ import {
   Mail,
   Lock,
   User,
+  Wallet,
+  RotateCcw,
+  Star,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -93,8 +96,7 @@ export default function DashboardPage() {
   const fiatWallet = profileData?.fiatWallet;
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
-    { label: "My Account", href: "/home/user/settings" },
-    { label: "Dashboard", href: "/home" },
+    { label: "Dashboard", href: "/home/user" },
     { label: "Overview", href: null },
   ];
 
@@ -207,6 +209,12 @@ export default function DashboardPage() {
       return <Lock className="w-5 h-5 text-red-600" />;
     } else if (text.includes("profile")) {
       return <User className="w-5 h-5 text-blue-600" />;
+    } else if (text.includes("wallet") || text.includes("topup") || text.includes("top_up") || text.includes("topped up")) {
+      return <Wallet className="w-5 h-5 text-green-600" />;
+    } else if (text.includes("refund")) {
+      return <RotateCcw className="w-5 h-5 text-orange-600" />;
+    } else if (text.includes("review")) {
+      return <Star className="w-5 h-5 text-yellow-600" />;
     } else {
       return <FileText className="w-5 h-5 text-blue-600" />;
     }
@@ -228,6 +236,9 @@ export default function DashboardPage() {
       "email_change_initiated": "Initiated email change",
       "password_changed": "Changed password",
       "profile_updated": "Updated profile",
+      "wallet_topup": "Topped up wallet",
+      "refund_received": "Received a refund",
+      "review_created": "Submitted a review",
     };
 
     // Check if it's a known activity code

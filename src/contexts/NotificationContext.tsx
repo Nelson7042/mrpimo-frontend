@@ -11,6 +11,7 @@ import { INotification } from '@/types/notification.type';
 interface NotificationContextType {
   notifications: INotification[];
   unreadCount: number;
+  ringing: boolean;
   markAsRead: (id: string) => void;
   markAllAsRead: () => void;
   clearNotifications: () => void;
@@ -18,9 +19,33 @@ interface NotificationContextType {
 
 const NotificationContext = createContext<NotificationContextType | undefined>(undefined);
 
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
+    const notes = [783.99, 1046.50, 1318.51]; // G5, C6, E6
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const start = ctx.currentTime + i * 0.15;
+      gain.gain.setValueAtTime(0, start);
+      gain.gain.linearRampToValueAtTime(0.3, start + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, start + 0.5);
+      osc.start(start);
+      osc.stop(start + 0.5);
+    });
+  } catch {
+    // AudioContext not available
+  }
+}
+
 export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [notifications, setNotifications] = useState<INotification[]>([]);
+  const [ringing, setRinging] = useState(false);
   const { user } = useUserStore();
   const { data: userNotifications } = useUserNotifications(!!user?._id);
   
@@ -47,7 +72,9 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!socket) return;
     
     const handleNotification = (notification: INotification) => {
-      // Add new notification to state
+      playChime();
+      setRinging(true);
+      setTimeout(() => setRinging(false), 1000);
       setNotifications(prev => [
         notification,
         ...prev
@@ -111,6 +138,7 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     <NotificationContext.Provider value={{
       notifications,
       unreadCount,
+      ringing,
       markAsRead,
       markAllAsRead,
       clearNotifications

@@ -21,13 +21,13 @@ type Order = {
 };
 
 // Helper function to calculate vendor-specific totals
-const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
+const calculateVendorTotals = (orderItems: any[], vendorId: string, vendorCurrency: string) => {
   const vendorItems = orderItems.filter(item => 
     item.metadata?.vendorId === vendorId
   );
 
   if (vendorItems.length === 0) {
-    return { totalAmount: 0, totalItems: 0, currency: 'USD' };
+    return { totalAmount: 0, totalItems: 0, currency: vendorCurrency };
   }
 
   const totalAmount = vendorItems.reduce((sum, item) => {
@@ -36,15 +36,15 @@ const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
   }, 0);
 
   const totalItems = vendorItems.reduce((sum, item) => sum + item.quantity, 0);
-  const currency = vendorItems[0]?.metadata?.vendorCurrency || vendorItems[0]?.metadata?.userCurrency || 'USD';
 
-  return { totalAmount, totalItems, currency };
+  return { totalAmount, totalItems, currency: vendorCurrency };
 };
 
 const RecentOrders = ({ currency }: { currency: string}) => {
   const { vendor } = useVendorStore();
   const { data: products } = useVendorProducts(vendor?._id!);
   const { data, isLoading: isOrderdsLoading } = useVendorOrders(vendor?._id!);
+  const vendorCurrency = data?.vendorCurrency || 'USD';
   const router = useRouter();
 
   if (isOrderdsLoading) {
@@ -100,7 +100,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
               <tbody className="bg-white divide-y divide-gray-200">
                 {data &&
                   data.orders?.map((order: any) => {
-                    const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+                    const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "", vendorCurrency);
                     
                     return (
                       <tr key={order?._id}>
@@ -172,7 +172,7 @@ const RecentOrders = ({ currency }: { currency: string}) => {
           <div className="md:hidden space-y-4">
             {data &&
               data.orders?.map((order: any) => {
-                const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+                const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "", vendorCurrency);
                 
                 return (
                   <div

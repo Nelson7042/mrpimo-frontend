@@ -104,7 +104,7 @@ const ProductCard = ({
       <div className="relative mb-3 sm:mb-4">
         <div
           className={`bg-gradient-to-br from-gray-100 to-gray-200 rounded-lg ${
-            isLarge ? "h-40 sm:h-48 md:h-56 lg:h-64" : "h-32 sm:h-36 md:h-40"
+            isLarge ? "aspect-[4/3]" : "aspect-square"
           } flex items-center justify-center overflow-hidden`}
         >
           <img
@@ -112,8 +112,8 @@ const ProductCard = ({
             alt={product.name}
             className={`${
               isLarge
-                ? "h-32 sm:h-40 md:h-48 lg:h-56"
-                : "h-24 sm:h-28 md:h-32"
+                ? "max-h-[85%]"
+                : "max-h-[85%]"
             } w-auto object-contain group-hover:scale-105 transition-transform duration-300`}
           />
         </div>
@@ -152,7 +152,7 @@ const ProductCard = ({
         )}
 
         <h3
-          className={`font-semibold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition-colors leading-tight ${
+          className={`font-semibold text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors leading-tight ${
             isLarge ? "text-base sm:text-lg md:text-xl mb-2 sm:mb-3" : "text-sm sm:text-base mb-2"
           }`}
         >

@@ -155,5 +155,34 @@ export const vendorService = {
       body: JSON.stringify({ amount, method }),
     });
     return handleApiResponse(response, 'Failed to request payout');
+  },
+
+  async getFulfillmentOptions(orderId: string, shipmentId: string) {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/orders/${orderId}/shipments/${shipmentId}/fulfillment-options`
+    );
+    return handleApiResponse(response, 'Failed to fetch fulfillment options');
+  },
+
+  async fulfillShipment(
+    orderId: string,
+    shipmentId: string,
+    body: { fulfillmentMethod: "pickup" | "dropoff"; serviceCentreId?: number }
+  ) {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/orders/${orderId}/shipments/${shipmentId}/fulfill`,
+      {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }
+    );
+    return handleApiResponse(response, 'Failed to fulfill shipment');
+  },
+
+  async getExperienceCentres(stationId: number) {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/shipping/experience-centres/${stationId}`
+    );
+    return handleApiResponse(response, 'Failed to fetch experience centres');
   }
 };

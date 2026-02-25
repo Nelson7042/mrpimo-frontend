@@ -3,12 +3,15 @@ import { usePathname, useRouter } from "next/navigation";
 import {
   LayoutDashboard,
   ShoppingBag,
+  Tag,
   Wallet,
   Heart,
   Star,
   Settings,
   LogOut,
   MessageCircleMore,
+  AlertTriangle,
+  Gavel,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
@@ -21,8 +24,11 @@ const BASE_PATH = "/home/user";
 const navigation = [
   { name: "Overview", href: "", icon: LayoutDashboard }, // Empty string for base path
   { name: "Orders", href: "/orders", icon: ShoppingBag },
+  { name: "Offers", href: "/offers", icon: Tag },
+  { name: "My Bids", href: "/bids", icon: Gavel },
   { name: "Messages", href: "/messages", icon: MessageCircleMore },
   { name: "Wallet", href: "/wallet", icon: Wallet },
+  { name: "My Disputes", href: "/disputes", icon: AlertTriangle },
   { name: "Wishlists", href: "/wishlist", icon: Heart },
   { name: "Notifications", href: "/notifications", icon: Notification1 },
   // { name: "Needs Reviews", href: "/reviews", icon: Star },
@@ -51,7 +57,10 @@ export function Sidebar({
       {navigation.map((item) => {
         // Construct full path
         const fullPath = BASE_PATH + item.href;
-        const isActive = pathname === fullPath;
+        // Overview (empty href) should only match exact path, others match sub-paths too
+        const isActive = item.href === ""
+          ? pathname === fullPath
+          : pathname === fullPath || pathname.startsWith(fullPath + "/");
 
         return (
           <Button

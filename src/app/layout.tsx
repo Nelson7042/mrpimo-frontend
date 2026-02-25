@@ -39,8 +39,20 @@ const alexandria = Alexandria({
 });
 
 export const metadata: Metadata = {
-  title: "Mprimo",
-  description: "A global marketplace",
+  metadataBase: new URL('https://mprimo-one.vercel.app'),
+  title: {
+    template: '%s | Mprimo - Global Marketplace',
+    default: 'Mprimo - Global Marketplace',
+  },
+  description: 'Discover amazing deals on Mprimo, your global e-commerce marketplace for electronics, fashion, home goods, and more. Shop, bid, and save.',
+  openGraph: {
+    siteName: 'Mprimo',
+    type: 'website',
+    locale: 'en_US',
+  },
+  twitter: {
+    card: 'summary_large_image',
+  },
   manifest: '/manifest.json',
 };
 

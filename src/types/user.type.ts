@@ -29,7 +29,8 @@ export interface User {
         provider: string;
         providerId: string;
     }>;
-    role: 'user' | 'admin' | 'superadmin' | 'vendor_admin' | 'compliance_admin' | 'finance_admin' | 'support_admin' | 'marketing_admin' | 'product_admin' | 'analytics_admin' | 'dispatch_admin' | 'warehouse_admin' | 'content_admin' | 'dispute_admin';
+    role: 'user' | 'admin';
+    adminRole?: 'superadmin' | 'vendor_admin' | 'compliance_admin' | 'finance_admin' | 'support_admin' | 'marketing_admin' | 'product_admin' | 'analytics_admin' | 'dispatch_admin' | 'warehouse_admin' | 'content_admin' | 'dispute_admin' | 'review_moderator' | 'tech_admin';
     status: 'active' | 'inactive' | 'suspended';
     canMakeSales: boolean;
     preferences: {

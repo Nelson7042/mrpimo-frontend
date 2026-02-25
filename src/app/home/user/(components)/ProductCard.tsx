@@ -1,9 +1,7 @@
 import Wishlist from "@/components/client-component/Wishlist";
 import { StarRating } from "@/components/Home/ProductCard";
-import { useUserStore } from "@/stores/useUserStore";
 import { ProductType } from "@/types/product.type";
 import Link from "next/link";
-import { useState } from "react";
 
 const ProductCard = ({
   product,
@@ -12,7 +10,6 @@ const ProductCard = ({
   product: ProductType;
   isLarge?: boolean;
 }) => {
-  const { user } = useUserStore();
 
   return (
     <Link
@@ -75,7 +72,7 @@ const ProductCard = ({
               </span>
             )}
           </h3>
-          <p className="text-gray-600 lg:text-[11px] mt-1 text-sm leading-tight mb-3 sm:mb-4 hidden sm:block">
+          <p className="text-gray-600 lg:text-[11px] mt-1 text-sm leading-tight mb-3 sm:mb-4 hidden sm:line-clamp-3">
             {product.description}
           </p>
 
@@ -115,7 +112,6 @@ const ProductCard = ({
                   product?.variants?.[0]?.options?.[0]?.price ||
                   0
                 }
-                user={user}
               />
             </div>
           </div>

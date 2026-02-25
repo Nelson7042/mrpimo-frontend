@@ -161,7 +161,7 @@ const ProductCard = ({
           )}
           {!isLarge && (
             <h3
-              className={`font-semibold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition-colors ${
+              className={`font-semibold text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors ${
                 isLarge
                   ? "text-sm md:text-base mb-2 sm:mb-4"
                   : "text-sm sm:text-base"
@@ -185,7 +185,7 @@ const ProductCard = ({
                 </span>
               </div>
               <h3
-                className={`font-semibold text-gray-800 line-clamp-2 group-hover:text-blue-600 transition-colors ${
+                className={`font-semibold text-gray-800 line-clamp-1 group-hover:text-blue-600 transition-colors ${
                   isLarge
                     ? "text-sm md:text-base mb-2 sm:mb-4"
                     : "text-sm sm:text-base"
@@ -365,9 +365,9 @@ export default function BestDeals() {
         {/* Header */}
         <div className="flex flex-row items-center justify-between element-spacing gap-4">
           <div className="flex flex-row items-center gap-3 sm:gap-6">
-            <h1 className="text-responsive-xl font-semibold text-gray-900">
+            <h2 className="text-responsive-xl font-semibold text-gray-900">
               Our Best Deals
-            </h1>
+            </h2>
             {/* <CountdownTimer /> */}
           </div>
           <Link href="/home/best-deals">

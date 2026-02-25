@@ -145,3 +145,45 @@ export const useRequestPayout = () => {
     },
   });
 };
+
+
+export const useFulfillmentOptions = (orderId: string, shipmentId: string) => {
+  return useQuery({
+    queryKey: ['fulfillment-options', orderId, shipmentId],
+    queryFn: () => vendorService.getFulfillmentOptions(orderId, shipmentId),
+    enabled: !!orderId && !!shipmentId,
+  });
+};
+
+export const useFulfillShipment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      shipmentId,
+      body,
+    }: {
+      orderId: string;
+      shipmentId: string;
+      body: { fulfillmentMethod: "pickup" | "dropoff"; serviceCentreId?: number };
+    }) => vendorService.fulfillShipment(orderId, shipmentId, body),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
+      queryClient.invalidateQueries({ queryKey: ['fulfillment-options', variables.orderId, variables.shipmentId] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to fulfill shipment');
+    },
+  });
+};
+
+export const useExperienceCentres = (stationId: number) => {
+  return useQuery({
+    queryKey: ['experience-centres', stationId],
+    queryFn: () => vendorService.getExperienceCentres(stationId),
+    enabled: !!stationId,
+  });
+};
+

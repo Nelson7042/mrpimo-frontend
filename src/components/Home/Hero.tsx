@@ -177,6 +177,8 @@ const MarketplaceSection = () => {
     <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-8 pb-3 md:py-10 lg:py-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
+        <h1 className="sr-only">Mprimo - Shop the Best Deals on the Global Marketplace</h1>
+
         {/* Carousel Section */}
         <div className="lg:col-span-2">
           <div 
@@ -216,7 +218,7 @@ const MarketplaceSection = () => {
             <div className="flex items-center justify-center relative w-[45%]">
               <img 
                 src={carouselItems[currentSlide]?.image}
-                alt="Product"
+                alt={carouselItems[currentSlide]?.subtitle || 'Featured product'}
                 className="w-[120px] sm:w-[100px] md:w-[140px] lg:w-[160px] h-[90px] sm:h-[180px] md:h-[220px] lg:h-[300px] object-contain rounded-lg"
               />
               <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-blue-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">

@@ -63,10 +63,12 @@ const LoginForm: React.FC<LoginFormProps> = ({ onLoginSuccess })=> {
         { email, password },
         {
           onSuccess: (data) => {
-            if (onLoginSuccess) {
-              if (data.has2faEnabled) {
-                onLoginSuccess(data)
+            // Check if 2FA is required — return early to prevent setting user/navigating
+            if (data.has2faEnabled || data.requires2FA) {
+              if (onLoginSuccess) {
+                onLoginSuccess(data);
               }
+              return;
             }
             setUser(data.user);
             setVendor(data.vendor);

@@ -60,9 +60,7 @@ const Page = (props: Props) => {
   
   const verificationStatus = getVerificationStatus();
 
-  const [vendorCurrency] = useState(
-    data?.dashboard?.salesTotal?.currency || ""
-  );
+  const vendorCurrency = data?.dashboard?.salesTotal?.currency || vendor?.wallet?.currency || '';
 
   useUserNotifications(true);
 
@@ -153,7 +151,7 @@ const Page = (props: Props) => {
                 title="Sales Total"
                 percentageIncrease={data?.dashboard?.salesTotal}
                 amount={data?.dashboard?.salesTotal?.value}
-                currency={data?.dashboard?.salesTotal?.currency}
+                currency={data?.dashboard?.salesTotal?.currency || vendor?.wallet?.currency}
               />
               <AnalyticsCard
                 title="Total Orders"
@@ -185,7 +183,7 @@ const Page = (props: Props) => {
             {isLoading ? (
               <SalesOverviewSkeleton />
             ) : (
-              <SalesOverview vendorId={vendor?._id!} />
+              <SalesOverview vendorId={vendor?._id!} currency={vendorCurrency} />
             )}
           </div>
           <div className="col-span-1 xl:col-span-4">

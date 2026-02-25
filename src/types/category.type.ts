@@ -21,6 +21,14 @@ export default interface ICategory {
     createdBy: string;
     updatedBy: string;
     metadata?: Record<string, any>;
+    sortOrder: number;
+    icon?: string;
+    seoTitle?: string;
+    seoDescription?: string;
+    seoKeywords?: string[];
+    featured: boolean;
+    breadcrumbs: { name: string; slug: string; categoryId: string }[];
+    productCount: number;
   }
 
 
@@ -51,4 +59,12 @@ export interface Category {
   createdBy: string;
   updatedBy: string;
   __v: number;
+  sortOrder: number;
+  icon?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords?: string[];
+  featured: boolean;
+  breadcrumbs: { name: string; slug: string; categoryId: string }[];
+  productCount: number;
 }

@@ -102,9 +102,8 @@ export default function MessagesPage() {
   
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
-    { label: "Cart", href: "/my-cart" },
-    { label: "Auction", href: null},
-  
+    { label: "Dashboard", href: "/home/user" },
+    { label: "Messages", href: null },
   ];
   const handleBreadcrumbClick = (
     item: BreadcrumbItem,

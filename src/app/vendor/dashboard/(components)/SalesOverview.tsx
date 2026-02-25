@@ -16,6 +16,7 @@ import { getCurrencySymbol } from "@/utils/currency";
 
 type Props = {
   vendorId: string;
+  currency?: string;
 };
 
 const SalesOverview = (props: Props) => {
@@ -53,7 +54,7 @@ const SalesOverview = (props: Props) => {
           <p className="font-roboto text-xs text-gray-500">Total Sales</p>
           {data?.analytics && (
             <p className="font-roboto text-base font-semibold">
-              {getCurrencySymbol(data?.analytics?.currency)}
+              {getCurrencySymbol(data?.analytics?.currency || props.currency || '')}
               {data?.analytics?.totalSales?.toFixed(2) || "0.00"}
             </p>
           )}

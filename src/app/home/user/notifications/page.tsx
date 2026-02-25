@@ -49,7 +49,7 @@ export default function NotificationsPage() {
   });
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
-    { label: "Dashboard", href: "/home" },
+    { label: "Dashboard", href: "/home/user" },
     { label: "Notifications", href: null },
   ];
 

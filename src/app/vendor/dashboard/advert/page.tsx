@@ -249,7 +249,7 @@ const page = (props: Props) => {
                       ? "Unlimited"
                       : plan.productListingLimit ?? 0
                   }`,
-                  `Featured Slots: ${plan.featuredProductSlots ?? 0}`,
+                  `Collection Slots: ${plan.collectionProductSlots ?? 0}`,
                   `Analytics: ${plan.analyticsDashboard ? "Yes" : "No"}`,
                   `Bulk Upload: ${plan.bulkUpload ? "Yes" : "No"}`,
                   `Store Branding: ${plan.customStoreBranding ?? "none"}`,

@@ -92,9 +92,8 @@ export default function ReviewsPage() {
   
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
-    { label: "Cart", href: "/my-cart" },
-    { label: "Auction", href: null},
-  
+    { label: "Dashboard", href: "/home/user" },
+    { label: "Reviews", href: null },
   ];
   const handleBreadcrumbClick = (
     item: BreadcrumbItem,

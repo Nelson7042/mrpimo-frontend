@@ -3,7 +3,7 @@ export interface INotification {
     userId: string;
     title: string;
     case: string;
-    type: 'order' | 'payment' | 'promotion' | 'system' | 'chat';
+    type: 'order' | 'payment' | 'promotion' | 'system' | 'chat' | 'offer' | 'bid' | 'wallet';
     message: string;
     data: {
         redirectUrl: string;

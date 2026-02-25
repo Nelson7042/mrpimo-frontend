@@ -81,14 +81,14 @@ const Breadcrumbs: React.FC<BreadcrumbsProps> = ({
         {/* Home Item */}
         {showHome && (
           <li className='flex items-center'>
-            <a
+            <Link
               href="/home"
               onClick={(e) => handleItemClick({ label: 'Home', href: '/home' }, e)}
               className="flex flex-col justify-center  text-gray-500 hover:text-gray-700 transition-colors duration-200"
               aria-label="Home"
             >
             <div  className="flex items-start">{homeIcon} <span className="ml-1">Home</span> </div>  
-            </a>
+            </Link>
             {items.length > 0 && (
               <span className="mx-1 md:mx-2 flex items-center ">
                 {separator}

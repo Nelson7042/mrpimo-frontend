@@ -1,7 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import { X, Box, ShoppingBag, MessageSquare, CheckCircle, CreditCard } from "lucide-react";
+import { X, Box, ShoppingBag, MessageSquare, CheckCircle, CreditCard, Tag, Wallet } from "lucide-react";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useNotifications } from "@/contexts/NotificationContext";
 
 type NotificationType =
@@ -10,7 +11,9 @@ type NotificationType =
   | "payment"
   | "product-listed"
   | "message"
-  | "offer";
+  | "offer"
+  | "bid"
+  | "wallet";
 
 interface Notification {
   id: string;
@@ -52,6 +55,10 @@ const NotificationIcon = ({ type }: { type: NotificationType }) => {
       return <MessageSquare className="text-purple-500" size={18} />;
     case "offer":
       return <Box className="text-green-500" size={18} />;
+    case "bid":
+      return <Tag className="text-orange-500" size={18} />;
+    case "wallet":
+      return <Wallet className="text-emerald-500" size={18} />;
     default:
       return null;
   }
@@ -64,6 +71,16 @@ const NotificationModal = ({
 }: NotificationModalProps) => {
   const { notifications, unreadCount, markAsRead, markAllAsRead } =
     useNotifications();
+  const router = useRouter();
+
+  const handleNotificationClick = (notification: any) => {
+    if (notification.data?.redirectUrl && notification.data.redirectUrl !== "/") {
+      markAsRead(notification._id);
+      onClose();
+      router.push(notification.data.redirectUrl);
+    }
+  };
+
   const getPosition = () => {
     if (!anchorEl) return {};
 
@@ -135,7 +152,12 @@ const NotificationModal = ({
                   key={notification._id}
                   className={`p-4 border-b border-b-[#dcdee4] ${
                     notification.read ? "bg-[#fafbff]" : "bg-white"
+                  } ${
+                    notification.data?.redirectUrl && notification.data.redirectUrl !== "/"
+                      ? "cursor-pointer hover:bg-gray-50"
+                      : ""
                   }`}
+                  onClick={() => handleNotificationClick(notification)}
                 >
                   <div className="flex gap-3">
                     <div className="rounded-full flex items-center justify-center flex-shrink-0">
@@ -201,9 +223,28 @@ const NotificationModal = ({
                           </button>
                           <button
                             className="px-3 py-1 bg-gray-200 text-gray-700 text-xs rounded hover:bg-gray-300"
-                            onClick={() => markAsRead(notification.id)}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(notification.id);
+                            }}
                           >
                             Dismiss
+                          </button>
+                        </div>
+                      )}
+
+                      {notification.type !== "message" &&
+                        notification.data?.redirectUrl &&
+                        notification.data.redirectUrl !== "/" && (
+                        <div className="mt-3 flex gap-2">
+                          <button
+                            className="px-3 py-1 bg-blue-600 text-white text-xs rounded hover:bg-blue-700"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleNotificationClick(notification);
+                            }}
+                          >
+                            View
                           </button>
                         </div>
                       )}

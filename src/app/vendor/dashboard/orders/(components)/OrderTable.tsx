@@ -29,55 +29,23 @@ const getStatusColor = (status: string) => {
 };
 
 // Helper function to calculate vendor-specific totals
-const calculateVendorTotals = (orderItems: any[], vendorId: string) => {
+const calculateVendorTotals = (orderItems: any[], vendorId: string, vendorCurrency: string) => {
   const vendorItems = orderItems.filter(item => 
     item.metadata?.vendorId === vendorId
   );
 
   if (vendorItems.length === 0) {
-    return { totalAmount: 0, totalItems: 0, currency: 'USD' };
+    return { totalAmount: 0, totalItems: 0, currency: vendorCurrency };
   }
 
   const totalAmount = vendorItems.reduce((sum, item) => {
-    // Use amountInVendorCurrency if available (it's already the total for this item)
-    // Otherwise fallback to vendorPrice * quantity
     const itemTotal = item.metadata?.amountInVendorCurrency || (item.vendorPrice || item.price) * item.quantity;
     return sum + itemTotal;
   }, 0);
 
   const totalItems = vendorItems.reduce((sum, item) => sum + item.quantity, 0);
-  const currency = vendorItems[0]?.metadata?.vendorCurrency || vendorItems[0]?.metadata?.userCurrency || 'USD';
 
-  return { totalAmount, totalItems, currency };
-};
-
-// Helper function to get currency symbol
-const getVendorCurrencySymbol = (currency: string): string => {
-  const currencySymbols: { [key: string]: string } = {
-    'USD': '$',
-    'EUR': '€',
-    'GBP': '£',
-    'JPY': '¥',
-    'NGN': '₦',
-    'GHS': '₵',
-    'ZAR': 'R',
-    'KES': 'KSh',
-    'UGX': 'USh',
-    'TZS': 'TSh',
-    'RWF': 'RF',
-    'XOF': 'CFA',
-    'CNY': '¥',
-    'HKD': 'HK$',
-    'TWD': 'NT$',
-    'CAD': 'C$',
-    'AUD': 'A$',
-    'CHF': 'CHF',
-    'SEK': 'kr',
-    'NOK': 'kr',
-    'DKK': 'kr',
-  };
-
-  return currencySymbols[currency.toUpperCase()] || currency;
+  return { totalAmount, totalItems, currency: vendorCurrency };
 };
 
 const OrderTable = (props: Props) => {
@@ -86,6 +54,7 @@ const OrderTable = (props: Props) => {
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const { vendor } = useVendorStore();
   const { data, isLoading } = useVendorOrders(vendor?._id || "");
+  const vendorCurrency = data?.vendorCurrency || 'USD';
 
   const router = useRouter();
 
@@ -207,7 +176,7 @@ const OrderTable = (props: Props) => {
             {orders &&
               orders.length > 0 &&
               orders.map((order) => {
-                const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+                const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "", vendorCurrency);
                 
                 return (
                   <tr key={order?._id} className="hover:bg-gray-50">
@@ -275,7 +244,7 @@ const OrderTable = (props: Props) => {
       {/* Mobile Cards */}
       <div className="md:hidden space-y-4 p-4">
         {orders && orders.length > 0 && orders.map((order) => {
-          const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "");
+          const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "", vendorCurrency);
           
           return (
             <div

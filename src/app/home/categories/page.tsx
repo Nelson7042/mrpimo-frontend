@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -33,6 +33,21 @@ export default function CategoriesPage() {
  
 
   const router = useRouter();
+
+  // SEO: Set page title for the categories listing page
+  useEffect(() => {
+    document.title = "Shop by Categories | mprimo";
+    const metaDesc = document.querySelector('meta[name="description"]');
+    const descContent = "Browse all product categories on mprimo. Find electronics, fashion, home goods and more.";
+    if (metaDesc) {
+      metaDesc.setAttribute("content", descContent);
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content = descContent;
+      document.head.appendChild(meta);
+    }
+  }, []);
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
     { label: "Shop by Categories", href: null },
@@ -141,7 +156,7 @@ export default function CategoriesPage() {
                   <div className="mb-3 lg:mb-4">
                     <div>
                       <img
-                        src={card?.image}
+                        src={card?.image || "/images/tv.png"}
                         alt={card?.name}
                         className="w-16 h-16 sm:w-20 sm:h-20 lg:w-24 lg:h-24 mx-auto"
                       />
@@ -150,6 +165,12 @@ export default function CategoriesPage() {
                   <h3 className="font-medium text-sm lg:text-base text-gray-900 group-hover:text-blue-600 transition-colors">
                     {card.name}
                   </h3>
+                  {(card as any).productCount > 0 && (
+                    <span className="text-xs text-gray-500 mt-1 block">
+                      {(card as any).productCount.toLocaleString()}{" "}
+                      {(card as any).productCount === 1 ? "product" : "products"}
+                    </span>
+                  )}
                 </div>
               </Link>
             ))

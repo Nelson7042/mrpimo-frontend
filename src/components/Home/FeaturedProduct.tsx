@@ -111,8 +111,8 @@ export default function FeaturedProducts() {
         </div>
 
         {/* Products Grid Skeleton */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
-          {Array.from({ length: 6 }).map((_, index) => (
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          {Array.from({ length: 8 }).map((_, index) => (
             <div key={index} className="bg-white rounded-lg border border-gray-200 overflow-hidden animate-pulse">
               <div className="h-48 bg-gray-200"></div>
               <div className="p-4 space-y-3">
@@ -149,9 +149,9 @@ export default function FeaturedProducts() {
       <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
         {/* Header */}
         <div className="flex flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
-            <h1 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
+            <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
               Featured Products
-            </h1>
+            </h2>
           {/* Navigation */}
           <div className="flex items-center gap-2">
             {/* Desktop navigation */}
@@ -199,16 +199,23 @@ export default function FeaturedProducts() {
           ))}
         </div> */}
 
-           {/* featured Products Swiper */}
-          <div className="lg:w-2/3">
-            <MobileSwiper
-              items={featuredProducts}
-              renderItem={(product: ProductType) => <ProductCard  key={product._id} product={product} />}
-              swiperRef={otherProductsSwiperRef}
-              prevClass="other-products-prev"
-              nextClass="other-products-next"
-            />
-          </div>
+        {/* Mobile Swiper */}
+        <div className="lg:hidden">
+          <MobileSwiper
+            items={featuredProducts}
+            renderItem={(product: ProductType) => <ProductCard key={product._id} product={product} />}
+            swiperRef={otherProductsSwiperRef}
+            prevClass="other-products-prev"
+            nextClass="other-products-next"
+          />
+        </div>
+
+        {/* Desktop Grid */}
+        <div className="hidden lg:grid grid-cols-4 gap-4">
+          {featuredProducts.slice(0, 8).map((product: ProductType) => (
+            <ProductCard key={product._id} product={product} />
+          ))}
+        </div>
       </div>
     ) : (
       <></>

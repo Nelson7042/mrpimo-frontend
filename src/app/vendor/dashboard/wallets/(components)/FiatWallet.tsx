@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { CreditCard, CircleDollarSign, Plus, ArrowDown, ArrowUp, ArrowRight, ArrowDownRight, ArrowUpRight } from "lucide-react";
 import FiatWalletCard from "./FiatWalletCard";
-import Pagination from "./Pagination";
+import Pagination from "../../../../../components/Pagination/Pagination";
 import TransactionHeader from "./TransactionHeader";
 import AccountDetailsCard from "./AccountDetailsCard";
 import Link from "next/link";

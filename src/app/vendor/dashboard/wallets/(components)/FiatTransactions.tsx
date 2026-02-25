@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { ArrowDown, ArrowUp, Search } from "lucide-react";
-import Pagination from "./Pagination";
+import Pagination from "../../../../../components/Pagination/Pagination";
 
 type Transaction = {
   id: string;

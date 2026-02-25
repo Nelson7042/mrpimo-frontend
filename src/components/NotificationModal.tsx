@@ -1,7 +1,9 @@
 "use client";
 
+import React from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 interface NotificationModalProps {
   notification: {
@@ -24,6 +26,7 @@ interface NotificationModalProps {
 }
 
 export default function NotificationModal({ notification, onClose }: NotificationModalProps) {
+  const router = useRouter();
   return (
     <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md max-h-[90vh] overflow-y-auto">
@@ -76,6 +79,15 @@ export default function NotificationModal({ notification, onClose }: Notificatio
               </div>
             )}
           </div>
+          
+          {notification.data?.redirectUrl && notification.data.redirectUrl !== "/" && (
+            <Button
+              onClick={() => { onClose(); router.push(notification.data!.redirectUrl!); }}
+              className="w-full bg-green-600 hover:bg-green-700 text-white"
+            >
+              Go to
+            </Button>
+          )}
           
           <Button
             onClick={onClose}

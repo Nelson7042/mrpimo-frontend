@@ -1,7 +1,15 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { X, Bell, Shield } from 'lucide-react';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
+
+interface CountryLimits {
+  autoTopUpThreshold: number;
+  autoTopUpAmount: number;
+  dailySpendingLimit: number;
+}
 
 interface WalletSettingsProps {
   onClose: () => void;
@@ -15,29 +23,75 @@ export default function WalletSettings({ onClose }: WalletSettingsProps) {
     dailySpendingLimit: 1000,
     notifications: true
   });
+  const [countryLimits, setCountryLimits] = useState<CountryLimits | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    fetchCountryLimits();
+  }, []);
+
+  const fetchCountryLimits = async () => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallet/country-limits`);
+      const data = await response.json();
+      if (data.success && data.limits) {
+        setCountryLimits(data.limits);
+      }
+    } catch {
+      // Country limits not available — validation will happen server-side
+    }
+  };
 
   const updateSetting = (key: string, value: boolean | number) => {
     setSettings(prev => ({ ...prev, [key]: value }));
+    setError('');
+  };
+
+  const validateSettings = (): boolean => {
+    if (!countryLimits) return true;
+    
+    if (settings.autoTopUp) {
+      if (settings.autoTopUpThreshold > countryLimits.autoTopUpThreshold) {
+        setError(`Threshold cannot exceed ${countryLimits.autoTopUpThreshold}`);
+        return false;
+      }
+      if (settings.autoTopUpAmount > countryLimits.autoTopUpAmount) {
+        setError(`Top-up amount cannot exceed ${countryLimits.autoTopUpAmount}`);
+        return false;
+      }
+    }
+    if (settings.dailySpendingLimit > countryLimits.dailySpendingLimit) {
+      setError(`Daily limit cannot exceed ${countryLimits.dailySpendingLimit}`);
+      return false;
+    }
+    return true;
   };
 
   const saveSettings = async () => {
+    if (!validateSettings()) return;
+    
+    setSaving(true);
     try {
-      await fetch('/api/wallet/settings', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallet/settings`, {
+        method: 'PATCH',
         body: JSON.stringify(settings)
       });
-      onClose();
-    } catch (error) {
-      console.error('Failed to save settings:', error);
+      const data = await response.json();
+      if (data.success) {
+        onClose();
+      } else {
+        setError(data.message || 'Failed to save settings');
+      }
+    } catch {
+      setError('Failed to save settings');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 transition-opacity bg-[#29292938]   flex items-center justify-center z-50">
+    <div className="fixed inset-0 transition-opacity bg-[#29292938] flex items-center justify-center z-50">
       <div className="bg-white rounded-lg p-6 w-full max-w-md">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Wallet Settings</h2>
@@ -46,6 +100,10 @@ export default function WalletSettings({ onClose }: WalletSettingsProps) {
           </button>
         </div>
         
+        {error && (
+          <div className="mb-4 p-2 bg-red-50 text-red-600 text-sm rounded">{error}</div>
+        )}
+
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -92,18 +150,24 @@ export default function WalletSettings({ onClose }: WalletSettingsProps) {
                 <input
                   type="number"
                   value={settings.autoTopUpThreshold}
-                  onChange={(e) => updateSetting('autoTopUpThreshold', parseFloat(e.target.value))}
+                  onChange={(e) => updateSetting('autoTopUpThreshold', parseFloat(e.target.value) || 0)}
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {countryLimits && (
+                  <p className="text-xs text-gray-500 mt-1">Max: {countryLimits.autoTopUpThreshold}</p>
+                )}
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Top-up Amount ($)</label>
                 <input
                   type="number"
                   value={settings.autoTopUpAmount}
-                  onChange={(e) => updateSetting('autoTopUpAmount', parseFloat(e.target.value))}
+                  onChange={(e) => updateSetting('autoTopUpAmount', parseFloat(e.target.value) || 0)}
                   className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+                {countryLimits && (
+                  <p className="text-xs text-gray-500 mt-1">Max: {countryLimits.autoTopUpAmount}</p>
+                )}
               </div>
             </div>
           )}
@@ -113,17 +177,21 @@ export default function WalletSettings({ onClose }: WalletSettingsProps) {
             <input
               type="number"
               value={settings.dailySpendingLimit}
-              onChange={(e) => updateSetting('dailySpendingLimit', parseFloat(e.target.value))}
+              onChange={(e) => updateSetting('dailySpendingLimit', parseFloat(e.target.value) || 0)}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
+            {countryLimits && (
+              <p className="text-xs text-gray-500 mt-1">Max: {countryLimits.dailySpendingLimit}</p>
+            )}
           </div>
 
           <div className="border-t pt-4">
             <button
               onClick={saveSettings}
-              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700"
+              disabled={saving}
+              className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
             >
-              Save Settings
+              {saving ? 'Saving...' : 'Save Settings'}
             </button>
           </div>
         </div>

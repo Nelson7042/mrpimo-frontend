@@ -24,6 +24,24 @@ const navItems = [
     iconfilled: "ant-design:shopping-filled",
   },
   {
+    name: "Offers",
+    href: "/vendor/dashboard/offers",
+    icon: "ph:tag-light",
+    iconfilled: "ph:tag-fill",
+  },
+  {
+    name: "Bids",
+    href: "/vendor/dashboard/bids",
+    icon: "ph:gavel-light",
+    iconfilled: "ph:gavel-fill",
+  },
+  {
+    name: "Disputes",
+    href: "/vendor/dashboard/disputes",
+    icon: "ph:warning-light",
+    iconfilled: "ph:warning-fill",
+  },
+  {
     name: "Messages",
     href: "/vendor/dashboard/messages",
     icon: "iconamoon:comment-dots-light",
@@ -144,13 +162,17 @@ export default function Sidebar({
         </div>
 
         {/* Navigation */}
-        <div className="flex flex-col h-[80vh]">
-          <nav className="flex-1 px-4 py-6 space-y-1">
+        <div className="flex flex-col flex-1 overflow-hidden">
+          <nav className="flex-1 px-4 py-6 space-y-1 overflow-y-auto">
             {navItems.map((item) => (
               <NavigationItem
                 key={item.name}
                 item={item}
-                isActive={pathname === item.href}
+                isActive={
+                  item.href === "/vendor/dashboard"
+                    ? pathname === item.href
+                    : pathname === item.href || pathname.startsWith(item.href + "/")
+                }
                 onClick={() => handleClick(item.href)}
               />
             ))}

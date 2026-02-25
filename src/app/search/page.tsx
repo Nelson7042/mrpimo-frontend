@@ -7,6 +7,19 @@ import { ProductCard } from "@/components/Home/ProductCard";
 import { Loader2, Filter } from "lucide-react";
 import ProductSearchBar from "@/components/ProductSearchBar";
 
+export function getSearchMetadata(query: string, count: number): { title: string; description: string } {
+  if (query) {
+    return {
+      title: `Search: ${query} | Mprimo`,
+      description: `Found ${count} result${count !== 1 ? 's' : ''} for '${query}' on Mprimo`,
+    };
+  }
+  return {
+    title: 'Search Products | Mprimo',
+    description: 'Search for products on Mprimo, your global e-commerce marketplace.',
+  };
+}
+
 export default function SearchPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -56,6 +69,19 @@ export default function SearchPage() {
   const currentPage = filters.page || 1;
   const limit = filters.limit || 20;
   const totalPages = Math.ceil(total / limit);
+
+  useEffect(() => {
+    const { title, description } = getSearchMetadata(searchQuery, total);
+    document.title = title;
+
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', description);
+  }, [searchQuery, total]);
 
   return (
     <div className="min-h-screen bg-gray-50">

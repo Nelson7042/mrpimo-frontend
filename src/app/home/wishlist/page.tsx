@@ -148,7 +148,7 @@ import { getWishlistDisplayPrice } from "@/utils/priceUtils"
   
   
       <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-6 md:py-10 lg:py-10">
-          <div className=" ">
+          <div className="font-roboto">
             {/* Breadcrumb */}
             <Breadcrumbs
               items={manualBreadcrumbs}
@@ -159,8 +159,8 @@ import { getWishlistDisplayPrice } from "@/utils/priceUtils"
           {/* Header */}
           <div className="flex flex-row items-center justify-between mb-4 md:mb-6">
             <div className="flex items-center space-x-2 ">
-              <h1 className="text-base md:text-lg lg:text-2xl font-bold">My Wishlist</h1>
-              <span className="text-gray-600">{wishlistCount} Items</span>
+              <h1 className="font-roboto text-sm md:text-base font-bold">My Wishlist</h1>
+              <span className="font-roboto text-xs text-gray-600">{wishlistCount} Items</span>
             </div>
             <Button
               variant="link"
@@ -175,7 +175,7 @@ import { getWishlistDisplayPrice } from "@/utils/priceUtils"
           {/* Wishlist Table */}
           <div className="bg-white rounded-lg border overflow-hidden">
             {/* Desktop Header */}
-            <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-medium text-gray-700">
+            <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 bg-gray-50 border-b font-roboto font-medium text-xs text-gray-700">
               <div className="col-span-6">Products</div>
               <div className="col-span-3">Amount</div>
               <div className="col-span-3">Actions</div>
@@ -242,13 +242,13 @@ import { getWishlistDisplayPrice } from "@/utils/priceUtils"
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-medium text-sm leading-tight">{wishlistItem.name || "Unknown Product"}</h3>
-                        <p className="text-xs text-gray-500 mt-1">Added {wishlistItem.addedAt ? new Date(wishlistItem.addedAt).toLocaleDateString() : "Unknown date"}</p>
+                        <h3 className="font-roboto font-medium text-xs leading-tight">{wishlistItem.name || "Unknown Product"}</h3>
+                        <p className="font-roboto text-xs text-gray-500 mt-1">Added {wishlistItem.addedAt ? new Date(wishlistItem.addedAt).toLocaleDateString() : "Unknown date"}</p>
                       </div>
                     </Link>
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <span className="font-bold">{getCurrencySymbol(wishlistItem)} {(getProductPrice(wishlistItem) || 0).toLocaleString()}</span>
+                        <span className="font-roboto font-bold text-xs">{getCurrencySymbol(wishlistItem)} {(getProductPrice(wishlistItem) || 0).toLocaleString()}</span>
                       </div>
                     </div>
                     <div className="flex space-x-2">
@@ -309,15 +309,15 @@ import { getWishlistDisplayPrice } from "@/utils/priceUtils"
                           )}
                         </div>
                         <div className="flex-1">
-                          <h3 className="font-medium text-base">{wishlistItem.name || "Unknown Product"}</h3>
-                          <p className="text-sm text-gray-500 mt-1">Added {wishlistItem.addedAt ? new Date(wishlistItem.addedAt).toLocaleDateString() : "Unknown date"}</p>
+                          <h3 className="font-roboto font-medium text-xs">{wishlistItem.name || "Unknown Product"}</h3>
+                          <p className="font-roboto text-xs text-gray-500 mt-1">Added {wishlistItem.addedAt ? new Date(wishlistItem.addedAt).toLocaleDateString() : "Unknown date"}</p>
                         </div>
                       </Link>
                     </div>
 
                     {/* Price */}
                     <div className="col-span-3">
-                      <span className="font-bold text-lg">{getCurrencySymbol(wishlistItem)} {(getProductPrice(wishlistItem) || 0).toLocaleString()}</span>
+                      <span className="font-roboto font-bold text-xs">{getCurrencySymbol(wishlistItem)} {(getProductPrice(wishlistItem) || 0).toLocaleString()}</span>
                     </div>
 
                     {/* Actions */}

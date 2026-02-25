@@ -5,7 +5,7 @@ export interface Notification {
   userId: string;
   title: string;
   message: string;
-  type: 'order' | 'payment' | 'product' | 'system' | 'promotion';
+  type: 'order' | 'payment' | 'product' | 'system' | 'promotion' | 'offer' | 'bid' | 'wallet';
   case: string;
   read: boolean;
   data?: {

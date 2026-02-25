@@ -93,8 +93,8 @@ export default function WalletPage() {
   }, [showDateFilter, showTypeFilter, showStatusFilter])
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
-    { label: "Cart", href: "/my-cart" },
-    { label: "Auction", href: null},
+    { label: "Dashboard", href: "/home/user" },
+    { label: "Wallet", href: null },
   ];
   
   const handleBreadcrumbClick = (

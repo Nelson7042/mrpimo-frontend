@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft, Search } from "lucide-react";
 import { format } from "date-fns";
-import Pagination from "./Pagination";
+import Pagination from "../../../../../components/Pagination/Pagination";
 import TransactionHeader from "./TransactionHeader";
 
 type Transaction = {

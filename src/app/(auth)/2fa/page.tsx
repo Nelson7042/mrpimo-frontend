@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useUserStore } from '@/stores/useUserStore';
 import { useVendorStore } from '@/stores/useVendorStore';
@@ -11,53 +11,61 @@ import { toastConfigError, toastConfigSuccess } from '@/app/config/toast.config'
 export default function TwoFactorPage() {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isUsingBackupCode, setIsUsingBackupCode] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const provider = searchParams.get('provider'); // "google" or null
+  const provider = searchParams.get('provider'); // "google", "apple", or null
   const { setUser } = useUserStore();
   const { setVendor } = useVendorStore();
+
+  const getProviderLabel = () => {
+    if (provider === 'google') return 'Complete your Google sign-in with 2FA';
+    if (provider === 'apple') return 'Complete your Apple sign-in with 2FA';
+    return 'Enter your 2FA code to continue';
+  };
 
   const handle2FASubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!code.trim()) {
-      toast.error('Please enter the 2FA code', toastConfigError);
+      toast.error(
+        isUsingBackupCode ? 'Please enter a backup code' : 'Please enter the 2FA code',
+        toastConfigError
+      );
       return;
     }
 
     setIsLoading(true);
     
     try {
+      const body = isUsingBackupCode ? { backupCode: code } : { code };
       const response = await fetch(`${API_BASE_URL}/auth/2fa/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        credentials: 'include', // ✅ Critical: Send 2fa_token cookie
-        body: JSON.stringify({ code })
+        credentials: 'include',
+        body: JSON.stringify(body)
       });
 
       const data = await response.json();
 
       if (data.success) {
-        // ✅ 2FA verified - now fetch full profile
         const profileResponse = await fetch(`${API_BASE_URL}/users/profile`, {
           credentials: 'include'
         });
 
         if (profileResponse.ok) {
           const { user, vendor } = await profileResponse.json();
-          
           setUser(user);
           if (vendor) {
             setVendor(vendor);
           }
-          
           toast.success('Authentication successful!', toastConfigSuccess);
           router.push('/dashboard');
         } else {
           throw new Error('Failed to fetch profile');
         }
       } else {
-        toast.error(data.message || 'Invalid 2FA code', toastConfigError);
+        toast.error(data.message || 'Invalid code', toastConfigError);
       }
     } catch (error: any) {
       toast.error(error.message || 'Verification failed', toastConfigError);
@@ -74,17 +82,14 @@ export default function TwoFactorPage() {
             Two-Factor Authentication
           </h2>
           <p className="mt-2 text-center text-sm text-gray-600">
-            {provider === 'google' 
-              ? 'Complete your Google sign-in with 2FA' 
-              : 'Enter your 2FA code to continue'
-            }
+            {getProviderLabel()}
           </p>
         </div>
         
         <form className="mt-8 space-y-6" onSubmit={handle2FASubmit}>
           <div>
             <label htmlFor="code" className="sr-only">
-              2FA Code
+              {isUsingBackupCode ? 'Backup Code' : '2FA Code'}
             </label>
             <input
               id="code"
@@ -92,10 +97,10 @@ export default function TwoFactorPage() {
               type="text"
               required
               className="appearance-none rounded-md relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-              placeholder="Enter 6-digit code"
+              placeholder={isUsingBackupCode ? 'Enter backup code' : 'Enter 6-digit code'}
               value={code}
               onChange={(e) => setCode(e.target.value)}
-              maxLength={6}
+              maxLength={isUsingBackupCode ? 20 : 6}
             />
           </div>
 
@@ -109,11 +114,22 @@ export default function TwoFactorPage() {
             </button>
           </div>
 
-          <div className="text-center">
+          <div className="text-center space-y-2">
+            <button
+              type="button"
+              onClick={() => {
+                setIsUsingBackupCode(!isUsingBackupCode);
+                setCode('');
+              }}
+              className="text-indigo-600 hover:text-indigo-500 text-sm"
+            >
+              {isUsingBackupCode ? 'Use authenticator code instead' : 'Use a backup code instead'}
+            </button>
+            <br />
             <button
               type="button"
               onClick={() => router.push('/login')}
-              className="text-indigo-600 hover:text-indigo-500 text-sm"
+              className="text-gray-500 hover:text-gray-700 text-sm"
             >
               Back to Login
             </button>

@@ -4,7 +4,7 @@ import MarketplaceSection from './Hero'
 import BestDeals from './BestDeals'
 import ShopCategoriesComponent from './ByCategory'
 import ComputerAccessories from './ComputerAccessories'
-import FeaturedProducts from './FeaturedProduct'
+import PromotionalCollections from './PromotionalCollections'
 import CustomerReviews from './Review'
 import Cta from './Cta'
 import Footer from './Footer'
@@ -18,7 +18,7 @@ const Homepage = () => {
         <MarketplaceSection />
         <BestDeals />
         <ShopCategoriesComponent />
-        <FeaturedProducts />
+        <PromotionalCollections />
         <ComputerAccessories />
         <CustomerReviews />
         <Cta />

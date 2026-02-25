@@ -1,51 +1,32 @@
-"use client"
+import type { Metadata } from 'next';
+import HomeClient from './HomeClient';
+import OrganizationJsonLd from '@/components/seo/OrganizationJsonLd';
+import WebSiteJsonLd from '@/components/seo/WebSiteJsonLd';
 
-import AuctionedProduct from "@/components/Home/AuctionedProduct";
-import BestDeals from "@/components/Home/BestDeals";
-import ShopCategoriesComponent from "@/components/Home/ByCategory";
-import ComputerAccessories from "@/components/Home/ComputerAccessories";
-import Cta from "@/components/Home/Cta";
-import FeaturedProducts from "@/components/Home/FeaturedProduct";
-import MarketplaceSection from "@/components/Home/Hero";
-import CustomerReviews from "@/components/Home/Review";
-// import { AllProduct } from "@/utils/config";
-// import { useQuery } from "@tanstack/react-query";
-import React from "react";
-
-const Page = () => {
-
-// const fetchAllProducts = async () => {
-//   const response = await fetch(`${AllProduct}?page=2`);
-//   if (!response.ok) {
-//     throw new Error('Failed to fetch user subscriptions');
-//   }
-//   const data = await response.json();
-//   console.log("Vendor products:", data);
-//   return data.products;
-// };
-
-// const useAllProducts =  useQuery({
-//     queryKey: ['useAllProducts'],
-//     queryFn: fetchAllProducts,
-//     // enabled: !!vendorId, // ensures it won't run if vendorId is undefined/null
-//     refetchOnWindowFocus: false,
-//     retry: 1,
-//   });
-
-
-
-  return (
-    <div className="font-roboto " >
-      <MarketplaceSection/>
-      <BestDeals />
-      <ShopCategoriesComponent />
-      <FeaturedProducts />
-      <AuctionedProduct />
-      <ComputerAccessories />
-      <CustomerReviews />
-      <Cta />
-    </div>
-  );
+export const metadata: Metadata = {
+  title: 'Shop the Best Deals on Mprimo - Global Marketplace',
+  description: 'Explore thousands of products at unbeatable prices on Mprimo. Discover best deals, auctions, trending categories, and curated collections across electronics, fashion, home goods, and more.',
+  openGraph: {
+    title: 'Shop the Best Deals on Mprimo - Global Marketplace',
+    description: 'Explore thousands of products at unbeatable prices on Mprimo.',
+    url: 'https://mprimo-one.vercel.app/home',
+    type: 'website',
+  },
+  twitter: {
+    title: 'Shop the Best Deals on Mprimo - Global Marketplace',
+    description: 'Explore thousands of products at unbeatable prices on Mprimo.',
+  },
+  alternates: {
+    canonical: 'https://mprimo-one.vercel.app/home',
+  },
 };
 
-export default Page;
+export default function HomePage() {
+  return (
+    <>
+      <OrganizationJsonLd />
+      <WebSiteJsonLd />
+      <HomeClient />
+    </>
+  );
+}

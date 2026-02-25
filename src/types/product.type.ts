@@ -5,6 +5,12 @@ export type PopulatedCategory = {
   name: string;
   slug: string;
 };
+export interface CategoryBreadcrumb {
+  name: string;
+  slug: string;
+  categoryId: string;
+}
+
 
 type CategoryType = {
   main: PopulatedCategory;
@@ -257,6 +263,15 @@ export interface Category {
   __v: number;
   image?: string;
   productDimensionsRequired: boolean;
+  // Enhanced fields
+  sortOrder: number;
+  icon?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  seoKeywords: string[];
+  featured: boolean;
+  breadcrumbs: CategoryBreadcrumb[];
+  productCount: number;
 }
 
 // Product Types based on your sample data

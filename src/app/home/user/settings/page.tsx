@@ -24,7 +24,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
-import { ChevronRight, ChevronLeft, Edit, Eye, EyeOff, Plus } from "lucide-react";
+import { ChevronRight, ChevronLeft, Edit, Eye, EyeOff, Plus, Upload, Shield, Globe } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -38,6 +38,11 @@ import AddCardModal from "@/components/users/settings/AddCardModal";
 import { toast } from "react-hot-toast";
 import LocationPicker from "@/components/users/settings/LocationPicker";
 import ShippingInfoBanner from "@/components/users/settings/ShippingInfoBanner";
+import { useUserStore } from "@/stores/useUserStore";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
+import TwoFactorSetup from "@/app/vendor/dashboard/settings/components/TwoFactorSetup";
+import DisableTwoFactor from "@/app/vendor/dashboard/settings/components/DisableTwoFactor";
 
 type SettingsSection =
   | "main"
@@ -101,6 +106,30 @@ export default function SettingsPage() {
     gateway: "stripe",
   });
 
+  // Avatar upload state
+  const [avatarUploading, setAvatarUploading] = useState(false);
+
+  // Language preference state
+  const SUPPORTED_LANGUAGES = [
+    { code: "en", label: "English" },
+    { code: "fr", label: "Français" },
+    { code: "es", label: "Español" },
+    { code: "pt", label: "Português" },
+    { code: "ar", label: "العربية" },
+    { code: "zh", label: "中文" },
+    { code: "yo", label: "Yorùbá" },
+    { code: "ig", label: "Igbo" },
+    { code: "ha", label: "Hausa" },
+  ];
+
+  // Security section state
+  const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
+  const [showDisable2FA, setShowDisable2FA] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordChanging, setPasswordChanging] = useState(false);
+
+  const { user, setUser } = useUserStore();
+
   const addresses = addressData?.addresses || [];
   const shippingAddresses = addresses.filter(
     (addr) => addr.type === "shipping"
@@ -129,7 +158,7 @@ export default function SettingsPage() {
   const router = useRouter();
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
-    { label: "My Account", href: "/home/user/settings" },
+    { label: "Dashboard", href: "/home/user" },
     { label: "Settings", href: null },
   ];
   const handleBreadcrumbClick = (
@@ -279,6 +308,82 @@ export default function SettingsPage() {
     updateNotificationPreferences.mutate(newPreferences);
   };
 
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please upload a JPEG, PNG, or WebP image");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB");
+      return;
+    }
+
+    setAvatarUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append("avatar", file);
+      const response = await fetchWithAuth(`${API_BASE_URL}/users/avatar`, {
+        method: "POST",
+        body: formData,
+      });
+      const data = await response.json();
+      if (data.success && data.avatarUrl) {
+        setUser({ ...user, profile: { ...user?.profile, avatar: data.avatarUrl } });
+        toast.success("Avatar updated");
+      } else {
+        toast.error(data.message || "Failed to upload avatar");
+      }
+    } catch {
+      toast.error("Failed to upload avatar");
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleLanguageChange = async (langCode: string) => {
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/users/preferences/language`, {
+        method: "PATCH",
+        body: JSON.stringify({ language: langCode }),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success("Language updated");
+      }
+    } catch {
+      toast.error("Failed to update language");
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      toast.error("Passwords do not match");
+      return;
+    }
+    setPasswordChanging(true);
+    try {
+      const response = await fetchWithAuth(`${API_BASE_URL}/users/change-password`, {
+        method: "POST",
+        body: JSON.stringify(passwordForm),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success("Password changed successfully");
+        setPasswordForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
+      } else {
+        toast.error(data.message || "Failed to change password");
+      }
+    } catch {
+      toast.error("Failed to change password");
+    } finally {
+      setPasswordChanging(false);
+    }
+  };
+
   const renderMainSettings = () => (
     <div className="flex gap-8 font-roboto">
       {/* Left Panel - Navigation */}
@@ -365,6 +470,41 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6">
+          {/* Avatar Upload */}
+          <div className="flex items-center gap-4">
+            <div className="relative w-16 h-16 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+              {profileData?.user?.profile?.avatar ? (
+                <img
+                  src={profileData.user.profile.avatar}
+                  alt="Profile avatar"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <span className="text-gray-500 text-xl">
+                  {profileData?.user?.profile?.firstName?.[0] || "?"}
+                </span>
+              )}
+            </div>
+            <div>
+              <label
+                htmlFor="avatar-upload"
+                className="cursor-pointer inline-flex items-center gap-1 text-sm text-blue-600 hover:text-blue-700"
+              >
+                <Upload className="w-4 h-4" />
+                {avatarUploading ? "Uploading..." : "Change Photo"}
+              </label>
+              <input
+                id="avatar-upload"
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleAvatarUpload}
+                disabled={avatarUploading}
+              />
+              <p className="text-xs text-gray-500 mt-1">JPEG, PNG, or WebP. Max 5MB.</p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label htmlFor="firstName" className="font-roboto text-xs">First Name</Label>
@@ -392,9 +532,11 @@ export default function SettingsPage() {
               id="email"
               type="email"
               value={profileData?.user?.email || ""}
-              onChange={(e) => handleInputChange("email", e.target.value)}
-              className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1"
+              className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1 cursor-not-allowed opacity-70"
+              readOnly
+              aria-readonly="true"
             />
+            <p className="text-xs text-gray-500 mt-1">Email cannot be changed</p>
           </div>
 
           <div>
@@ -405,6 +547,28 @@ export default function SettingsPage() {
               onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
               className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1"
             />
+          </div>
+
+          {/* Language Preference */}
+          <div>
+            <Label className="font-roboto text-xs flex items-center gap-1">
+              <Globe className="w-3 h-3" /> Language
+            </Label>
+            <Select
+              defaultValue={profileData?.user?.preferences?.language || "en"}
+              onValueChange={handleLanguageChange}
+            >
+              <SelectTrigger className="mt-1 bg-[#E2E8F0] border-0">
+                <SelectValue placeholder="Select language" />
+              </SelectTrigger>
+              <SelectContent>
+                {SUPPORTED_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.code} value={lang.code}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -863,17 +1027,17 @@ export default function SettingsPage() {
 
         <div className="space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-roboto text-sm font-medium">Email Notification</h3>
+            <h3 className="font-roboto text-sm font-medium">Email Notifications</h3>
             <Switch defaultChecked />
           </div>
 
           <div className="space-y-4">
             {[
-              { key: "newStockAlert", label: "New Stock Alert" },
-              { key: "lowStockAlert", label: "Low Stock Alert" },
-              { key: "orderStatusAlert", label: "Order Status Alert" },
+              { key: "stockAlert", label: "New Stock Alert" },
+              { key: "orderStatus", label: "Order Status Alert" },
               { key: "pendingReviews", label: "Pending Reviews" },
-              { key: "paymentAlert", label: "Payment Alert" },
+              { key: "paymentUpdates", label: "Payment Alert" },
+              { key: "newsletter", label: "Newsletter" },
             ].map((item) => (
               <div key={item.key} className="flex items-center space-x-3">
                 <Checkbox
@@ -885,6 +1049,56 @@ export default function SettingsPage() {
                 <Label className="font-roboto text-xs">{item.label}</Label>
               </div>
             ))}
+          </div>
+
+          {/* Push & SMS Notifications */}
+          <div className="border-t pt-4 space-y-4">
+            <h3 className="font-roboto text-sm font-medium">Other Channels</h3>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-roboto text-xs font-medium">Push Notifications</p>
+                <p className="font-roboto text-xs text-gray-500">Receive browser push notifications</p>
+              </div>
+              <Switch
+                defaultChecked={profileData?.user?.preferences?.notifications?.push !== false}
+                onCheckedChange={(checked) =>
+                  handleNotificationChange("push", checked)
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-roboto text-xs font-medium">SMS Notifications</p>
+                <p className="font-roboto text-xs text-gray-500">Receive text message alerts</p>
+              </div>
+              <Switch
+                defaultChecked={profileData?.user?.preferences?.notifications?.sms === true}
+                onCheckedChange={(checked) =>
+                  handleNotificationChange("sms", checked)
+                }
+              />
+            </div>
+          </div>
+
+          {/* Marketing Opt-in */}
+          <div className="border-t pt-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-roboto text-xs font-medium">Marketing Communications</p>
+                <p className="font-roboto text-xs text-gray-500">Receive promotional offers and updates</p>
+              </div>
+              <Switch
+                defaultChecked={profileData?.user?.preferences?.marketing === true}
+                onCheckedChange={(checked) =>
+                  handleNotificationChange("marketing", checked)
+                }
+              />
+            </div>
+            {!preferences.stockAlert && !preferences.orderStatus && !preferences.pendingReviews && !preferences.paymentUpdates && !preferences.newsletter && (
+              <p className="text-xs text-amber-600 mt-2">
+                Note: Critical emails (password reset, email verification) will still be sent.
+              </p>
+            )}
           </div>
         </div>
       </CardContent>
@@ -905,37 +1119,148 @@ export default function SettingsPage() {
             </Button>
             <h2 className="text-xl font-semibold">Security</h2>
           </div>
-          <Button variant="ghost" size="sm">
-            <Edit className="w-4 h-4" />
-            Change
-          </Button>
         </div>
 
         <div className="space-y-6">
+          {/* Email Verification Status */}
           <div>
-            <Label htmlFor="password">Password</Label>
-            <div className="relative mt-1">
-              <Input
-                id="password"
-                type={showPassword ? "text" : "password"}
-                value="*******"
-                className="bg-[#E2E8F0] border-0 pr-10"
-                readOnly
-              />
+            <Label className="font-roboto text-xs text-gray-600">Email Verification</Label>
+            <div className="flex items-center gap-2 mt-1">
+              {profileData?.user?.isEmailVerified ? (
+                <span className="text-xs text-green-600 bg-green-50 px-2 py-1 rounded">Verified</span>
+              ) : (
+                <>
+                  <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded">Unverified</span>
+                  <Button variant="link" size="sm" className="text-xs text-blue-600 p-0 h-auto">
+                    Resend verification email
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
+
+          {/* Linked Social Providers */}
+          <div>
+            <Label className="font-roboto text-xs text-gray-600">Linked Accounts</Label>
+            <div className="flex gap-2 mt-1">
+              {(profileData?.user?.socialLogins || []).map((login: any) => (
+                <span key={login.provider} className="text-xs bg-gray-100 px-2 py-1 rounded capitalize">
+                  {login.provider}
+                </span>
+              ))}
+              {(!profileData?.user?.socialLogins || profileData.user.socialLogins.length === 0) && (
+                <span className="text-xs text-gray-500">No linked accounts</span>
+              )}
+            </div>
+          </div>
+
+          {/* Password Change */}
+          <div className="border-t pt-4">
+            <Label className="font-roboto text-sm font-medium">
+              {profileData?.user?.socialLogins?.length > 0 && !profileData?.user?.password
+                ? "Set Password"
+                : "Change Password"}
+            </Label>
+            <div className="space-y-3 mt-2">
+              {!(profileData?.user?.socialLogins?.length > 0 && !profileData?.user?.password) && (
+                <div>
+                  <Label htmlFor="currentPassword" className="font-roboto text-xs">Current Password</Label>
+                  <Input
+                    id="currentPassword"
+                    type="password"
+                    value={passwordForm.currentPassword}
+                    onChange={(e) => setPasswordForm(prev => ({ ...prev, currentPassword: e.target.value }))}
+                    className="bg-[#E2E8F0] border-0 mt-1"
+                  />
+                </div>
+              )}
+              <div>
+                <Label htmlFor="newPassword" className="font-roboto text-xs">New Password</Label>
+                <Input
+                  id="newPassword"
+                  type="password"
+                  value={passwordForm.newPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, newPassword: e.target.value }))}
+                  className="bg-[#E2E8F0] border-0 mt-1"
+                  placeholder="Min 8 chars, 1 uppercase, 1 number"
+                />
+              </div>
+              <div>
+                <Label htmlFor="confirmPassword" className="font-roboto text-xs">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) => setPasswordForm(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                  className="bg-[#E2E8F0] border-0 mt-1"
+                />
+              </div>
               <Button
-                variant="ghost"
                 size="sm"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2"
-                onClick={() => setShowPassword(!showPassword)}
+                onClick={handlePasswordChange}
+                disabled={passwordChanging || !passwordForm.newPassword}
               >
-                {showPassword ? (
-                  <EyeOff className="w-4 h-4" />
-                ) : (
-                  <Eye className="w-4 h-4" />
-                )}
+                {passwordChanging ? "Changing..." : "Update Password"}
               </Button>
             </div>
           </div>
+
+          {/* Two-Factor Authentication */}
+          <div className="border-t pt-4">
+            <div className="flex items-center gap-2 mb-2">
+              <Shield className="w-4 h-4" />
+              <Label className="font-roboto text-sm font-medium">Two-Factor Authentication</Label>
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              Add an extra layer of security to your account.
+            </p>
+            {user?.twoFactorAuth?.enabled ? (
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => setShowDisable2FA(true)}
+              >
+                Disable 2FA
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                onClick={() => setShowTwoFactorSetup(true)}
+              >
+                Enable 2FA
+              </Button>
+            )}
+
+            {showTwoFactorSetup && (
+              <TwoFactorSetup
+                onComplete={(updatedUser) => {
+                  setUser({ ...user, ...updatedUser });
+                  setShowTwoFactorSetup(false);
+                }}
+                onCancel={() => setShowTwoFactorSetup(false)}
+              />
+            )}
+
+            {showDisable2FA && (
+              <DisableTwoFactor
+                onComplete={(updatedUser) => {
+                  setUser({ ...user, ...updatedUser });
+                  setShowDisable2FA(false);
+                }}
+                onCancel={() => setShowDisable2FA(false)}
+              />
+            )}
+          </div>
+
+          {/* Last Login Info */}
+          {profileData?.user?.activity?.lastLogin && (
+            <div className="border-t pt-4">
+              <Label className="font-roboto text-xs text-gray-600">Last Login</Label>
+              <p className="text-xs mt-1">
+                {new Date(profileData.user.activity.lastLogin).toLocaleString()}
+              </p>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

@@ -9,9 +9,9 @@ export default function Cta() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-7 lg:gap-12 items-center">
           {/* Left Content */}
           <div className="text-white py-8  md:py-8 lg:py-10">
-            <h1 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight mb-4 md:mb-6">
+            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight mb-4 md:mb-6">
               Enjoy Maximum Shopping Experience Today
-            </h1>
+            </h2>
             <p className="text-sm md:text-base lg:text-base text-blue-100 leading-relaxed mb-4 md:mb-8">
               Search, buy and sell your product in any part of the world with us
             </p>

@@ -63,6 +63,7 @@ export default function OrdersPage() {
   const cancelOrderMutation = useCancelOrder()
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
+    { label: "Dashboard", href: "/home/user" },
     { label: "My Orders", href: null },
   ];
   
@@ -132,7 +133,7 @@ export default function OrdersPage() {
       </div>
 
         <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-          <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 md:p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b font-semibold text-sm text-gray-700 uppercase tracking-wide">
+          <div className="hidden md:grid md:grid-cols-12 gap-4 p-4 md:p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b font-semibold text-xs text-gray-700 uppercase tracking-wide">
             <div className="col-span-2">Order ID</div>
             <div className="col-span-2">Date</div>
             <div className="col-span-2">Status</div>
@@ -215,48 +216,48 @@ export default function OrdersPage() {
                       </div>
                     </div>
 
-                    <div className="hidden md:grid md:grid-cols-12 gap-4 items-center">
+                    <div className="hidden md:grid md:grid-cols-12 gap-2 items-center">
                       <div className="col-span-2">
-                        <p className="font-semibold text-gray-900">#{order._id.slice(-8)}</p>
+                        <p className="font-roboto font-semibold text-xs text-gray-900">#{order._id.slice(-8)}</p>
                       </div>
                       <div className="col-span-2">
-                        <span className="text-sm text-gray-600">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</span>
+                        <span className="font-roboto text-xs text-gray-600">{format(new Date(order.createdAt), 'MMM dd, yyyy')}</span>
                       </div>
                       <div className="col-span-2">
-                        <Badge className={`${getStatusColor(order.status)} px-3 py-1.5`}>
-                          <span className="flex items-center gap-1.5 text-xs font-medium">
+                        <Badge className={`${getStatusColor(order.status)} px-2 py-0.5`}>
+                          <span className="flex items-center gap-1 text-xs font-medium">
                             {getStatusIcon(order.status)}
                             <span className="capitalize">{order.status}</span>
                           </span>
                         </Badge>
                       </div>
                       <div className="col-span-2">
-                        <span className="font-semibold text-gray-900">${order.paymentId?.amount?.toFixed(2) || '0.00'}</span>
+                        <span className="font-roboto font-semibold text-xs text-gray-900">${order.paymentId?.amount?.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="col-span-2">
-                        <span className="text-sm text-gray-600">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
+                        <span className="font-roboto text-xs text-gray-600">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
                       </div>
-                      <div className="col-span-2 flex flex-col md:flex-row gap-2">
-                        <Button 
-                          size="sm" 
+                      <div className="col-span-2 flex flex-wrap gap-1">
+                        <Button
+                          size="sm"
                           variant="ghost"
                           onClick={() => toggleOrderExpansion(order._id)}
-                          className="hover:bg-gray-100"
+                          className="h-6 w-6 p-0 hover:bg-gray-100"
                         >
-                          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                          {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                         </Button>
-                        <Button 
-                          size="sm" 
+                        <Button
+                          size="sm"
                           onClick={() => handleViewDetails(order._id)}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className="font-roboto h-6 px-2 text-xs bg-blue-600 hover:bg-blue-700 text-white"
                         >
                           View
                         </Button>
                         {(order.status === 'pending' || order.status === 'pending_payment' || order.status === 'processing') && (
-                          <Button 
-                            size="sm" 
+                          <Button
+                            size="sm"
                             variant="outline"
-                            className="border-red-300 text-red-600 hover:bg-red-50"
+                            className="font-roboto h-6 px-2 text-xs border-red-300 text-red-600 hover:bg-red-50"
                             onClick={() => handleCancelOrder(order._id)}
                             disabled={cancelOrderMutation.isPending}
                           >

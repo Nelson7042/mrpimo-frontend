@@ -111,7 +111,7 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
       <div className="">
         {/* Header */}
         <div className="mb-2 md:mb-4">
-          <h1 className="font-roboto text-sm font-bold text-gray-900">Reviews</h1>
+          <h2 className="font-roboto text-sm font-bold text-gray-900">Reviews</h2>
         </div>
 
         {/* Customer Reviews Summary */}

@@ -28,6 +28,8 @@ const page = (props: Props) => {
 
   const { data: analyticsData, isLoading: analyticsLoading } =
     useVendorAnalytics(vendor?._id || "");
+  const { data: ordersData } = useVendorOrders(vendor?._id || "");
+  const vendorCurrency = ordersData?.vendorCurrency || analyticsData?.currency || '';
 
   return (
     <div className="bg-[#f6f6f6] rounded-lg font-light shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-roboto">
@@ -58,7 +60,7 @@ const page = (props: Props) => {
                 <AnalyticsCard
                   title="Total Sales"
                   amount={analyticsData?.dashboard?.salesTotal?.value || 0}
-                  currency={analyticsData?.analytics?.currency}
+                  currency={vendorCurrency}
                   percentageIncrease={analyticsData?.dashboard?.salesTotal}
                 />
               </div>

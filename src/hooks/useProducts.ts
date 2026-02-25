@@ -199,3 +199,20 @@ export const useCategoryPriceRanges = (categoryId: string) => {
     retry: 1,
   });
 };
+
+const fetchFeaturedCategories = async () => {
+  const response = await fetchPublic(`${API_BASE_URL}/categories/featured`);
+  if (!response.ok) {
+    throw new Error('Failed to fetch featured categories');
+  }
+  return response.json();
+};
+
+export const useFeaturedCategories = () => {
+  return useQuery({
+    queryKey: ['featuredCategories'],
+    queryFn: fetchFeaturedCategories,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
+};

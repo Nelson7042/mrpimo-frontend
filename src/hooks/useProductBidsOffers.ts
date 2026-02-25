@@ -21,9 +21,18 @@ interface Offer {
   _id: string;
   userId: string;
   productId: string;
-  amount: number;
-  message?: string;
-  status: 'pending' | 'accepted' | 'rejected';
+  vendorId: string;
+  variantId: string;
+  optionId: string;
+  vendorAmount: number;
+  userAmount: number;
+  vendorCurrency: string;
+  userCurrency: string;
+  displayAmount: number;
+  displayCurrency: string;
+  role: 'buyer' | 'vendor';
+  type: 'offer' | 'counter-offer';
+  status: 'pending' | 'accepted' | 'rejected' | 'expired';
   createdAt: string;
   user?: {
     profile: {
@@ -44,11 +53,11 @@ const bidsApi = {
 };
 
 const offersApi = {
-  getOffersForProduct: async (productId: string): Promise<Offer[]> => {
+  getOffersForProduct: async (productId: string) => {
     const response = await fetchWithAuth(`${API_BASE_URL}/products/offer/${productId}`);
     if (!response.ok) throw new Error('Failed to fetch offers');
     const data = await response.json();
-    return data.offers || data;
+    return { offers: data.offers || [], viewerRole: data.viewerRole || 'buyer' };
   },
 };
 

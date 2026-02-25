@@ -9,16 +9,16 @@ const NotificationBell: React.FC = () => {
   const [showDropdown, setShowDropdown] = useState(false);
   const notificationBellRef = useRef<HTMLButtonElement>(null);
 
-  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+  const { notifications, unreadCount, ringing, markAsRead, markAllAsRead } =
     useNotifications();
   const router = useRouter();
 
   const handleNotificationClick = (notification: any) => {
-    markAsRead(notification.id);
+    markAsRead(notification._id);
     setShowDropdown(false);
 
-    if (notification.data?.url) {
-      router.push(notification.data.url);
+    if (notification.data?.redirectUrl && notification.data.redirectUrl !== "/") {
+      router.push(notification.data.redirectUrl);
     }
   };
 
@@ -31,7 +31,7 @@ const NotificationBell: React.FC = () => {
       >
         {unreadCount > 0 ? (
           <div className="relative">
-            <Bell size={20} />
+            <Bell size={20} className={ringing ? 'bell-ring' : ''} />
             <span className="absolute -top-1 -right-1 bg-red-500 text-white rounded-full size-3 flex items-center justify-center text-xs">
               {unreadCount}
             </span>
