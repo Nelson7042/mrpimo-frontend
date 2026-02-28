@@ -10,6 +10,9 @@ import { useChats, useMessages } from "@/hooks/queries";
 import MessageListSkeleton from "./(components)/MessageListSkeleton";
 import SocketService from "@/utils/socketService";
 import { useUserStore } from "@/stores/useUserStore";
+import { useQueryClient } from "@tanstack/react-query";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
 interface ProductModal {
   isOpen: boolean;
@@ -36,6 +39,7 @@ export const formatMessageTime = (date: Date): string => {
 const Page = () => {
   const { data: chatsData, isLoading } = useChats();
   const { user } = useUserStore();
+  const queryClient = useQueryClient();
   const [selectedChat, setSelectedChat] = useState<any>(null);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [participantName, setParticipantName] = useState<string>("");
@@ -47,8 +51,37 @@ const Page = () => {
     product: null,
   });
   const [newMessages, setNewMessages] = useState<{[chatId: string]: any[]}>({});
+  const [onlineUsers, setOnlineUsers] = useState<{[userId: string]: boolean}>({});
 
   const groupedChats = chatsData?.groupedChats || [];
+
+  // Initialize online status from API response
+  useEffect(() => {
+    if (groupedChats.length > 0) {
+      const statuses: {[userId: string]: boolean} = {};
+      for (const group of groupedChats) {
+        statuses[group._id] = !!group.isOnline;
+      }
+      setOnlineUsers(prev => ({ ...prev, ...statuses }));
+    }
+  }, [chatsData]);
+
+  // Handle focused chat from notification click
+  useEffect(() => {
+    const focusedChatId = localStorage.getItem('focusedChatId');
+    if (focusedChatId && groupedChats.length > 0) {
+      for (const group of groupedChats) {
+        for (const productChat of group.productChats) {
+          if (productChat.chatId === focusedChatId) {
+            handleChatSelect(productChat, productChat.product, group);
+            localStorage.removeItem('focusedChatId');
+            return;
+          }
+        }
+      }
+      localStorage.removeItem('focusedChatId');
+    }
+  }, [groupedChats]);
 
   // Socket.io connection and event handlers
   useEffect(() => {
@@ -77,12 +110,30 @@ const Page = () => {
       
       // Listen for flagged messages
       socket.on('messageFlagged', (data: any) => {
-        console.log('Message flagged:', data.flaggedReason);
+      });
+
+      // Listen for user presence changes (online/offline)
+      socket.on('user-presence-changed', (data: { userId: string; isOnline: boolean }) => {
+        setOnlineUsers(prev => ({ ...prev, [data.userId]: data.isOnline }));
+      });
+
+      // Listen for individual user status responses
+      socket.on('user-status', (data: { userId: string; isOnline: boolean }) => {
+        setOnlineUsers(prev => ({ ...prev, [data.userId]: data.isOnline }));
+      });
+
+      // Listen for message edits
+      socket.on('chat:message-edited', () => {
+        queryClient.invalidateQueries({ queryKey: ['messages'] });
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
       });
       
       return () => {
         socket.off('persisted-message');
         socket.off('messageFlagged');
+        socket.off('user-presence-changed');
+        socket.off('user-status');
+        socket.off('chat:message-edited');
       };
     }
   }, [user?._id]);
@@ -98,15 +149,28 @@ const Page = () => {
   }, [selectedChat?.chatId]);
 
   const handleChatSelect = (chat: any, product: any, group?: any) => {
-    console.log("Selected chat:", chat);
-    console.log("Selected product:", product);
     setSelectedChat(chat);
     setSelectedProduct(product);
     if (group) {
       setCurrentGroup(group);
       setParticipantName(group.participantName);
+      // Check online status of the other participant
+      const socket = SocketService.getSocket();
+      if (socket) {
+        socket.emit('check-online', { userId: group._id });
+      }
     }
     setIsChatOpen(true);
+
+    // Mark chat messages as read immediately when opening
+    if (chat?.chatId) {
+      fetchWithAuth(`${API_BASE_URL}/messages/chat/${chat.chatId}/read`, {
+        method: 'PATCH'
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
+        queryClient.invalidateQueries({ queryKey: ['messages'] });
+      }).catch(err => console.error('Failed to mark chat as read:', err));
+    }
   };
 
   const handleProductSwitch = (newChat: any, newProduct: any) => {
@@ -251,7 +315,7 @@ const Page = () => {
             {selectedChat ? (
               <div className="w-full h-full flex flex-col">
                 <ChatContainerHeader
-                  chat={selectedChat}
+                  chat={{ ...selectedChat, onlineStatus: onlineUsers[currentGroup?._id] }}
                   product={selectedProduct}
                   closeChat={() => setIsChatOpen(false)}
                   setProductModal={setProductModal}
@@ -308,7 +372,7 @@ const Page = () => {
               {/* Chat container header */}
               {selectedChat && (
                 <ChatContainerHeader
-                  chat={selectedChat}
+                  chat={{ ...selectedChat, onlineStatus: onlineUsers[currentGroup?._id] }}
                   product={selectedProduct}
                   closeChat={() => setIsChatOpen(false)}
                   setProductModal={setProductModal}

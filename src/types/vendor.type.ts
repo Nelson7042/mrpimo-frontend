@@ -1,69 +1,82 @@
-
-interface ITransaction {
-  type: 'credit' | 'debit';
-  amount: number;
-  description?: string;
-  date: Date;
-  relatedOrder?: string;
-}
-
-
-
-export interface IWallet {
-  userId: string;
-  currency: string;
-  balance: number;
-  pending: number;
-  transactions: ITransaction[];
-  createdAt: Date;
-}
-
-
 interface Subscription {
   currentPlan: string;
   isTrial: boolean;
   startDate: Date;
   endDate?: Date;
   autoDowngradeAt?: Date;
-  status: "active" | "expired" | "cancelled";
+  status: 'active' | 'expired' | 'cancelled';
 }
 
 interface VerificationDocument {
   name: string;
-  type: "ID" | "Proof of Address" | "Business Registration" | "Tax Document" | "Passport" | "BVN";
+  type: 'ID' | 'Proof of Address' | 'Business Registration' | 'Tax Document' | 'Passport' | 'BVN' | 'Bank Statement';
   url: string;
   uploadedAt: Date;
   verifiedAt?: Date;
   verifiedBy?: string;
-  status: "pending" | "verified" | "rejected";
+  status: 'pending' | 'verified' | 'rejected';
   remarks?: string;
+  documentNumber?: string;
+  expiryDate?: Date;
 }
 
 export interface IVendor {
   _id?: string;
-  userId: string;
-  accountType: "personal" | "business";
-  kycStatus: "pending" | "verified" | "rejected" | "requires_review";
-  kybStatus?: "pending" | "verified" | "rejected" | "requires_review" | null;
+  userId?: string;
+  registrationEmail?: string;
+  accountType: 'personal' | 'business';
+  kycStatus: 'pending' | 'verified' | 'rejected' | 'requires_review';
+  kycScore?: string | null;
+  kybStatus?: 'pending' | 'verified' | 'rejected' | 'requires_review' | null;
   kybStatusIsVerified?: boolean | null;
+  kybScore?: string | null;
   kybRejectionReason?: string | null;
   verificationDocuments: VerificationDocument[];
   stripeAccountId?: string;
   stripeVerificationStatus: string;
+  payStack?: {
+    paystackSubAccountCode?: string;
+    paystackVerificationStatus?: string;
+    paystackAccountName?: string;
+    paystackBankCode?: string;
+    paystackBankName?: string;
+    paystackRecipientCode?: string;
+    paystackStatus?: 'pending' | 'verified' | 'rejected';
+  };
   identityVerification?: {
-    firstName: string;
-    lastName: string;
-    dateOfBirth: string;
-    idNumber: string;
-    idType: "passport" | "drivers_license" | "national_id" | "voters_card" | "nin";
+    documentType?: 'passport' | 'drivers_license' | 'national_id' | 'voters_card' | 'nin';
+    documentNumber?: string;
+    bvn?: string;
+    firstName?: string;
+    lastName?: string;
+    middleName?: string;
+    dateOfBirth?: string;
+    email?: string;
+    phoneNumber?: string;
+    verified?: boolean;
+    voterCardType?: 'old_voter_card' | 'new_voter_card';
+    civIdType?: 'national_id' | 'old_national_id';
+    address?: {
+      addressLine1?: string;
+      addressLine2?: string;
+      houseNumber?: string;
+      street?: string;
+      city?: string;
+      postalCode?: string;
+      state?: string;
+      countryCode?: string;
+    };
+    // Legacy fields
+    idNumber?: string;
+    idType?: 'passport' | 'drivers_license' | 'national_id' | 'voters_card' | 'nin';
     idFrontUrl?: string;
     idBackUrl?: string;
-    verified: boolean;
   };
-  businessType?: "individual" | "company";
+  businessType?: 'individual' | 'company';
   businessInfo?: {
     name: string;
     registrationNumber?: string;
+    shippingZone?: string;
     taxId?: string;
     address?: {
       street: string;
@@ -73,16 +86,24 @@ export interface IVendor {
       postalCode: string;
     };
     location?: {
-      coordinates: [number, number]; // [longitude, latitude]
-      hasExactLocation: boolean;
+      type: 'Point';
+      coordinates: [number, number];
+      hasExactLocation?: boolean;
     };
   };
   bankDetails?: {
     accountHolder: string;
-    accountNumber: string;
+    accountNumber?: string;
     bankName: string;
-    swiftCode?: string;
     bankCode?: string;
+    routingNumber?: string;
+    sortCode?: string;
+    bsb?: string;
+    institutionNumber?: string;
+    transitNumber?: string;
+    iban?: string;
+    swiftBic?: string;
+    bankStatementUrl?: string;
   };
   sellingLimits?: {
     maxProducts: number | null;
@@ -96,7 +117,9 @@ export interface IVendor {
     totalRevenue: number;
     averageRating: number;
     productCount: number;
-    featuredProducts: number;
+    spentAdsCredit: number;
+    collectionProducts: number;
+    activeCollectionProducts: number;
     payoutRequests: number;
     lastPayoutRequest?: Date;
     adsCreated: number;
@@ -105,33 +128,33 @@ export interface IVendor {
     lastBulkUpload?: Date;
     analyticsViews: number;
     lastAnalyticsView?: Date;
-    // Order fulfillment tracking for personal accounts
-    totalFulfilledOrders?: number;
+    totalFulfilledOrders: number;
     lastOrderFulfilled?: Date;
   };
   settings: {
     autoAcceptOrders: boolean;
     minOrderAmount: number;
-    shippingMethods: [
-      {
-        name: string;
-        price: number;
-        estimatedDays: number;
-      }
-    ];
+    shippingMethods: Array<{
+      name: string;
+      price: number;
+      estimatedDays: number;
+    }>;
   };
-  wallet: IWallet;
+  wallet: {
+    balance: number;
+    pending: number;
+  };
   subscription: Subscription;
-  warnings?: {
+  warnings?: Array<{
     type:
-      | "Product Quality Issues"
-      | "Late Shipping"
-      | "Policy Violation"
-      | "Customer Complaints"
-      | "Others";
+      | 'Product Quality Issues'
+      | 'Late Shipping'
+      | 'Policy Violation'
+      | 'Customer Complaints'
+      | 'Others';
     message: string;
     createdAt: Date;
-  }[];
+  }>;
   suspension?: {
     reason: string;
     explanation: string;
@@ -139,7 +162,16 @@ export interface IVendor {
     resumesAt: Date;
     enforcedBy: string;
   };
-  status: "pending" | "active" | "suspended";
+  notificationPreferences?: {
+    newOrder: boolean;
+    orderStatusChange: boolean;
+    payoutProcessed: boolean;
+    lowStockAlert: boolean;
+    disputeNotification: boolean;
+  };
+  status: 'pending' | 'active' | 'suspended';
+  agreeToTerms?: boolean;
+  termsAgreedAt?: Date;
   createdAt?: Date;
   updatedAt?: Date;
 }

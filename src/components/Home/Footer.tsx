@@ -8,7 +8,6 @@ const Footer: React.FC = () => {
 
   const handleSubscribe = () => {
     // Handle newsletter subscription
-    console.log('Subscribing email:', email);
     setEmail('');
   };
 

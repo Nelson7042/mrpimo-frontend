@@ -26,6 +26,17 @@ import Timer from "./(componets)/Timer";
 import { ProductType } from "@/types/product.type";
 import { useVendorStore } from "@/stores/useVendorStore";
 import { Check } from "lucide-react";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
+
+interface AdvertisementItem {
+  _id: string;
+  title: string;
+  productId: { _id: string; name: string } | null;
+  adType: string;
+  status: "pending" | "approved" | "rejected" | "active" | "expired";
+  rejectionReason?: string;
+}
 
 
 
@@ -71,7 +82,29 @@ const page = (props: Props) => {
   const { data: vendorSubscription } = useVendorSubscription(vendor?._id!);
   const { data: countryPricing } = useCountrySubscriptionPrice(vendor?._id!);
 
-  console.log("Country Pricing Response:", countryPricing);
+  const [advertisements, setAdvertisements] = useState<AdvertisementItem[]>([]);
+  const [adsLoading, setAdsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchAdvertisements = async () => {
+      try {
+        setAdsLoading(true);
+        const response = await fetchWithAuth(`${API_BASE_URL}/vendors/advertisements`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            setAdvertisements(result.data.advertisements);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch advertisements:", error);
+      } finally {
+        setAdsLoading(false);
+      }
+    };
+    fetchAdvertisements();
+  }, []);
+
 
   // Auto-select existing subscription plan
   useEffect(() => {
@@ -86,7 +119,6 @@ const page = (props: Props) => {
     }
   }, [vendorSubscription, backendPlans]);
 
-  console.log(backendPlans);
 
   return (
     <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-roboto text-xs">
@@ -96,6 +128,57 @@ const page = (props: Props) => {
           Provide your product details to show case your product to thousands of
           buyers
         </p>
+
+        {/* Submitted Advertisements List */}
+        <div className="mt-6 mb-8">
+          <h3 className="text-sm font-semibold mb-2">Your Advertisements</h3>
+          <div className="border border-gray-300 rounded-md shadow-sm p-4">
+            {adsLoading ? (
+              <p className="text-xs text-gray-500">Loading advertisements...</p>
+            ) : advertisements.length === 0 ? (
+              <p className="text-xs text-gray-500">No advertisements submitted yet.</p>
+            ) : (
+              <div className="space-y-3">
+                {advertisements.map((ad) => (
+                  <div
+                    key={ad._id}
+                    className="flex items-center justify-between border border-gray-200 rounded-md p-3 bg-white"
+                  >
+                    <div className="flex-1">
+                      <p className="font-medium text-sm">{ad.title}</p>
+                      <p className="text-xs text-gray-500">
+                        Product: {ad.productId?.name ?? "N/A"} &middot; Type: {ad.adType}
+                      </p>
+                      {ad.status === "rejected" && ad.rejectionReason && (
+                        <p className="text-xs text-red-500 mt-1">
+                          Reason: {ad.rejectionReason}
+                        </p>
+                      )}
+                    </div>
+                    <div>
+                      {ad.status === "pending" && (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                          Pending
+                        </span>
+                      )}
+                      {ad.status === "approved" && (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                          Approved
+                        </span>
+                      )}
+                      {ad.status === "rejected" && (
+                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                          Rejected
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="mt-6">
           <h3 className="text-sm mb-2">Product Selection</h3>
 

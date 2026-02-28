@@ -24,11 +24,17 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
   );
 
   // Refs for scrolling logic
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const isInitialLoad = useRef(true);
 
   const scrollToBottom = (behavior: "smooth" | "auto" = "smooth") => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    if (behavior === "smooth") {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    } else {
+      container.scrollTop = container.scrollHeight;
+    }
   };
 
   // Handle auto-scroll logic
@@ -61,6 +67,7 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
 
   return (
     <div
+      ref={messagesContainerRef}
       className="flex-1 p-4 overflow-y-auto"
       style={{
         minHeight: "200px",
@@ -101,9 +108,6 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
               />
             );
           })}
-          
-          {/* Dummy div to anchor the scroll */}
-          <div ref={messagesEndRef} className="h-0 w-0" />
         </div>
       )}
     </div>

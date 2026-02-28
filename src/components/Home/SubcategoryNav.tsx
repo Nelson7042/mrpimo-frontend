@@ -3,12 +3,15 @@
 import React from "react";
 import Link from "next/link";
 import ICategory from "@/types/category.type";
+import { useLocalityFilter } from "@/hooks/useLocalityFilter";
 
 interface SubcategoryNavProps {
   categories: ICategory[];
 }
 
 const SubcategoryNav: React.FC<SubcategoryNavProps> = ({ categories }) => {
+  const { locality } = useLocalityFilter();
+
   if (!categories || categories.length === 0) {
     return null;
   }
@@ -42,7 +45,7 @@ const SubcategoryNav: React.FC<SubcategoryNavProps> = ({ categories }) => {
               <h4 className="font-medium text-xs md:text-sm text-gray-900 group-hover:text-blue-600 transition-colors line-clamp-2">
                 {category.name}
               </h4>
-              {category.productCount > 0 ? (
+              {!locality && category.productCount > 0 ? (
                 <span className="text-[10px] md:text-xs text-gray-500 mt-1 block min-h-[1rem]">
                   {category.productCount.toLocaleString()}{" "}
                   {category.productCount === 1 ? "product" : "products"}

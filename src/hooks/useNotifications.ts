@@ -51,6 +51,7 @@ export const useMarkNotificationAsRead = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['userNotifications'] });
     }
   });
 };
@@ -67,6 +68,7 @@ export const useMarkAllNotificationsAsRead = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['userNotifications'] });
     }
   });
 };
@@ -83,6 +85,7 @@ export const useDeleteNotification = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['userNotifications'] });
     }
   });
 };
@@ -99,6 +102,7 @@ export const useDeleteAllNotifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['userNotifications'] });
     }
   });
 };
@@ -116,6 +120,7 @@ export const useBulkMarkAsRead = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['userNotifications'] });
     }
   });
 };
@@ -133,6 +138,7 @@ export const useBulkDeleteNotifications = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      queryClient.invalidateQueries({ queryKey: ['userNotifications'] });
     }
   });
 };

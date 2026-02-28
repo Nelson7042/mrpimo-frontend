@@ -28,11 +28,12 @@ export const useCategories = () => {
 };
 
 
+import { useLocalityFilter } from './useLocalityFilter';
+
 // Fetch best deals
-const fetchBestDeals = async () => {
-  // Use fetchPublic to send cookies (including currency preference)
-  // This allows the backend to determine the user's preferred currency
-  const response = await fetchPublic(`${API_BASE_URL}/products/best-deals`);
+const fetchBestDeals = async (locality?: string) => {
+  const params = locality ? `?locality=${locality}` : '';
+  const response = await fetchPublic(`${API_BASE_URL}/products/best-deals${params}`);
   if (!response.ok) {
     throw new Error('Failed to fetch best deals');
   }
@@ -41,11 +42,13 @@ const fetchBestDeals = async () => {
 };
 
 export const useBestDeals = () => {
+  const { locality } = useLocalityFilter();
+  const localityParam = locality ?? undefined;
   return useQuery({
-    queryKey: ['bestDeals'],
-    queryFn: fetchBestDeals,
-    staleTime: 10 * 60 * 1000, // 10 minutes
-    gcTime: 30 * 60 * 1000, // 30 minutes
+    queryKey: ['bestDeals', localityParam],
+    queryFn: () => fetchBestDeals(localityParam),
+    staleTime: 10 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
     retry: 1
   });
@@ -76,7 +79,6 @@ const fetchProductBySlug = async (slug: string) => {
     throw new Error('Failed to fetch product');
   }
   const data = await response.json();
-  console.log("Product data:", data);
   return data;
 };
 
@@ -97,7 +99,6 @@ const fetchProductById = async (productId: string) => {
     throw new Error('Failed to fetch product');
   }
   const data = await response.json();
-  console.log("Product data:", data);
   return data;
 };
 
@@ -121,7 +122,6 @@ const fetchProductAnalytics = async (
     throw new Error("Failed to fetch product analytics");
   }
   const data = await response.json();
-  console.log("Product analytics:", data);
   return data;
 };
 
@@ -137,8 +137,10 @@ export const useFetchProductAnalytics = (
   });
 };
 
-const fetchAllProducts = async () => {
-  const response = await fetchPublic(`${API_BASE_URL}/products?page=1&limit=50`);
+const fetchAllProducts = async (locality?: string) => {
+  const params = new URLSearchParams({ page: '1', limit: '50' });
+  if (locality) params.append('locality', locality);
+  const response = await fetchPublic(`${API_BASE_URL}/products?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch products');
   }
@@ -147,9 +149,11 @@ const fetchAllProducts = async () => {
 };
 
 export const useFetchAllProducts = () => {
+  const { locality } = useLocalityFilter();
+  const localityParam = locality ?? undefined;
   return useQuery({
-    queryKey: ['allProducts'],
-    queryFn: fetchAllProducts,
+    queryKey: ['allProducts', localityParam],
+    queryFn: () => fetchAllProducts(localityParam),
     refetchOnWindowFocus: false,
     retry: 1,
   });
@@ -162,31 +166,33 @@ interface AuctionQueryDataType {
   categoryId?: string;
 }
 
-const fetchProductsOnAuction = async (queryData: AuctionQueryDataType) => {
+const fetchProductsOnAuction = async (queryData: AuctionQueryDataType, locality?: string) => {
   const params = new URLSearchParams();
 
   if (queryData.page !== undefined) params.append('page', queryData.page.toString());
   if (queryData.limit !== undefined) params.append('limit', queryData.limit.toString());
   if (queryData.status) params.append('status', queryData.status);
   if (queryData.categoryId) params.append('categoryId', queryData.categoryId);
+  if (locality) params.append('locality', locality);
 
   const response = await fetchPublic(`${API_BASE_URL}/products/auctions?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch products on auction');
   }
   const data = await response.json();
-  console.log("Products on auction data:", data);
   return data.products;
 };
 
 
 export const useProductsOnAuction = (queryData: AuctionQueryDataType) => {
+  const { locality } = useLocalityFilter();
+  const localityParam = locality ?? undefined;
   return useQuery({
-    queryKey: ['productsOnAuction', queryData],
-    queryFn: () => fetchProductsOnAuction(queryData),
+    queryKey: ['productsOnAuction', queryData, localityParam],
+    queryFn: () => fetchProductsOnAuction(queryData, localityParam),
     staleTime: 0,
     refetchOnWindowFocus: true,
-    refetchInterval: 30 * 1000, // refetch every 30s for live auction data
+    refetchInterval: 30 * 1000,
     retry: 1,
   });
 };
@@ -218,7 +224,6 @@ const fetchVendorAnalytics= async (vendorId: string, range="7days") => {
     throw new Error('Failed to fetch user subscriptions');
   }
   const data = await response.json();
-  console.log("Vendor analytics data:", data);
   return data;
 };
 
@@ -257,7 +262,6 @@ const fetchVendorOrders = async (vendorId: string) => {
     throw new Error('Failed to fetch vendor orders');
   }
   const data = await response.json();
-  console.log("Data is")
   return data;
 };
 
@@ -420,7 +424,6 @@ const fetchPlans = async () => {
     throw new Error('Failed to fetch plans');
   }
   const data = await response.json();
-  console.log('Backend Plans Response:', data);
   return data.plans;
 };
 
@@ -439,7 +442,6 @@ const fetchVendorSubscription = async (vendorId: string) => {
     throw new Error('Failed to fetch vendor subscription');
   }
   const data = await response.json();
-  console.log('Vendor Subscription Response:', data);
   return data;
 };
 
@@ -455,7 +457,6 @@ export const useVendorSubscription = (vendorId: string) => {
 
 const fetchCountrySubscriptionPrice = async (vendorId: string) => {
   const response = await fetchWithAuth(`${API_BASE_URL}/subscriptions/countrySubscriptionPrice/${vendorId}`);
-  console.log(vendorId);
   if (!response.ok) {
     throw new Error('Failed to fetch country subscription price');
   }

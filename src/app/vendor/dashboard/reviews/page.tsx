@@ -426,7 +426,6 @@ const page = (props: Props) => {
                 selectedStar={selectedStar}
                 onFilterChange={(star) => {
                   setSelectedStar(star);
-                  console.log("Selected Star Rating:", star);
                 }}
               />
             </div>

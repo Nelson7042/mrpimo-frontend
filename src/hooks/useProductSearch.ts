@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/utils/config";
 import { SearchResponse } from "@/types/search.types";
 import { fetchPublic } from "@/utils/fetchPublic";
+import { useLocalityFilter } from "./useLocalityFilter";
 
 export interface ProductSearchFilters {
   category?: string;
@@ -14,7 +15,8 @@ export interface ProductSearchFilters {
 
 const fetchProductSearch = async (
   query: string,
-  filters: ProductSearchFilters = {}
+  filters: ProductSearchFilters = {},
+  locality?: string
 ): Promise<SearchResponse> => {
   const params = new URLSearchParams();
   
@@ -38,6 +40,10 @@ const fetchProductSearch = async (
     params.append("maxPrice", filters.maxPrice.toString());
   }
   
+  if (locality) {
+    params.append("locality", locality);
+  }
+  
   params.append("page", (filters.page || 1).toString());
   params.append("limit", (filters.limit || 20).toString());
 
@@ -56,11 +62,13 @@ export const useProductSearch = (
   query: string,
   filters: ProductSearchFilters = {}
 ) => {
+  const { locality } = useLocalityFilter();
+  const localityParam = locality ?? undefined;
   return useQuery({
-    queryKey: ["productSearch", query, filters],
-    queryFn: () => fetchProductSearch(query, filters),
+    queryKey: ["productSearch", query, filters, localityParam],
+    queryFn: () => fetchProductSearch(query, filters, localityParam),
     enabled: query.trim().length > 0,
-    staleTime: 30000, // 30 seconds
+    staleTime: 30000,
     refetchOnWindowFocus: false,
   });
 };

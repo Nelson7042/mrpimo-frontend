@@ -139,6 +139,8 @@ export const useRequestPayout = () => {
     onSuccess: () => {
       toast.success('Payout request submitted successfully');
       queryClient.invalidateQueries({ queryKey: ['vendor-payouts'] });
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to request payout');

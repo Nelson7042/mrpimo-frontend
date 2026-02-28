@@ -174,7 +174,7 @@ const RegisterFormVendor = ({ setAuthState, close }: LoginProps) => {
         registrationData,
         {
           onSuccess: (data: any) => {
-            console.log('✅ Vendor registration successful:', data);
+
             
             // Set user in store
             setUser(data.user);
@@ -183,7 +183,7 @@ const RegisterFormVendor = ({ setAuthState, close }: LoginProps) => {
             if (data.vendor) {
               const { setVendor } = require('@/stores/useVendorStore').useVendorStore.getState();
               setVendor(data.vendor);
-              console.log('✅ Vendor saved to store:', data.vendor);
+
             }
             
             toast.success(data.message || "Vendor registration successful! Please verify your email.", toastConfigSuccess);

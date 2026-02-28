@@ -70,7 +70,6 @@ const SendToken = (props: Props) => {
     e.preventDefault();
     if (validate()) {
       // Perform the action to send the token
-      console.log("Token sent to:", email);
       mutation.mutate(email, {
         onSuccess: () => {
           setStep(step + 1); // Move to the next step

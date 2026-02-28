@@ -172,7 +172,6 @@ const Page = (props: Props) => {
 
   const validateDesktopStep1 = async () => {
     const validation = validateCurrentStep();
-    console.log('Desktop Step 1 Validation:', validation);
     
     // Also trigger legacy validation for backward compatibility
     const imageErrors: { [key: string]: string } = {};
@@ -185,8 +184,6 @@ const Page = (props: Props) => {
       imageErrors.imagesError = "You can only upload a maximum of 6 images in total";
     }
 
-    console.log('Image Errors:', imageErrors);
-    console.log('Product Details for Step 1:', productDetails);
 
     // Dispatch events for legacy components
     document.dispatchEvent(
@@ -195,7 +192,6 @@ const Page = (props: Props) => {
     document.dispatchEvent(new CustomEvent("validateDetails"));
 
     const isValid = validation.isValid && Object.keys(imageErrors).length === 0;
-    console.log('Step 1 Final Validation Result:', isValid);
     
     // Scroll to first error if validation fails
     if (!isValid) {
@@ -207,8 +203,6 @@ const Page = (props: Props) => {
 
   const validateDesktopStep2 = async () => {
     const validation = validateCurrentStep();
-    console.log('Desktop Step 2 Validation:', validation);
-    console.log('Product Details for Step 2:', productDetails);
     
     // Trigger legacy validation events for backward compatibility
     document.dispatchEvent(new CustomEvent("validateSpecifications"));
@@ -217,8 +211,7 @@ const Page = (props: Props) => {
       document.dispatchEvent(new CustomEvent("validateVariants"));
     }
 
-    console.log('Step 2 Final Validation Result:', validation.isValid);
-    
+
     // Scroll to first error if validation fails
     if (!validation.isValid) {
       scrollToFirstError();
@@ -229,14 +222,10 @@ const Page = (props: Props) => {
 
   const validateDesktopStep3 = () => {
     const validation = validateCurrentStep();
-    console.log('Desktop Step 3 Validation:', validation);
-    console.log('Product Details for Step 3:', productDetails);
     
     // Trigger legacy validation for backward compatibility
     document.dispatchEvent(new CustomEvent("validateShipping"));
 
-    console.log('Step 3 Final Validation Result:', validation.isValid);
-    
     // Scroll to first error if validation fails
     if (!validation.isValid) {
       scrollToFirstError();

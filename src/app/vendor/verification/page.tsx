@@ -13,8 +13,6 @@ export default function VerificationRouter() {
 
   useEffect(() => {
     if (user) {
-      console.log('User country:', user.country);
-      console.log(countryNameToISO[user.country])
       router.push(`/vendor/verification/${countryNameToISO[user.country]}`);
     }
   }, [user, router]);

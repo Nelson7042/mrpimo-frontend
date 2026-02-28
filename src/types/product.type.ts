@@ -33,6 +33,7 @@ type InventoryType = {
       startBidPrice?: number;
       reservePrice?: number;
       buyNowPrice?: number;
+      finalPrice?: number;
       startTime?: string;
       endTime?: string;
       quantity?: number;
@@ -56,14 +57,19 @@ type CountryType = {
 
 type VariantOptionType = {
   id: string;
-  isDefault: boolean;
+  isDefault?: boolean;
   sku: string;
   value: string;
   price: number;
   salePrice?: number;
   displayPrice?: number;
+  displaySalePrice?: number;
   currencySymbol?: string;
+  exchangeRate?: number;
+  displayCurrency?: string;
   quantity: number;
+  status?: 'inStock' | 'outOfStock';
+  dimensions?: Record<string, string>;
   _id: string;
 };
 
@@ -72,17 +78,24 @@ type VariantOptionType = {
 
 export type VariantType = {
   id: string;
-  isDefault: boolean;
+  isDefault?: boolean;
   name: string;
   options: VariantOptionType[];
   _id: string;
 };
 
 type ReviewType = {
+  _id?: string;
+  productId?: string;
   userId: string;
   rating: number;
   comment: string;
   createdAt: Date;
+  helpful?: string[];
+  vendorResponse?: {
+    comment: string;
+    createdAt: Date;
+  };
 };
 
 type BidType = {
@@ -125,13 +138,7 @@ type ShippingType = {
     width: number;
     height: number;
   };
-  restrictions?: (
-    | "hazardous"
-    | "fragile"
-    | "perishable"
-    | "oversized"
-    | "none"
-  )[];
+  restrictions?: ("local" | "none")[];
 };
 
 export type ProductType = {
@@ -153,6 +160,7 @@ export type ProductType = {
   reviews?: ReviewType[];
   rating?: number;
   variants?: VariantType[];
+  variantDimensions?: string[];
   analytics?: AnalyticsType;
   offers?: OfferType[];
   bids?: BidType[];

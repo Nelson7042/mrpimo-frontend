@@ -8,6 +8,7 @@ import { Category } from "@/types/product.type";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
 import { Button } from "@/components/ui/button";
+import { useLocalityFilter } from "@/hooks/useLocalityFilter";
 
 const ShopCategoriesComponent = () => {
   const categoryData = useCategories() || [];
@@ -26,6 +27,7 @@ const ShopCategoriesComponent = () => {
   }, [allCategories]);
 
   const categoriesSwiperRef = useRef<any>(null);
+  const { locality } = useLocalityFilter();
 
   return (
     <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-5 pb-3 md:py-10 lg:py-10">
@@ -82,7 +84,7 @@ const ShopCategoriesComponent = () => {
                     <h3 className="text-xs md:text-base whitespace-nowrap font-medium md:font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-center line-clamp-2">
                       {category.name}
                     </h3>
-                    {category.productCount > 0 && (
+                    {!locality && category.productCount > 0 && (
                       <span className="text-[10px] md:text-xs text-gray-500">
                         {category.productCount.toLocaleString()}{" "}
                         {category.productCount === 1 ? "product" : "products"}

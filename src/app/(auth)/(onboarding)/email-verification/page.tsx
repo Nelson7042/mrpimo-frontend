@@ -120,9 +120,6 @@ const VerifyAccount = () => {
   };
 
   const handleResendCode = () => {
-    console.log("🔄 Resending verification code...");
-    console.log("📧 User email:", user?.email);
-
     if (!user?.email) {
       console.error("❌ User email is missing");
       toast.error("Email is required to resend verification", toastConfigError);
@@ -144,7 +141,6 @@ const VerifyAccount = () => {
 
     resendCode(user.email, {
       onSuccess: (data) => {
-        console.log("✅ Resend successful:", data);
         toast.success(data.message, toastConfigSuccess);
       },
       onError: (error) => {

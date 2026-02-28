@@ -61,7 +61,7 @@ export const useSubmitProduct = () => {
             width: Number(productDetails.shippingDetails?.productDimensions?.width),
             height: Number(productDetails.shippingDetails?.productDimensions?.height),
           },
-          restrictions: ['none'],
+          restrictions: productDetails.shippingDetails?.restrictions || ['none'],
         },
         variants: productDetails.variants?.map((variant: any, index: number) => ({
           name: variant.name,

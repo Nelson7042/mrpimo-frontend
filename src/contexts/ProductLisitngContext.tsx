@@ -103,9 +103,7 @@ export const ProductListingProvider = ({ children }: { children: ReactNode }) =>
 
   // Enhanced validation function
   const validateCurrentStep = useCallback(() => {
-    console.log('Validating step:', step, 'with data:', productDetails);
     const result = ProductFormValidator.validateStep(step, productDetails);
-    console.log('Validation result:', result);
     setValidationResults(result);
     return result;
   }, [step, productDetails]);

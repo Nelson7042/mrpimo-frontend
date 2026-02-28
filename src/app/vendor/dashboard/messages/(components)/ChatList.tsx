@@ -94,8 +94,6 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
               <div className="border-t border-gray-100 bg-gray-50">
                 {group.productChats.map((productChat: any) => {
                   const isProductExpanded = expandedProducts.has(productChat.chatId);
-                  // Calculate unread count for this product
-                  const unreadCount = productChat.recentMessages?.filter((msg: any) => !msg.read && msg.senderId._id !== group._id).length || 0;
                   
                   return (
                     <div key={productChat.chatId} className="border-b border-gray-100 last:border-b-0">
@@ -122,9 +120,9 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
                         </div>
                         
                         <div className="flex items-center gap-2 flex-shrink-0">
-                          {unreadCount > 0 && (
+                          {productChat.unreadCount > 0 && (
                             <span className="bg-blue-500 text-white text-xs px-2 py-1 rounded-full font-medium">
-                              {unreadCount}
+                              {productChat.unreadCount}
                             </span>
                           )}
                           {isProductExpanded ? (
@@ -149,9 +147,9 @@ const ChatList = ({ groupedChats, onChatSelect, formatMessageTime, filterType, s
                                   <span className="text-xs text-gray-400">
                                     Latest message
                                   </span>
-                                  {unreadCount > 0 && (
+                                  {productChat.unreadCount > 0 && (
                                     <span className="text-xs text-blue-600 ">
-                                      {unreadCount} unread
+                                      {productChat.unreadCount} unread
                                     </span>
                                   )}
                                 </div>

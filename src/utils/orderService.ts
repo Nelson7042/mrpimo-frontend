@@ -39,14 +39,12 @@ export const orderService = {
     
     const response = await fetchWithAuth(`${API_BASE_URL}/orders/user?${params}`);
     const data = await response.json();
-    console.log("Fetched user orders:", data);
     return data
   },
 
   async getOrderById(orderId: string) {
     const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}`);
     const data = await response.json();
-    console.log("Fetched order by ID:", data);
     return data;
   },
 

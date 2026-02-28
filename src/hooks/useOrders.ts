@@ -48,9 +48,10 @@ export const useRequestRefund = () => {
   return useMutation({
     mutationFn: ({ orderId, reason, amount }: { orderId: string; reason: string; amount?: number }) =>
       orderService.requestRefund(orderId, reason, amount),
-    onSuccess: () => {
+    onSuccess: (_, { orderId }) => {
       toast.success('Refund request submitted successfully');
       queryClient.invalidateQueries({ queryKey: ['user-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['order', orderId] });
     },
     onError: (error: any) => {
       toast.error(error.message || 'Failed to request refund');

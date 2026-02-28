@@ -69,22 +69,11 @@ interface CartState {
 }
 
 const calculateCartSummary = (items: CartItem[]): CartSummary => {
-  console.log('Calculating cart summary for items:', items.map(item => ({
-    productId: item.product._id,
-    variantId: item.selectedVariant?.variantId,
-    optionId: item.selectedVariant?.optionId,
-    quantity: item.quantity,
-    variantPrice: item.selectedVariant?.price,
-    exchangeRate: item.priceInfo?.exchangeRate,
-    displayPrice: item.priceInfo?.displayPrice
-  })));
-
   const subtotal = items.reduce((total, item) => {
     // FIX: Use displayPrice directly (already converted by backend)
     // Do NOT multiply by exchange rate - that causes double conversion
     const price = getDisplayPrice(item);
     const itemTotal = Math.round((price * item.quantity) * 100) / 100;
-    console.log(`Item: ${item.product.name}, Display Price: ${price}, Qty: ${item.quantity}, Total: ${itemTotal}`);
     return total + itemTotal;
   }, 0);
 
@@ -92,8 +81,6 @@ const calculateCartSummary = (items: CartItem[]): CartSummary => {
   const totalItems = items.length;
   // Sum all quantities
   const totalQuantity = items.reduce((total, item) => total + item.quantity, 0);
-
-  console.log('Cart Summary:', { subtotal, totalItems, totalQuantity });
 
   return {
     subtotal: Math.round(subtotal * 100) / 100,
@@ -225,7 +212,7 @@ export const useCartStore = create<CartState>()(
             toast.success("Product Added to Cart Successfully", toastConfigSuccess);
           }
         } catch (error) {
-          console.log(error)
+          console.error(error)
           set({ error: error instanceof Error ? error.message : 'Failed to add to cart' });
           toast.error(error instanceof Error ? error.message : 'Failed to add to cart', toastConfigError);
 
@@ -364,7 +351,6 @@ export const useCartStore = create<CartState>()(
             get().calculateSummary();
             
             // Then sync with backend
-            console.log('🔍 [UPDATE QUANTITY] calling backend addToCart');
             await cartService.addToCart({
               productId,
               quantity,
@@ -379,7 +365,6 @@ export const useCartStore = create<CartState>()(
             });
             
             // Reload cart to get updated totals/currency but don't trigger re-renders
-            console.log('🔍 [UPDATE QUANTITY] reloading cart for updated totals');
             await get().loadCart();
           } else {
             const { items, calculateSummary, generateCartItemKey } = get();
@@ -466,7 +451,6 @@ export const useCartStore = create<CartState>()(
 
         try {
           const response = await cartService.getCart();
-          console.log('🔍 [CART RESPONSE]:', JSON.stringify(response, null, 2));
           
           if (response.success && response.cart) {
             const cartItems: CartItem[] = response.cart.map((item: any) => ({

@@ -258,9 +258,11 @@ export const useSetDefaultCard = () => {
 };
 
 export const useUpdateNotificationPreferences = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: userApi.updateNotificationPreferences,
     onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userProfile'] });
       toast.success('Notification preferences updated', toastConfigSuccess);
     },
     onError: () => {

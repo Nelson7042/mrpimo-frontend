@@ -43,7 +43,7 @@ const OTPModal: React.FC<OTPModalProps> = ({
         try {
           const parsedUser = JSON.parse(tempUserStr);
           setTempUser(parsedUser);
-          console.log('📧 Loaded temp user from localStorage:', parsedUser);
+
         } catch (e) {
           console.error('Failed to parse temp user:', e);
         }
@@ -55,9 +55,7 @@ const OTPModal: React.FC<OTPModalProps> = ({
 
   // Log email for debugging
   useEffect(() => {
-    console.log('📧 OTP Modal - Email from prop:', emailProp);
-    console.log('📧 OTP Modal - Email from user store:', user?.email);
-    console.log('📧 OTP Modal - Final email:', email);
+
   }, [emailProp, user?.email, email]);
 
   // Timer effect
@@ -137,9 +135,7 @@ const OTPModal: React.FC<OTPModalProps> = ({
         { code: otpValue },
         {
           onSuccess: (data) => {
-            console.log('✅ FRONTEND: Email verification successful');
-            console.log('📦 FRONTEND: Received user data from backend:', data.user);
-            console.log('📧 FRONTEND: User email verified status:', data.user?.isEmailVerified);
+
             
             localStorage.removeItem('tempUserForVerification');
             
@@ -148,16 +144,16 @@ const OTPModal: React.FC<OTPModalProps> = ({
               isEmailVerified: true
             };
             
-            console.log('💾 FRONTEND: Setting verified user in Zustand store:', verifiedUser);
+
             setUser(verifiedUser);
             
-            console.log('🔄 FRONTEND: Invalidating user profile query');
+
             queryClient.invalidateQueries({ queryKey: ['userProfile'] });
             
-            console.log('✅ FRONTEND: User stored in Zustand, checking store state...');
+
             setTimeout(() => {
               const currentUser = useUserStore.getState().user;
-              console.log('📊 FRONTEND: Current user in store after setUser:', currentUser);
+
             }, 100);
             
             toast.success("Email verified successfully!", toastConfigSuccess);
@@ -190,7 +186,7 @@ const OTPModal: React.FC<OTPModalProps> = ({
 
   // Handle resend
   const handleResend = (): void => {
-    console.log('🔄 Attempting to resend OTP for email:', email);
+
     
     if (!email || email.trim() === '') {
       console.error('❌ Email is missing or empty');
@@ -204,7 +200,7 @@ const OTPModal: React.FC<OTPModalProps> = ({
       return;
     }
     
-    console.log('✅ Email validated, calling resendVerification...');
+
     resendVerification(
       email,
       {

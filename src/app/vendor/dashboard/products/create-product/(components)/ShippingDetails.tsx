@@ -243,21 +243,75 @@ const ShippingDetails = (props: Props) => {
             helperText="The unit of weight for the product."
           />
         </div>
-        <Select
-          label="Shipping Restrictions"
-          value={shippingDetails.restrictions[0] || "none"}
-          onChange={(value) => {
-            const updatedShipping = {
-              ...shippingDetails,
-              restrictions: [value],
-            };
-            setShippingDetails(updatedShipping);
-            updateProductDetails("shippingDetails", updatedShipping);
-          }}
-          options={["none", "hazardous", "fragile", "perishable", "oversized", "local"]}
-          placeholder="Select shipping restrictions"
-          helperText="Select any special handling requirements for this product."
-        />
+        <div className="space-y-2">
+          <label className="block text-sm font-medium text-gray-700">
+            Shipping Availability
+          </label>
+          <div className="flex flex-col gap-3">
+            <label
+              className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                !shippingDetails.restrictions?.includes("local")
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <input
+                type="radio"
+                name="shippingRestriction"
+                value="none"
+                checked={!shippingDetails.restrictions?.includes("local")}
+                onChange={() => {
+                  const updatedShipping = {
+                    ...shippingDetails,
+                    restrictions: ["none"],
+                  };
+                  setShippingDetails(updatedShipping);
+                  updateProductDetails("shippingDetails", updatedShipping);
+                }}
+                className="mt-1"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-900">
+                  Ship everywhere
+                </span>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  This product can be shipped to buyers in any country.
+                </p>
+              </div>
+            </label>
+            <label
+              className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                shippingDetails.restrictions?.includes("local")
+                  ? "border-blue-500 bg-blue-50"
+                  : "border-gray-200 hover:border-gray-300"
+              }`}
+            >
+              <input
+                type="radio"
+                name="shippingRestriction"
+                value="local"
+                checked={shippingDetails.restrictions?.includes("local")}
+                onChange={() => {
+                  const updatedShipping = {
+                    ...shippingDetails,
+                    restrictions: ["local"],
+                  };
+                  setShippingDetails(updatedShipping);
+                  updateProductDetails("shippingDetails", updatedShipping);
+                }}
+                className="mt-1"
+              />
+              <div>
+                <span className="text-sm font-medium text-gray-900">
+                  Local only
+                </span>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  This product can only be shipped within your country. Buyers from other countries will not see it.
+                </p>
+              </div>
+            </label>
+          </div>
+        </div>
       </div>
       <div className="relative w-full my-5">
         <label className="absolute -top-2 left-1/2 transform -translate-x-1/2 px-1 text-xs bg-white text-black z-10">

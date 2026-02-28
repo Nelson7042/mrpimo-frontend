@@ -4,6 +4,7 @@ import { Socket } from 'socket.io-client';
 import { useUserStore } from '@/stores/useUserStore';
 import socketService from '@/utils/socketService';
 import { useUserNotifications } from '@/hooks/queries';
+import { useMarkNotificationAsRead, useMarkAllNotificationsAsRead } from '@/hooks/useNotifications';
 import { INotification } from '@/types/notification.type';
 
 
@@ -48,7 +49,8 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   const [ringing, setRinging] = useState(false);
   const { user } = useUserStore();
   const { data: userNotifications } = useUserNotifications(!!user?._id);
-  
+  const markAsReadMutation = useMarkNotificationAsRead();
+  const markAllAsReadMutation = useMarkAllNotificationsAsRead();
   
   // Use the initialized socket from socketService
   useEffect(() => {
@@ -117,16 +119,22 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
   
   // Mark notification as read
   const markAsRead = (id: string) => {
+    // Optimistic update
     setNotifications(prev => 
       prev.map(n => n._id === id ? { ...n, isRead: true } : n)
     );
+    // Call backend API
+    markAsReadMutation.mutate(id);
   };
   
   // Mark all notifications as read
   const markAllAsRead = () => {
+    // Optimistic update
     setNotifications(prev => 
       prev.map(n => ({ ...n, isRead: true }))
     );
+    // Call backend API
+    markAllAsReadMutation.mutate();
   };
   
   // Clear all notifications

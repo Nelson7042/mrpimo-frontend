@@ -1,4 +1,4 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { API_BASE_URL } from '@/utils/config';
 
@@ -23,10 +23,19 @@ const createProductAPI = async (productData: any): Promise<CreateProductResponse
 };
 
 export const useCreateProduct = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createProductAPI,
     onSuccess: (data) => {
-      console.log('Product created successfully:', data);
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['bestDeals'] });
+      queryClient.invalidateQueries({ queryKey: ['productsByCategory'] });
+      queryClient.invalidateQueries({ queryKey: ['productsOnAuction'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
     },
     onError: (error) => {
       console.error('Failed to create product:', error);

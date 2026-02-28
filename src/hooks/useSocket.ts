@@ -18,12 +18,10 @@ export const useSocket = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('Connected to server');
       newSocket.emit('join', user._id);
     });
 
     newSocket.on('disconnect', () => {
-      console.log('Disconnected from server');
     });
 
     // Listen for notifications
@@ -70,7 +68,6 @@ export const useVendorSocket = () => {
     });
 
     newSocket.on('connect', () => {
-      console.log('Vendor connected to server');
       newSocket.emit('registerVendor', user._id);
     });
 

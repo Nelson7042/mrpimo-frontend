@@ -29,20 +29,27 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
   };
 
   const messagesRef = useRef<HTMLDivElement>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  const scrollToBottom = (behavior: "smooth" | "auto" = "smooth") => {
+    const container = messagesRef.current;
+    if (!container) return;
+    if (behavior === "smooth") {
+      container.scrollTo({ top: container.scrollHeight, behavior: "smooth" });
+    } else {
+      container.scrollTop = container.scrollHeight;
+    }
+  };
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
+    scrollToBottom("smooth");
   }, [messagesData?.messages, newMessages]);
 
   // Auto-scroll when chat changes
   useEffect(() => {
-    if (selectedChat?.chatId && messagesEndRef.current) {
+    if (selectedChat?.chatId) {
       setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'auto' });
+        scrollToBottom("auto");
       }, 100);
     }
   }, [selectedChat?.chatId]);
@@ -104,7 +111,6 @@ const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
               onMessageVisible={observeMessage}
             />
           ))}
-          <div ref={messagesEndRef} />
         </div>
       )}
     </div>

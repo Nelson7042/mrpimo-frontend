@@ -76,7 +76,6 @@ export default function NigerianVendorVerification() {
 
   const handleBusinessVerificationComplete = () => {
     // Final submission logic here
-    console.log("All verification steps completed");
   };
 
   return (

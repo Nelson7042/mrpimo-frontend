@@ -48,7 +48,6 @@ const WalletPage = (props: Props) => {
         headers: { 'Authorization': `Bearer ${localStorage.getItem('token')}` }
       });
       const data = await response.json();
-      console.log('Wallet data fetched:', data);
       if (data.success) {
         setWalletData(data.wallet);
       }

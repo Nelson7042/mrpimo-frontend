@@ -4,6 +4,7 @@ import React from "react";
 import { X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import { getNotificationAction } from "@/utils/notification-action-map";
 
 interface NotificationModalProps {
   notification: {
@@ -80,14 +81,28 @@ export default function NotificationModal({ notification, onClose }: Notificatio
             )}
           </div>
           
-          {notification.data?.redirectUrl && notification.data.redirectUrl !== "/" && (
-            <Button
-              onClick={() => { onClose(); router.push(notification.data!.redirectUrl!); }}
-              className="w-full bg-green-600 hover:bg-green-700 text-white"
-            >
-              Go to
-            </Button>
-          )}
+          {(() => {
+            const action = getNotificationAction(notification.type, notification.case || "");
+            if (action) {
+              const url = action.getUrl(notification);
+              return url && url !== "/" ? (
+                <Button
+                  onClick={() => { onClose(); router.push(url); }}
+                  className="w-full bg-green-600 hover:bg-green-700 text-white"
+                >
+                  {action.label}
+                </Button>
+              ) : null;
+            }
+            return notification.data?.redirectUrl && notification.data.redirectUrl !== "/" ? (
+              <Button
+                onClick={() => { onClose(); router.push(notification.data!.redirectUrl!); }}
+                className="w-full bg-green-600 hover:bg-green-700 text-white"
+              >
+                Go to
+              </Button>
+            ) : null;
+          })()}
           
           <Button
             onClick={onClose}

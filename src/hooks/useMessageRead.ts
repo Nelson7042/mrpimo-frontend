@@ -1,16 +1,21 @@
 import { useRef, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { API_BASE_URL } from '@/utils/config';
 
 export const useMessageRead = (chatId: string | null, userId: string | null) => {
   const observerRef = useRef<IntersectionObserver | null>(null);
   const readTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const queryClient = useQueryClient();
 
   const markAsRead = async (chatId: string) => {
     try {
       await fetchWithAuth(`${API_BASE_URL}/messages/chat/${chatId}/read`, {
         method: 'PATCH'
       });
+      // Invalidate chats query so unread counts update in the chat list
+      queryClient.invalidateQueries({ queryKey: ['chats'] });
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
     } catch (error) {
       console.error('Failed to mark messages as read:', error);
     }

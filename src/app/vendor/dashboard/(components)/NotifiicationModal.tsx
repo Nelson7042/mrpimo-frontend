@@ -1,6 +1,21 @@
 "use client";
 import React, { useState } from "react";
-import { X, Box, ShoppingBag, MessageSquare, CheckCircle, CreditCard, Tag, Wallet } from "lucide-react";
+import {
+  X,
+  Box,
+  ShoppingBag,
+  MessageSquare,
+  CheckCircle,
+  CreditCard,
+  Tag,
+  Wallet,
+  AlertTriangle,
+  RefreshCw,
+  ArrowDownCircle,
+  Shield,
+  Megaphone,
+  AlertOctagon,
+} from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useNotifications } from "@/contexts/NotificationContext";
@@ -13,7 +28,16 @@ type NotificationType =
   | "message"
   | "offer"
   | "bid"
-  | "wallet";
+  | "wallet"
+  | "dispute"
+  | "subscription"
+  | "payout"
+  | "refund"
+  | "withdrawal"
+  | "verification"
+  | "advertisement"
+  | "product"
+  | "account-warning";
 
 interface Notification {
   id: string;
@@ -59,6 +83,24 @@ const NotificationIcon = ({ type }: { type: NotificationType }) => {
       return <Tag className="text-orange-500" size={18} />;
     case "wallet":
       return <Wallet className="text-emerald-500" size={18} />;
+    case "dispute":
+      return <AlertTriangle className="text-red-500" size={18} />;
+    case "subscription":
+      return <CreditCard className="text-indigo-500" size={18} />;
+    case "payout":
+      return <Wallet className="text-green-500" size={18} />;
+    case "refund":
+      return <RefreshCw className="text-teal-500" size={18} />;
+    case "withdrawal":
+      return <ArrowDownCircle className="text-amber-500" size={18} />;
+    case "verification":
+      return <Shield className="text-blue-500" size={18} />;
+    case "advertisement":
+      return <Megaphone className="text-pink-500" size={18} />;
+    case "product":
+      return <Box className="text-green-500" size={18} />;
+    case "account-warning":
+      return <AlertOctagon className="text-red-600" size={18} />;
     default:
       return null;
   }
@@ -77,6 +119,10 @@ const NotificationModal = ({
     if (notification.data?.redirectUrl && notification.data.redirectUrl !== "/") {
       markAsRead(notification._id);
       onClose();
+      // For chat notifications, store chatId so the messages page auto-selects it
+      if (notification.data?.chatId) {
+        localStorage.setItem("focusedChatId", notification.data.chatId);
+      }
       router.push(notification.data.redirectUrl);
     }
   };
@@ -260,4 +306,6 @@ const NotificationModal = ({
   );
 };
 
+export { NotificationIcon };
+export type { NotificationType };
 export default NotificationModal;

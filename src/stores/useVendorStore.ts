@@ -1,4 +1,4 @@
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import { User } from "@/types/user.type";
 import {IVendor} from "@/types/vendor.type";
 import { create } from "zustand";
@@ -17,7 +17,7 @@ interface VendorState {
   resetStore: () => void;
 }
 
-type PersistedState = Pick<VendorState, "vendor">;
+type PersistedState = Pick<VendorState, "vendor" | "listedProducts">;
 
 // Define persist configuration
 const persistConfig: PersistOptions<VendorState, PersistedState> = {

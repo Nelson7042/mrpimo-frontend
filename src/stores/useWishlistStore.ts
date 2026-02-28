@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ProductType } from "@/types/product.type.ts_";
+import { ProductType } from "@/types/product.type";
 import { Wishlist, WishlistItem } from "@/types/wishlist.type";
 
 interface WishlistState {

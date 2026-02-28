@@ -73,7 +73,6 @@ const signUpUser = async (
       if (result.refreshToken) {
         localStorage.setItem('refreshToken', result.refreshToken);
       }
-      console.log('✅ Tokens stored after signup');
     } catch (e) {
       console.warn('Failed to store tokens:', e);
     }
@@ -115,9 +114,6 @@ export const useVerifyEmail = () => {
 const resendVerification = async (
   email: string
 ): Promise<{ message: string }> => {
-  console.log('🔄 Resending verification to:', email);
-  console.log('🔄 API URL:', `${API_BASE_URL}/auth/resend-verification`);
-  
   const response = await fetch(
     `${API_BASE_URL}/auth/resend-verification`,
     {
@@ -128,8 +124,6 @@ const resendVerification = async (
     }
   );
 
-  console.log('🔄 Response status:', response.status);
-
   if (!response.ok) {
     const errorData = await response.json();
     console.error('❌ Resend verification error:', errorData);
@@ -138,7 +132,6 @@ const resendVerification = async (
   }
 
   const data = await response.json();
-  console.log('✅ Resend verification success:', data);
   return data;
 };
 
@@ -169,7 +162,6 @@ const loginUser = async (
 
   // Handle email verification required (403 status)
   if (response.status === 403 && result.requiresEmailVerification) {
-    console.log('⚠️ Email verification required');
     // Store user data temporarily for verification page
     if (result.user) {
       try {
@@ -192,7 +184,6 @@ const loginUser = async (
       if (result.refreshToken) {
         localStorage.setItem('refreshToken', result.refreshToken);
       }
-      console.log('✅ Tokens stored after login');
     } catch (e) {
       console.warn('Failed to store tokens:', e);
     }
@@ -228,7 +219,6 @@ const signUpVendor = async (
       if (result.refreshToken) {
         localStorage.setItem('refreshToken', result.refreshToken);
       }
-      console.log('✅ Tokens stored after vendor signup');
     } catch (e) {
       console.warn('Failed to store tokens:', e);
     }
@@ -287,8 +277,6 @@ const logoutUser = async (): Promise<{ message: string }> => {
     },
     credentials: 'include'
   });
-
-  console.log('🔒 Logout response status:', response.status);
 
   if (!response.ok) {
     const errorData = await response.json();
@@ -375,7 +363,6 @@ const subscribeToPushNotification = async (subscription: {
 
   if (!response.ok) {
     const errorData = await response.json();
-    console.log(errorData);
     toast.error(errorData.message);
     throw new Error(errorData.message);
   }
@@ -384,8 +371,12 @@ const subscribeToPushNotification = async (subscription: {
 };
 
 export const useSubscribeToPush = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: subscribeToPushNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
+    },
   });
 };
 
@@ -408,8 +399,12 @@ const unsubscribeFromPushNotification = async (deviceId: string): Promise<{ mess
 };
 
 export const useUnsubscribeFromPush = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: unsubscribeFromPushNotification,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['userSubscriptions'] });
+    },
   });
 };
 
@@ -431,8 +426,13 @@ const createWallet = async (): Promise<{wallet: ICryptoWallet}> => {
 }
 
 export const useCreateWallet = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createWallet,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['walletTransactions'] });
+    },
   });
 }
 
@@ -730,8 +730,12 @@ const createPaymentIntent = async (data: {
 };
 
 export const useCreatePaymentIntent = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createPaymentIntent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['vendorSubscription'] });
+    },
   });
 };
 
@@ -764,8 +768,13 @@ const addPaymentMethod = async (data: {
 };
 
 export const useAddPaymentMethod = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: addPaymentMethod,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+    },
   });
 };
 
@@ -791,8 +800,13 @@ const initiateTopUp = async (data: {
 };
 
 export const useInitiateTopUp = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: initiateTopUp,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['walletTransactions'] });
+    },
   });
 };
 
@@ -813,8 +827,12 @@ const createSetupIntent = async () => {
 };
 
 export const useCreateSetupIntent = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createSetupIntent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+    },
   });
 };
 
@@ -841,8 +859,13 @@ const buyNow = async (data: {
 };
 
 export const useBuyNow = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: buyNow,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['user-orders'] });
+    },
   });
 };
 
@@ -870,8 +893,13 @@ const createBuyNowPaymentIntent = async (data: {
 };
 
 export const useCreateBuyNowPaymentIntent = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: createBuyNowPaymentIntent,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['walletTransactions'] });
+    },
   });
 };
 
@@ -892,8 +920,12 @@ const deletePaymentMethod = async (paymentMethodId: string) => {
 };
 
 export const useDeletePaymentMethod = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: deletePaymentMethod,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['paymentMethods'] });
+    },
   });
 };
 
@@ -941,6 +973,9 @@ export const useCreateBuyNowOrder = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['vendorOrders'] });
       queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
+      queryClient.invalidateQueries({ queryKey: ['user-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['walletBalance'] });
+      queryClient.invalidateQueries({ queryKey: ['walletTransactions'] });
     },
   });
 };

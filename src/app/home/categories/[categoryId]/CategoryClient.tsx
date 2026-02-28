@@ -29,6 +29,7 @@ import {
 import { ProductType } from "@/types/product.type";
 import { ProductCard } from "@/components/Home/ProductCard";
 import { filterAvailableProducts } from "@/utils/productUtils";
+import { useUserStore } from "@/stores/useUserStore";
 
 interface FilterState {
   category?: string;
@@ -53,6 +54,7 @@ export default function CategoryClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const categoryId = params.categoryId as string;
+  const { user } = useUserStore();
 
   const [filters, setFilters] = useState<FilterState>({
     category: categoryId,
@@ -75,15 +77,15 @@ export default function CategoryClient() {
   // Fetch price ranges for this category
   const { data: priceRangesData } = useCategoryPriceRanges(categoryData?.category?._id || "");
 
-  // Get min and max values from price ranges data
+  // Get min and max values from price ranges data (rounded to integers for slider)
   const priceRangeLimits = useMemo(() => {
     if (!priceRangesData?.priceRanges?.length) {
       return { min: 0, max: 10000000 };
     }
     const ranges = priceRangesData.priceRanges;
     return {
-      min: Math.min(...ranges.map((r: any) => r.min)),
-      max: Math.max(...ranges.map((r: any) => r.max))
+      min: Math.floor(Math.min(...ranges.map((r: any) => r.min))),
+      max: Math.ceil(Math.max(...ranges.map((r: any) => r.max)))
     };
   }, [priceRangesData]);
 
@@ -97,23 +99,29 @@ export default function CategoryClient() {
     }
   }, [priceRangeLimits]);
 
-  // Format currency
+  // Format currency using the API-returned currency or user's preference
+  const displayCurrency = priceRangesData?.currency || user?.preferences?.currency || 'USD';
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-NG', {
-      style: 'currency',
-      currency: priceRangesData?.currency || 'NGN',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(amount);
+    try {
+      return new Intl.NumberFormat(undefined, {
+        style: 'currency',
+        currency: displayCurrency,
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 0
+      }).format(Math.round(amount));
+    } catch {
+      return `${displayCurrency} ${Math.round(amount).toLocaleString()}`;
+    }
   };
 
   // Handle slider price range change
   const handleSliderChange = (value: number[]) => {
     setFilters(prev => ({
       ...prev,
-      priceRange: value as [number, number]
+      priceRange: [Math.round(value[0]), Math.round(value[1])] as [number, number]
     }));
-    setSelectedPriceRange("All Prices"); // Reset radio selection when slider is used
+    setSelectedPriceRange("All Prices");
+    setPage(1);
   };
 
 
@@ -155,29 +163,26 @@ export default function CategoryClient() {
       filterParams.brand = filters.brands.join(",");
     }
 
-    // Check if custom slider range is being used
-    if (filters.priceRange[0] !== priceRangeLimits.min || filters.priceRange[1] !== priceRangeLimits.max) {
-      filterParams.priceRange = `${filters.priceRange[0]}-${filters.priceRange[1]}`;
-    } else if (selectedPriceRange !== "All Prices") {
+    // Price filtering: radio range takes priority, otherwise use slider if moved
+    if (selectedPriceRange !== "All Prices") {
       const range = PRICE_RANGES.find((r) => r.label === selectedPriceRange);
       if (range?.value) {
         filterParams.priceRange = range.value;
       }
+    } else if (filters.priceRange[0] !== priceRangeLimits.min || filters.priceRange[1] !== priceRangeLimits.max) {
+      filterParams.priceRange = `${Math.round(filters.priceRange[0])}-${Math.round(filters.priceRange[1])}`;
     }
 
     if (filters.sort) {
       filterParams.sort = filters.sort;
     }
 
-    console.log('Frontend Request Params:', filterParams);
     return filterParams;
   }, [categoryData, filters, selectedPriceRange, page, priceRangeLimits, PRICE_RANGES]);
 
   // Fetch products with filters
   const { data: productsData, isLoading } =
     useProductsByCategory(productFilters);
-
-  console.log("CategoryPage - productsData:", productsData);
 
   const products = productsData?.products || [];
   const availableBrands = productsData?.brands || [];
@@ -191,6 +196,7 @@ export default function CategoryClient() {
         ? prev.brands.filter((b) => b !== brand)
         : [...prev.brands, brand],
     }));
+    setPage(1);
   };
 
   const toggleSubcategory = (subcategoryId: string) => {
@@ -200,21 +206,20 @@ export default function CategoryClient() {
         ? prev.subCategories.filter((s) => s !== subcategoryId)
         : [...prev.subCategories, subcategoryId],
     }));
+    setPage(1);
   };
 
   const handleSortChange = (sortValue: string) => {
     setFilters((prev) => ({ ...prev, sort: sortValue }));
+    setPage(1);
   };
 
   const handlePriceRangeChange = (range: string) => {
     setSelectedPriceRange(range);
-    // Reset slider to full range when radio button is selected
-    if (range === "All Prices") {
-      setFilters(prev => ({
-        ...prev,
-        priceRange: [priceRangeLimits.min, priceRangeLimits.max]
-      }));
-    }
+    setPage(1);
+    // Don't touch the slider — radio and slider are independent controls.
+    // When "All Prices" is selected, no radio-based filter is sent.
+    // The slider keeps its position but only applies when no radio is active.
   };
 
   const clearFilters = () => {
@@ -227,6 +232,7 @@ export default function CategoryClient() {
       search: "",
     });
     setSelectedPriceRange("All Prices");
+    setPage(1);
   };
 
   const manualBreadcrumbs: BreadcrumbItem[] = [
@@ -282,8 +288,8 @@ export default function CategoryClient() {
               className="w-full"
             />
             <div className="flex justify-between text-sm text-gray-800 font-medium">
-              <span>{formatCurrency(filters.priceRange[0])}</span>
-              <span>{formatCurrency(filters.priceRange[1])}</span>
+              <span>{formatCurrency(priceRangeLimits.min)}</span>
+              <span>{formatCurrency(priceRangeLimits.max)}</span>
             </div>
           </div>
           <RadioGroup
@@ -355,7 +361,7 @@ export default function CategoryClient() {
           <div className="w-[70%] md:w-full ">
             <div className="mb-8 grid grid-cols-2">
               <div className="flex flex-col  gap-4 col-span-1">
-                <div className="flex-1 font-normal hidden md:block">
+                <div className="flex-1 font-normal">
                   <div className=" flex w-full  bg-white  py-[5px] border border-[#ADADAD] rounded-3xl">
                     <button className=" border-r px-2 ">
                       <Search className="w-2 h-2 md:w-4 md:h-4" color="black" />
@@ -369,10 +375,19 @@ export default function CategoryClient() {
                           search: e.target.value,
                         }))
                       }
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          setPage(1);
+                        }
+                      }}
                       className="flex-1 border-0 px-2 w-full pl-[2px] outline-0 text-[#121212] placeholder:text-sm"
                     />
 
-                    <button className="py-[4px] font-normal md:py-2 w-[80px] text-xs md:w-[90px] lg:w-[100px] bg-secondary text-white placeholder:text-xs  rounded-4xl mr-1  ">
+                    <button
+                      onClick={() => setPage(1)}
+                      className="py-[4px] font-normal md:py-2 w-[80px] text-xs md:w-[90px] lg:w-[100px] bg-secondary text-white placeholder:text-xs  rounded-4xl mr-1  "
+                    >
                       Search
                     </button>
                   </div>
@@ -382,25 +397,26 @@ export default function CategoryClient() {
               {/* Sort By */}
               <div className="col-span-1  w-full flex  justify-end">
                 <div className="flex  items-center space-x-2 ">
-                  <span className="text-sm text-gray-600 whitespace-nowrap">
+                  <span className="text-xs text-gray-600 whitespace-nowrap font-roboto">
                     Sort by:
                   </span>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="outline"
-                        className="min-w-[140px] justify-between"
+                        className="min-w-[140px] justify-between font-roboto text-xs"
                       >
                         {SORT_OPTIONS.find((opt) => opt.value === filters.sort)
                           ?.label || "Sort"}
-                        <ChevronDown className="w-4 h-4" />
+                        <ChevronDown className="w-3 h-3" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent className="w-56">
+                    <DropdownMenuContent className="w-56 font-roboto">
                       {SORT_OPTIONS.map((option) => (
                         <DropdownMenuItem
                           key={option.value}
                           onClick={() => handleSortChange(option.value)}
+                          className="text-xs"
                         >
                           {option.label}
                         </DropdownMenuItem>

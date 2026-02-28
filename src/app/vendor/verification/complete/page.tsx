@@ -22,7 +22,6 @@ const CompleteVerificationPage = () => {
         throw new Error("Failed to fetch verification status");
       }
       const data = await response.json();
-      console.log(data);
       setVerificationStatus(data);
       setIsVerified(data.status === "verified" || data.status === "complete");
     } catch (error) {

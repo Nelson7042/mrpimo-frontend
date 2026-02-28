@@ -49,11 +49,9 @@ export default function CountryVerification() {
           { id: 'bank', title: 'Bank Account', fields: [] },
           { id: 'tos', title: 'Terms of Service', fields: [] },
         ];
-        console.log('Page - Using custom groups:', customGroups);
         setFieldGroups(customGroups);
       } else {
         const groups = parseStripeFields(fields, vendorType);
-        console.log('Page - Using parsed groups:', groups);
         setFieldGroups(groups);
       }
     }
@@ -95,8 +93,6 @@ export default function CountryVerification() {
   };
 
   const handleSubmit = async (data: Record<string, any>) => {
-    console.log('Submitting verification:', data);
-    
     // Structure data for backend
     const payload: any = {
       country,
@@ -256,7 +252,7 @@ export default function CountryVerification() {
       };
     }
 
-    console.log('Structured payload for backend:', payload);
+
     
     try {
       const response = await fetch(`${API_BASE_URL}/verification/stripe/initiate`, {

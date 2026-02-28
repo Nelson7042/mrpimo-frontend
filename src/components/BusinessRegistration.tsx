@@ -48,16 +48,6 @@ const BusinessRegistration = (props: Props) => {
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    console.log("Form submitted:", {
-      businessName,
-      businessEmail,
-      password,
-      street,
-      city,
-      state,
-      postalCode,
-      country: selected,
-    });
     e.preventDefault();
 
     const newErrors = {
@@ -129,8 +119,6 @@ const BusinessRegistration = (props: Props) => {
       );
 
       const data = await response.json();
-
-      console.log("Server response:", data);
 
       if (response.ok) {
         toast.success("Registration successful!", toastConfigSuccess);

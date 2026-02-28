@@ -1,10 +1,11 @@
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { toast } from 'react-toastify';
 import { toastConfigSuccess, toastConfigError } from '@/app/config/toast.config';
 import { API_BASE_URL } from '@/utils/config';
 
 export const useProductImport = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: async ({ type, data }: { type: 'csv' | 'json' | 'shopify' | 'woocommerce', data: any }) => {
       const formData = new FormData();
@@ -39,6 +40,13 @@ export const useProductImport = () => {
     },
     onSuccess: (data) => {
       toast.success(`Import completed: ${data.summary.successful}/${data.summary.total} products imported`, toastConfigSuccess);
+      queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-products'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['allProducts'] });
+      queryClient.invalidateQueries({ queryKey: ['bestDeals'] });
+      queryClient.invalidateQueries({ queryKey: ['productsByCategory'] });
+      queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
     },
     onError: (error: Error) => {
       toast.error(error.message, toastConfigError);

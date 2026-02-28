@@ -174,7 +174,6 @@ const PricingInformation = (props: Props) => {
   React.useEffect(() => {
     const handleValidateEvent = () => {
       const isValid = validatePricingInformation();
-      console.log("isValid", isValid);
       document.dispatchEvent(
         new CustomEvent("pricingValidated", { detail: { isValid } })
       );
@@ -582,7 +581,6 @@ const PricingInformation = (props: Props) => {
         label="Listing Type"
         options={["Auction", "Instant Sale"]}
         onChange={(value) => {
-          console.log(value.toLocaleLowerCase());
           const type =
             value.toLowerCase() === "auction" ? "auction" : "instantSale";
           setPricingInformation({ ...pricingInformation, listingType: type });

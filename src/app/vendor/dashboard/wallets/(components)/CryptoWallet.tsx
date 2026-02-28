@@ -79,7 +79,6 @@ const CryptoWallet = () => {
       setIsLoadingRates(false);
     }
   };
-  console.log(wallet)
   // Fetch rates on component mount and set up refresh interval
   useEffect(() => {
     fetchCryptoRates();

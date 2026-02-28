@@ -183,7 +183,6 @@ const ProductsPage = () => {
   };
 
   const handleDelete = (productId: string) => {
-    console.log("Delete:", productId);
     // trigger confirmation or delete
   };
 
@@ -611,9 +610,8 @@ const ProductsPage = () => {
                                 </li>
                                 <li
                                   className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs"
-                                  onClick={() =>
-                                    console.log("Delete", product?._id!)
-                                  }
+                                  onClick={() => {
+                                  }}
                                 >
                                   <Trash size={14} />
                                   <p className="font-roboto text-xs">Delete</p>

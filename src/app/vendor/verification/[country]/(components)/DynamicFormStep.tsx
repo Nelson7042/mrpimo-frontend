@@ -69,14 +69,8 @@ export default function DynamicFormStep({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('DynamicFormStep - Form data:', formData);
-    console.log('DynamicFormStep - Group fields:', group.fields);
-    console.log('DynamicFormStep - Validation result:', validate());
     if (validate()) {
-      console.log('DynamicFormStep - Calling onNext with:', formData);
       onNext(formData);
-    } else {
-      console.log('DynamicFormStep - Validation errors:', errors);
     }
   };
 

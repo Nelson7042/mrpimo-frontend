@@ -18,6 +18,10 @@ const NotificationBell: React.FC = () => {
     setShowDropdown(false);
 
     if (notification.data?.redirectUrl && notification.data.redirectUrl !== "/") {
+      // For chat notifications, store chatId so the messages page auto-selects it
+      if (notification.data?.chatId) {
+        localStorage.setItem("focusedChatId", notification.data.chatId);
+      }
       router.push(notification.data.redirectUrl);
     }
   };

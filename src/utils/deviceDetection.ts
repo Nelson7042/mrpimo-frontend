@@ -155,16 +155,6 @@ export const logDeviceInfo = () => {
   // Only log in development mode
   if (process.env.NODE_ENV === 'development') {
     console.group('🔍 Device Information');
-    console.log('Browser:', `${deviceInfo.browser} ${deviceInfo.browserVersion}`);
-    console.log('Operating System:', `${deviceInfo.os} ${deviceInfo.osVersion}`);
-    console.log('Device Type:', deviceInfo.deviceType);
-    if (deviceInfo.deviceModel) {
-      console.log('Device Model:', deviceInfo.deviceModel);
-    }
-    console.log('User Agent:', navigator.userAgent);
-    console.log('Platform:', navigator.platform);
-    console.log('Screen Resolution:', `${window.screen.width}x${window.screen.height}`);
-    console.log('Viewport Size:', `${window.innerWidth}x${window.innerHeight}`);
     console.groupEnd();
   }
 

@@ -185,8 +185,6 @@ export default function OrderDetailsPage() {
     });
   };
 
-  console.log(listedProducts, "Listed Products");
-
   return (
     <div className="bg-white p-4 md:p-4 lg:p-10 h-full w-full">
       <button

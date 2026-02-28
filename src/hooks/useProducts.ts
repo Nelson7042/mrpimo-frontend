@@ -1,8 +1,9 @@
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { API_BASE_URL } from '@/utils/config';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { fetchPublic } from '@/utils/fetchPublic';
+import { useLocalityFilter } from './useLocalityFilter';
 
 interface ProductFilters {
   category?: string;
@@ -15,6 +16,7 @@ interface ProductFilters {
   sort?: string;
   page?: number;
   limit?: number;
+  locality?: 'local';
 }
 
 const fetchProducts = async (filters: ProductFilters) => {
@@ -34,9 +36,12 @@ const fetchProducts = async (filters: ProductFilters) => {
 };
 
 export const useProducts = (filters: ProductFilters) => {
+  const { locality } = useLocalityFilter();
+  const localityParam = locality ?? undefined;
+  const filtersWithLocality = localityParam ? { ...filters, locality: localityParam } : filters;
   return useQuery({
-    queryKey: ['products', filters],
-    queryFn: () => fetchProducts(filters),
+    queryKey: ['products', filtersWithLocality],
+    queryFn: () => fetchProducts(filtersWithLocality),
     refetchOnWindowFocus: false,
     retry: 1,
   });
@@ -87,8 +92,10 @@ interface CategoryProductFilters {
   brand?: string;
   priceRange?: string;
   sort?: string;
+  search?: string;
   page?: number;
   limit?: number;
+  locality?: 'local';
 }
 
 const fetchProductsByCategory = async (filters: CategoryProductFilters) => {
@@ -112,9 +119,12 @@ const fetchProductsByCategory = async (filters: CategoryProductFilters) => {
 };
 
 export const useProductsByCategory = (filters: CategoryProductFilters) => {
+  const { locality } = useLocalityFilter();
+  const localityParam = locality ?? undefined;
+  const filtersWithLocality = localityParam ? { ...filters, locality: localityParam } : filters;
   return useQuery({
-    queryKey: ['productsByCategory', filters],
-    queryFn: () => fetchProductsByCategory(filters),
+    queryKey: ['productsByCategory', filtersWithLocality],
+    queryFn: () => fetchProductsByCategory(filtersWithLocality),
     enabled: !!filters.categoryId,
     refetchOnWindowFocus: false,
     retry: 1,
@@ -172,28 +182,35 @@ const addReview = async (productId: string, reviewData: { rating: number; commen
 };
 
 export const useAddReview = () => {
+  const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ productId, reviewData }: { productId: string; reviewData: { rating: number; comment?: string; vendorRating?: number } }) =>
       addReview(productId, reviewData),
+    onSuccess: (_, { productId }) => {
+      queryClient.invalidateQueries({ queryKey: ['product', productId] });
+      queryClient.invalidateQueries({ queryKey: ['product-slug'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorReviews'] });
+      queryClient.invalidateQueries({ queryKey: ['vendorReviewAnalytics'] });
+    },
   });
 };
 
-const fetchCategoryPriceRanges = async (categoryId: string) => {
-  const response = await fetchPublic(`${API_BASE_URL}/products/categories/${categoryId}/price-ranges`);
+const fetchCategoryPriceRanges = async (categoryId: string, locality?: string) => {
+  const params = new URLSearchParams({ categoryId });
+  if (locality) params.append('locality', locality);
+  const response = await fetchPublic(`${API_BASE_URL}/products/categories/${categoryId}/price-ranges?${params.toString()}`);
   if (!response.ok) {
     throw new Error('Failed to fetch price ranges');
   }
-  const data = await response.json();
-  console.log('Price Ranges API Response:', data);
-  console.log('Price Ranges Array:', data.priceRanges);
-  console.log('Price Ranges Count:', data.priceRanges?.length || 0);
-  return data;
+  return response.json();
 };
 
 export const useCategoryPriceRanges = (categoryId: string) => {
+  const { locality } = useLocalityFilter();
+  const localityParam = locality ?? undefined;
   return useQuery({
-    queryKey: ['categoryPriceRanges', categoryId],
-    queryFn: () => fetchCategoryPriceRanges(categoryId),
+    queryKey: ['categoryPriceRanges', categoryId, localityParam],
+    queryFn: () => fetchCategoryPriceRanges(categoryId, localityParam),
     enabled: !!categoryId,
     refetchOnWindowFocus: false,
     retry: 1,

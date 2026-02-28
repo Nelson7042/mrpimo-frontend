@@ -407,10 +407,7 @@ function VendorRegistrationForm({
       registrationData.bankDetails = bankDetails;
     }
 
-    console.log('📍 Sending vendor registration with location:', registrationData);
-
     const onSuccess = (data: any) => {
-      console.log("✅ Vendor registration successful:", data);
       if (data.user) {
         setUser(data.user);
       }
@@ -438,15 +435,12 @@ function VendorRegistrationForm({
 
   const fetchBankRequirements = async (countryCode: string) => {
     const endpoint = `${process.env.NEXT_PUBLIC_API_URL}/location/countries/${countryCode}/account-details`;
-    console.log('🏦 Fetching bank requirements from:', endpoint);
     
     try {
       const response = await fetch(endpoint);
-      console.log('📡 Bank requirements response status:', response.status);
       
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Bank requirements received:', data);
         setRequiredBankFields(data.data?.requiredAccountDetails || data.requiredAccountDetails);
       } else {
         console.error('❌ Failed to fetch bank requirements:', response.statusText);
@@ -485,7 +479,6 @@ function VendorRegistrationForm({
             name: bank.name,
           }));
           setBanksList(banks);
-          console.log(`✅ Loaded ${banks.length} banks for ${countryCode}`);
         }
       } else {
         const errorData = await response.json().catch(() => ({}));

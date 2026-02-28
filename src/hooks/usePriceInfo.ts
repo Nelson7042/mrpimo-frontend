@@ -34,8 +34,8 @@ export const usePriceInfo = (
     if (option) {
       const basePrice = option.salePrice || option.price || 0;
       const exchangeRate = (productData as any)?.priceInfo?.exchangeRate || 1;
-      const unitPrice = basePrice * exchangeRate;
-      const totalPrice = unitPrice * quantity;
+      const unitPrice = parseFloat((basePrice * exchangeRate).toFixed(2));
+      const totalPrice = parseFloat((unitPrice * quantity).toFixed(2));
       const currencySymbol = (productData as any)?.priceInfo?.currencySymbol || '$';
       const currency = (productData as any)?.priceInfo?.currency || 'USD';
 

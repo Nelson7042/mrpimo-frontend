@@ -17,12 +17,10 @@ class SocketService {
     });
 
     this.socket.on('connect', () => {
-      console.log('Connected to server');
       this.socket?.emit('authenticate', { userId });
     });
 
     this.socket.on('disconnect', () => {
-      console.log('Disconnected from server');
     });
 
     return this.socket;

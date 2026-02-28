@@ -57,7 +57,7 @@ const AuthenticationModal = ({ isOpen, close }: ModalProps) => {
       <div>
         <div className="py-4 flex justify-between mb-[16px] md:mb-[24px] lg-[40px] w-full ">
           <h3 className="text-[14px] flex-1   md:text-[20px] md:leading-[24px]  text-gray-700 font-semibold">
-            Log in or Create an Account to Continues
+            Log in or Create an Account to Continue
           </h3>
 
           <X onClick={close} className="cursor-pointer text-black" size={20} />

@@ -41,9 +41,6 @@ export default function FeaturedProducts() {
       const response = await fetchPublic(`${AllProduct}/featured?${params}`);
       if (!response.ok) throw new Error("Failed to fetch featured products");
       const data = await response.json();
-      console.log('Featured Products API Response:', data);
-      console.log('Featured Products Array:', data.products);
-      console.log('Featured Products Count:', data.products?.length || 0);
       return data.products || [];
     },
     refetchOnWindowFocus: false,

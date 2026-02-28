@@ -6,6 +6,9 @@ import {
   LogOut,
   LayoutDashboard,
   Wallet,
+  Bell,
+  MapPin,
+  Globe,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -33,9 +36,12 @@ import { ProfileCircle } from "iconsax-react";
 import { formatProductPrice } from "@/utils/formatPrice";
 import dynamic from "next/dynamic";
 import { useLogoutUser } from "@/hooks/mutations";
+import { useQueryClient } from "@tanstack/react-query";
 import { resetAllStores } from "@/stores/resetStore";
 import { toast } from "react-toastify";
 import { convertFromUSD, getCurrencySymbol } from "@/utils/currencyService";
+import { useNotifications } from "@/contexts/NotificationContext";
+import { useLocalityFilter } from "@/hooks/useLocalityFilter";
 
 // Dynamically import the vendor modal to avoid SSR issues
 const VendorRegistrationModal = dynamic(
@@ -65,6 +71,22 @@ const Header = () => {
   const debouncedQuery = useDebounce(searchQuery, 300);
   const { data: suggestionsData } = useSearchSuggestions(debouncedQuery, 5);
   const { setAuthType } = useAuthModalStore();
+  const { unreadCount } = useNotifications();
+  const { locality, setLocality } = useLocalityFilter();
+  const queryClient = useQueryClient();
+
+  const handleLocalityToggle = () => {
+    const next = locality === "local" ? null : "local";
+    setLocality(next);
+    // Invalidate all product queries so they refetch with the new filter
+    queryClient.invalidateQueries({ queryKey: ["bestDeals"] });
+    queryClient.invalidateQueries({ queryKey: ["allProducts"] });
+    queryClient.invalidateQueries({ queryKey: ["products"] });
+    queryClient.invalidateQueries({ queryKey: ["productsByCategory"] });
+    queryClient.invalidateQueries({ queryKey: ["productsOnAuction"] });
+    queryClient.invalidateQueries({ queryKey: ["productSearch"] });
+    queryClient.invalidateQueries({ queryKey: ["categoryPriceRanges"] });
+  };
 
   // Initialize cart sync
   useCartSync();
@@ -302,6 +324,23 @@ const Header = () => {
                   <button
                     onClick={() => {
                       setShowProfileModal(false);
+                      router.push("/home/user/notifications");
+                    }}
+                    className="w-full flex items-center justify-between px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                  >
+                    <span className="flex items-center gap-2">
+                      <Bell className="w-4 h-4" />
+                      Notifications
+                    </span>
+                    {unreadCount > 0 && (
+                      <span className="bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </button>
+                  <button
+                    onClick={() => {
+                      setShowProfileModal(false);
                       handleLogout();
                     }}
                     className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
@@ -452,6 +491,28 @@ const Header = () => {
 
             {/* Right menu */}
             <div className="flex items-center gap-2 sm:gap-3">
+              {/* Locality toggle */}
+              <button
+                onClick={handleLocalityToggle}
+                className={`flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium transition-colors ${
+                  locality === "local"
+                    ? "bg-white text-blue-600"
+                    : "bg-blue-700 text-white hover:bg-blue-800"
+                }`}
+                title={locality === "local" ? "Showing local products only" : "Showing all products"}
+              >
+                {locality === "local" ? (
+                  <>
+                    <MapPin className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">Local</span>
+                  </>
+                ) : (
+                  <>
+                    <Globe className="w-3.5 h-3.5" />
+                    <span className="hidden sm:inline">All</span>
+                  </>
+                )}
+              </button>
               {/* Mobile search button */}
               {/* <button
                 onClick={toggleSearch}

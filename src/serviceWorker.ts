@@ -7,7 +7,7 @@ export function register() {
         
         navigator.serviceWorker.register(swUrl)
           .then(registration => {
-            console.log('ServiceWorker registration successful');
+
             
             // Request notification permission
             if ('Notification' in window) {

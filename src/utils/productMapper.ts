@@ -2,9 +2,6 @@ import { VariantCombinationUtil } from './variantCombinations';
 
 export class ProductMapper {
   static mapToBackendSchema(productDetails: any) {
-    console.log('=== MAPPER CALLED ===');
-    console.log('ProductDetails.shippingDetails:', productDetails.shippingDetails);
-    console.log('Full productDetails keys:', Object.keys(productDetails));
     
     const mapped: any = {
       name: productDetails.productName,
@@ -62,10 +59,8 @@ export class ProductMapper {
   }
 
   private static mapShipping(shippingDetails: any) {
-    console.log('=== mapShipping called with ===:', shippingDetails);
     
     if (!shippingDetails) {
-      console.log('!!! No shipping details provided, returning default !!!');
       return {
         weight: 0.01,
         unit: 'kg',
@@ -75,13 +70,6 @@ export class ProductMapper {
     }
 
     const weight = parseFloat(shippingDetails.productWeight);
-    console.log('Mapping shipping details:', {
-      productWeight: shippingDetails.productWeight,
-      parsedWeight: weight,
-      finalWeight: Math.max(weight || 0.01, 0.01),
-      dimensions: shippingDetails.productDimensions,
-      dimensionUnit: shippingDetails.dimensionUnit
-    });
 
     return {
       weight: Math.max(weight || 0.01, 0.01),

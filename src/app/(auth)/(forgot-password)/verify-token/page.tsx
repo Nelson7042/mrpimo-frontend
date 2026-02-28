@@ -105,7 +105,6 @@ const VerifyToken = (props: Props) => {
   const handleResendCode = () => {
     setVerificationCode(["", "", "", "", "", ""]);
     inputRefs[0].current?.focus();
-    console.log("Resending verification code...");
     mutate({email: userEmail}, {
       onSuccess: (data) => {
         toast.success(data.message, toastConfigSuccess);
@@ -122,7 +121,6 @@ const VerifyToken = (props: Props) => {
   const handleVerify = async (e: React.FormEvent) => {
     e.preventDefault();
     const code = verificationCode.join("");
-    console.log("Verifying code:", code);
 
     const disabled = code.length !== 6;
 

@@ -136,6 +136,7 @@ export const useDeleteAddress = () => {
     mutationFn: addressApi.deleteAddress,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["addresses"] });
+      queryClient.invalidateQueries({ queryKey: ["shipping-estimate"] });
       toast.success("Address deleted successfully", toastConfigSuccess);
     },
     onError: () => {

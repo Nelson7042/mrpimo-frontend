@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { Notification1, Shop } from "iconsax-react";
 import { useVendorStore } from "@/stores/useVendorStore";
+import { useNotifications } from "@/contexts/NotificationContext";
 
 // Define the base path for your user section
 const BASE_PATH = "/home/user";
@@ -46,6 +47,7 @@ export function Sidebar({
 }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { unreadCount } = useNotifications();
 
   const handleClick = (link: string) => {
     router.push(link);
@@ -80,7 +82,12 @@ export function Sidebar({
               variant="Outline"
               className="mr-3 h-4 w-4"
             />
-            {item.name}
+            <span className="flex-1">{item.name}</span>
+            {item.name === "Notifications" && unreadCount > 0 && (
+              <span className="bg-red-500 text-white text-xs rounded-full min-w-[20px] h-5 flex items-center justify-center px-1">
+                {unreadCount}
+              </span>
+            )}
           </Button>
         );
       })}

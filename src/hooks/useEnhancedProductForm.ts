@@ -33,14 +33,12 @@ export const useEnhancedProductForm = () => {
     try {
       // Map product details to backend schema
       const mappedData = mapProductDetailsToSchema();
-      console.log('Mapped product data:', mappedData);
       
       // Validate the mapped data
       const validation = validateProduct(mappedData);
       
       if (!validation.isValid) {
         toast.error('Please fix validation errors before submitting', toastConfigError);
-        console.log('Validation errors:', validation.errors);
         return { success: false, errors: validation.errors };
       }
 

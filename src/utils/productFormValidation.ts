@@ -94,15 +94,6 @@ export class ProductFormValidator {
     errors: Record<string, string>,
     warnings: Record<string, string>
   ): ValidationResult {
-    console.log('Validating basic info with:', { 
-      productName: data.productName, 
-      name: data.name,
-      brandName: data.brandName,
-      brand: data.brand,
-      description: data.description,
-      condition: data.condition
-    });
-
     // Handle both productName and name fields
     const productName = data.productName || data.name;
     if (!productName || productName.trim().length < 3) {
@@ -133,7 +124,6 @@ export class ProductFormValidator {
       warnings.conditionDescription = "Consider adding condition details for used items";
     }
 
-    console.log('Basic info validation errors:', errors);
     return { isValid: Object.keys(errors).length === 0, errors, warnings };
   }
 

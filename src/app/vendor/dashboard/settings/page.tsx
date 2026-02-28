@@ -11,14 +11,50 @@ import UpgradeToBusinessAccount from "./components/UpgradeToBusinessAccount";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { toast } from "react-toastify";
 import { toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
+import KybModal from "@/components/KybModal";
+import { useKybStore } from "@/stores/useKybStore";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
 const page = () => {
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
   const [showDisable2FA, setShowDisable2FA] = useState(false);
+  const [showKybModal, setShowKybModal] = useState(false);
   const { user, setUser } = useUserStore();
   const { vendor } = useVendorStore();
+  const { setCurrentStep } = useKybStore();
+
+  const kycStatus = vendor?.kycStatus;
+  const kybStatus = vendor?.kybStatus;
+  const isBusinessAccount = vendor?.accountType === "business";
+
+  const handleOpenKycModal = () => {
+    setCurrentStep(1);
+    setShowKybModal(true);
+  };
+
+  const handleOpenKybModal = () => {
+    setCurrentStep(2);
+    setShowKybModal(true);
+  };
+
+  const getVerificationBadge = (status: string | undefined | null) => {
+    if (status === "verified") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+          Verified
+        </span>
+      );
+    }
+    if (status === "pending" || status === "requires_review") {
+      return (
+        <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
+          Pending Review
+        </span>
+      );
+    }
+    return null;
+  };
 
   // Email notification preferences
   const [notifPrefs, setNotifPrefs] = useState({
@@ -77,6 +113,68 @@ const page = () => {
     <div className="flex justify-center items-center flex-col p-4 md:p-6">
       {/* Upgrade to Business Account Section */}
       <UpgradeToBusinessAccount />
+
+      {/* Verification Status Section */}
+      <div className="w-full max-w-2xl mb-8 bg-white rounded-lg shadow p-6">
+        <h3 className="text-lg font-bold mb-4">Verification Status</h3>
+        <div className="space-y-4">
+          {/* KYC Row */}
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Identity Verification (KYC)</p>
+              <p className="text-xs text-gray-500">Verify your identity to unlock full vendor features</p>
+            </div>
+            <div className="flex items-center gap-2">
+              {getVerificationBadge(kycStatus)}
+              {(kycStatus === "rejected" || !kycStatus) && (
+                <button
+                  onClick={handleOpenKycModal}
+                  className="px-3 py-1.5 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                >
+                  Submit Identity Verification (KYC)
+                </button>
+              )}
+              {(kycStatus === "pending" || kycStatus === "requires_review") && (
+                <button
+                  disabled
+                  className="px-3 py-1.5 bg-blue-500 text-white rounded text-sm opacity-50 cursor-not-allowed"
+                >
+                  Submit Identity Verification (KYC)
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* KYB Row - only for business accounts */}
+          {isBusinessAccount && (
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Business Verification (KYB)</p>
+                <p className="text-xs text-gray-500">Verify your business registration</p>
+              </div>
+              <div className="flex items-center gap-2">
+                {getVerificationBadge(kybStatus)}
+                {(kybStatus === "rejected" || !kybStatus) && (
+                  <button
+                    onClick={handleOpenKybModal}
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded text-sm hover:bg-blue-600"
+                  >
+                    Submit Business Verification (KYB)
+                  </button>
+                )}
+                {(kybStatus === "pending" || kybStatus === "requires_review") && (
+                  <button
+                    disabled
+                    className="px-3 py-1.5 bg-blue-500 text-white rounded text-sm opacity-50 cursor-not-allowed"
+                  >
+                    Submit Business Verification (KYB)
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* Pickup Location Section */}
       <div className="w-full max-w-2xl mb-8">
@@ -211,6 +309,9 @@ const page = () => {
       
       {/* Push Notification Section */}
       <PushNotification />
+
+      {/* KYB Modal */}
+      <KybModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
     </div>
   );
 };

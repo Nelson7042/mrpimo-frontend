@@ -1,46 +1,58 @@
-import { Document, Types } from "mongoose";
-
-
-export interface User {
+export interface IUser {
     _id: string;
-    _doc: Document
     email: string;
     password?: string;
     businessName?: string;
-    country: string;
-    profile: {
-        firstName: string;
-        lastName: string;
-        phoneNumber: string;
+    profile?: {
+        firstName?: string;
+        middleName?: string;
+        lastName?: string;
+        phoneNumber?: string;
+        email?: string;
         avatar?: string;
         sex?: string;
     };
+    country?: string;
     addresses?: Array<{
         _id?: string;
-        type: string;
+        type: 'billing' | 'shipping';
         street: string;
         city: string;
         state: string;
         country: string;
         postalCode: string;
         isDefault: boolean;
+        coordinates?: {
+            latitude: number;
+            longitude: number;
+        };
+        hasExactLocation?: boolean;
     }>;
     socialLogins?: Array<{
         provider: string;
         providerId: string;
     }>;
     role: 'user' | 'admin';
-    adminRole?: 'superadmin' | 'vendor_admin' | 'compliance_admin' | 'finance_admin' | 'support_admin' | 'marketing_admin' | 'product_admin' | 'analytics_admin' | 'dispatch_admin' | 'warehouse_admin' | 'content_admin' | 'dispute_admin' | 'review_moderator' | 'tech_admin';
+    adminRole?: string;
+    permissions?: string[];
     status: 'active' | 'inactive' | 'suspended';
     canMakeSales: boolean;
+    saleLimit: number;
+    salesCount: number;
     preferences: {
         language?: string;
         currency?: string;
-        notifications?: {
-            email?: boolean;
+        notifications: {
+            email: {
+                stockAlert: boolean;
+                orderStatus: boolean;
+                pendingReviews: boolean;
+                paymentUpdates: boolean;
+                newsletter: boolean;
+            };
             push?: boolean;
             sms?: boolean;
-        },
+        };
         marketing?: boolean;
     };
     activity: {
@@ -49,14 +61,6 @@ export interface User {
         totalOrders?: number;
         totalSpent?: number;
     };
-    cart?: Array<{
-        product: Types.ObjectId;
-        quantity: number;
-        price: number;
-        selectedVariant: string;
-        addedAt: Date;
-    }>; 
-    wishlist?: Array<Types.ObjectId>;
     createdAt?: Date;
     updatedAt?: Date;
     resetPasswordToken?: string;
@@ -68,7 +72,19 @@ export interface User {
         enabled: boolean;
         secret?: string;
         tempSecret?: string;
-        backupCodes?: string[];
+        backupCodes?: Array<{
+            code: string;
+            used: boolean;
+        }>;
     };
-    vendorInfo: Types.ObjectId;
+    paymentInformation?: {
+        stripeCustomerId?: string;
+        paystackCustomerCode?: string;
+        flutterwaveCustomerKey?: string;
+        defaultGateway?: 'stripe' | 'paystack' | 'flutterwave';
+    };
+    vendorId?: string;
 }
+
+/** @deprecated Use IUser instead */
+export type User = IUser;

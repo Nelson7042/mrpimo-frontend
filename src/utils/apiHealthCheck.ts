@@ -19,6 +19,5 @@ export const checkApiHealth = async (): Promise<boolean> => {
 
 export const logApiStatus = async () => {
   const isHealthy = await checkApiHealth();
-  console.log(`API Status: ${isHealthy ? 'Healthy' : 'Unhealthy'} - ${API_BASE_URL}`);
   return isHealthy;
 };

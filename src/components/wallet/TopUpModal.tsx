@@ -74,7 +74,6 @@ export default function TopUpModal({ onClose, paymentMethods, onSuccess }: TopUp
       paymentMethodId: selectedMethod === 'card' ? paymentMethodId : undefined
     }, {
       onSuccess: (data) => {
-        console.log('Top-up response:', data);
         if (data.success) {
           setTransactionData(data.data);
           
@@ -115,18 +114,12 @@ export default function TopUpModal({ onClose, paymentMethods, onSuccess }: TopUp
 
   const confirmPaymentWithBackend = async (paymentIntentId: string) => {
     try {
-      console.log('Confirming payment with backend, paymentIntentId:', paymentIntentId);
-      
       const response = await fetchWithAuth(`${API_BASE_URL}/wallets/confirm-payment`, {
         method: 'POST',
         body: JSON.stringify({ paymentIntentId })
       });
       
-      console.log('Response status:', response.status);
-      console.log('Response ok:', response.ok);
-      
       const data = await response.json();
-      console.log('Backend confirmation response:', data);
       
       if (response.ok && data.success) {
         toast.success(`${data.message} New balance: $${data.data.newBalance.toFixed(2)}`);
@@ -159,7 +152,6 @@ export default function TopUpModal({ onClose, paymentMethods, onSuccess }: TopUp
         console.error('❌ Payment failed:', result.error.message);
         toast.error(`Payment failed: ${result.error.message}`);
       } else if (result.paymentIntent.status === 'succeeded') {
-        console.log('✅ Payment succeeded');
         // Confirm payment with backend
         await confirmPaymentWithBackend(result.paymentIntent.id);
       }

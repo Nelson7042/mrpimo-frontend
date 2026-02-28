@@ -80,7 +80,6 @@ const PersonalRegistrationForm = (props: Props) => {
     }
 
     if (phone && !/^\+(?:[0-9] ?){6,14}[0-9]$/.test(phone)) {
-        console.log(phone);
         newErrors.phoneNumber = 'Phone number is invalid. Format: +234 8051234567';
       }
 
@@ -101,7 +100,6 @@ const PersonalRegistrationForm = (props: Props) => {
     // Perform validation and submit the form if valid
     if (validateForm()) {
       // Submit the form
-      console.log("Form submitted successfully!");
       const userData = {
         firstName,
         lastName,

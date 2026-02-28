@@ -5,7 +5,10 @@ export interface Notification {
   userId: string;
   title: string;
   message: string;
-  type: 'order' | 'payment' | 'product' | 'system' | 'promotion' | 'offer' | 'bid' | 'wallet';
+  type: 'order' | 'payment' | 'promotion' | 'system' | 'chat' | 'offer' | 'bid' | 'wallet'
+    | 'dispute' | 'subscription' | 'payout' | 'refund' | 'withdrawal'
+    | 'verification' | 'advertisement' | 'product' | 'account-warning'
+    | 'issue' | 'subscription_upgrade';
   case: string;
   read: boolean;
   data?: {

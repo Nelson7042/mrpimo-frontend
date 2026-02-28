@@ -10,6 +10,7 @@ import { TokenRefresher } from "@/components/TokenRefresher";
 import { NotificationProvider } from "@/contexts/NotificationContext";
 import SocketInitializer from "@/components/SocketInitializer";
 import ToastProvider from "@/components/providers/ToastProvider";
+import ErrorBoundary from "@/components/ErrorBoundary";
 
 
 const poppins = Poppins({
@@ -54,6 +55,16 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
   },
   manifest: '/manifest.json',
+  icons: {
+    icon: [
+      { url: '/images/transparent-bg.ico', sizes: '16x16', type: 'image/x-icon' },
+      { url: '/images/transparent-bg-2.ico', sizes: '32x32', type: 'image/x-icon' },
+      { url: '/images/transparent-bg-2.png', sizes: '192x192', type: 'image/png' },
+      { url: '/images/transparent-bg-4.png', sizes: '512x512', type: 'image/png' },
+    ],
+    shortcut: '/images/transparent-bg-2.ico',
+    apple: '/images/transparent-bg-2.png',
+  },
 };
 
 export const viewport = {
@@ -82,11 +93,13 @@ export default function RootLayout({
         suppressHydrationWarning
       >
         <TanstackProvider>
-          <TokenRefresher />
-          <NotificationProvider>
-            <SocketInitializer />
-            {children}
-          </NotificationProvider>
+          <ErrorBoundary>
+            <TokenRefresher />
+            <NotificationProvider>
+              <SocketInitializer />
+              {children}
+            </NotificationProvider>
+          </ErrorBoundary>
           <ToastContainer transition={Slide} />
           <ToastProvider />
         </TanstackProvider>
@@ -125,7 +138,7 @@ export default function RootLayout({
               window.addEventListener('load', function() {
                 navigator.serviceWorker.register('/service-worker.js')
                   .then(function(registration) {
-                    console.log('Service Worker registered with scope:', registration.scope);
+
                   })
                   .catch(function(error) {
                     console.error('Service Worker registration failed:', error);

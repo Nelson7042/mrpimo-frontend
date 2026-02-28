@@ -163,7 +163,7 @@ export const useProductMapper = () => {
             width: Number(productDetails.shippingDetails?.productDimensions?.width) || 0,
             height: Number(productDetails.shippingDetails?.productDimensions?.height) || 0,
           },
-          restrictions: ["none"],
+          restrictions: productDetails.shippingDetails?.restrictions || ["none"],
         },
         variants: productDetails.variants?.map((variant: any, index: number) => ({
           name: variant.name,

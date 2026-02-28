@@ -16,8 +16,6 @@ const PhoneNumberInput = ({
 }: PhoneNumberInputProps) => {
   const [touched, setTouched] = useState(false);
 
-  console.log(value);
-
   return (
     <div className="relative w-full mb-4">
       <label

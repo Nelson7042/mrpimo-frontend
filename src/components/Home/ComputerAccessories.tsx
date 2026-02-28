@@ -11,9 +11,11 @@ import {
   useCategoryTree,
   useProductsByCategory,
 } from "@/hooks/useProducts";
+import { useLocalityFilter } from "@/hooks/useLocalityFilter";
 
 export default function ComputerAccessories() {
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const { locality } = useLocalityFilter();
 
   // Step 1: Fetch parent category by slug
   const { data: parentData, isLoading: isParentLoading } =
@@ -186,7 +188,7 @@ export default function ComputerAccessories() {
                 />
               )}
               {sub.name}
-              {sub.productCount > 0 && (
+              {!locality && sub.productCount > 0 && (
                 <span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-gray-100 text-gray-600">
                   {sub.productCount}
                 </span>

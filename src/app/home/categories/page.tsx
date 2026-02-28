@@ -13,6 +13,7 @@ import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/hooks/queries";
 import { Category } from "@/types/product.type";
+import { useLocalityFilter } from "@/hooks/useLocalityFilter";
 
 import { useQuery } from "@tanstack/react-query";
 import { API_BASE_URL } from "@/utils/config";
@@ -22,6 +23,7 @@ const categories = Object.values(categoriesConfig);
 
 export default function CategoriesPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const { locality } = useLocalityFilter();
   const [categorySearch, setCategorySearch] = useState("");
   const [filter, setFilter] = useState({
     name: "",
@@ -111,7 +113,7 @@ export default function CategoriesPage() {
           </h1>
 
           <div className="flex flex-col  gap-4 col-span-1">
-            <div className="flex-1 font-normal hidden md:block">
+            <div className="flex-1 font-normal">
               <div className=" flex w-full  bg-white  py-[5px] border border-[#ADADAD] rounded-3xl">
                 <button className=" border-r px-2 ">
                   <Search className="w-2 h-2 md:w-4 md:h-4" color="black" />
@@ -120,10 +122,28 @@ export default function CategoriesPage() {
                   placeholder="Search category..."
                   value={categorySearch}
                   onChange={(e) => setCategorySearch(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      // Filtering is already live, but if the input is empty, reset
+                      if (!categorySearch.trim()) {
+                        setCategorySearch("");
+                      }
+                    }
+                  }}
                   className="flex-1 border-0 px-2 w-full pl-[2px] outline-0 text-[#121212] placeholder:text-sm"
                 />
 
-                <button className="py-[4px] font-normal md:py-2 w-[80px] text-xs md:w-[90px] lg:w-[100px] bg-secondary text-white placeholder:text-xs  rounded-4xl mr-1  ">
+                <button
+                  onClick={() => {
+                    // Filtering is live via categorySearch state.
+                    // If there's a query, scroll to results; if empty, clear.
+                    if (!categorySearch.trim()) {
+                      setCategorySearch("");
+                    }
+                  }}
+                  className="py-[4px] font-normal md:py-2 w-[80px] text-xs md:w-[90px] lg:w-[100px] bg-secondary text-white placeholder:text-xs  rounded-4xl mr-1  "
+                >
                   Search
                 </button>
               </div>
@@ -165,7 +185,7 @@ export default function CategoriesPage() {
                   <h3 className="font-medium text-sm lg:text-base text-gray-900 group-hover:text-blue-600 transition-colors">
                     {card.name}
                   </h3>
-                  {(card as any).productCount > 0 && (
+                  {!locality && (card as any).productCount > 0 && (
                     <span className="text-xs text-gray-500 mt-1 block">
                       {(card as any).productCount.toLocaleString()}{" "}
                       {(card as any).productCount === 1 ? "product" : "products"}
