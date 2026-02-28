@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest"
   },
+  
   "dependencies": {
     "@paystack/inline-js": "^2.22.2",
     "@radix-ui/react-avatar": "^1.1.10",

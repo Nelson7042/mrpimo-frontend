@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { ArrowUpRight, ArrowDownLeft, Search } from "lucide-react";
 import { format } from "date-fns";
-import Pagination from "../../../../../components/Pagination/Pagination";
 import TransactionHeader from "./TransactionHeader";
+import Pagination from "@/components/Pagination";
 
 type Transaction = {
   amount: string;
