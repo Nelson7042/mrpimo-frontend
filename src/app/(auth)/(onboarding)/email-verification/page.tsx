@@ -195,8 +195,11 @@ const VerifyAccount = () => {
               </Link>
             </div>
 
-            <p className="text-xs md:text-sm text-gray-600 text-center mb-6">
+            <p className="text-xs md:text-sm text-gray-600 text-center mb-2">
               Provide the One Time Password sent to your email
+            </p>
+            <p className="text-xs text-gray-400 text-center mb-6">
+              Can&apos;t find it? Check your spam or junk folder.
             </p>
 
             {/* OTP Input */}

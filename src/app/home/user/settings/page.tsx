@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { useUpdateNotificationPreferences } from "@/hooks/useNotifications";
 import {
   useAddresses,
@@ -43,6 +44,7 @@ import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { API_BASE_URL } from "@/utils/config";
 import TwoFactorSetup from "@/app/vendor/dashboard/settings/components/TwoFactorSetup";
 import DisableTwoFactor from "@/app/vendor/dashboard/settings/components/DisableTwoFactor";
+import { useWalletDisplay } from "@/hooks/useWalletBalance";
 
 type SettingsSection =
   | "main"
@@ -82,7 +84,13 @@ export default function SettingsPage() {
     pendingReviews: true,
     paymentUpdates: true,
     newsletter: true,
+    push: true,
+    sms: false,
+    marketing: false,
   });
+  const [preferencesInitialized, setPreferencesInitialized] = useState(false);
+  const [notifDirty, setNotifDirty] = useState(false);
+  const [notifSaving, setNotifSaving] = useState(false);
 
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -125,10 +133,16 @@ export default function SettingsPage() {
   // Security section state
   const [showTwoFactorSetup, setShowTwoFactorSetup] = useState(false);
   const [showDisable2FA, setShowDisable2FA] = useState(false);
-  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
-  const [passwordChanging, setPasswordChanging] = useState(false);
 
   const { user, setUser } = useUserStore();
+  const queryClient = useQueryClient();
+
+  const { usdDisplay: balanceUSD, approxDisplay: balanceApprox } = useWalletDisplay(
+    profileData?.fiatWallet?.balances?.available,
+    user?.preferences?.currency
+  );
+  const [passwordForm, setPasswordForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [passwordChanging, setPasswordChanging] = useState(false);
 
   const addresses = addressData?.addresses || [];
   const shippingAddresses = addresses.filter(
@@ -137,11 +151,43 @@ export default function SettingsPage() {
   const cards = cardsData?.cards || [];
 
   const [formData, setFormData] = useState({
-    firstName: "Dickson",
-    middleName: "Dickson",
-    lastName: "Dickson",
-    email: "Thisismyemil@gmail.com",
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
   });
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [profileSaving, setProfileSaving] = useState(false);
+
+  // Sync formData when profileData loads
+  const profileLoaded = profileData?.user;
+  if (profileLoaded && !formData.firstName && !isEditingProfile) {
+    setFormData({
+      firstName: profileLoaded.profile?.firstName || "",
+      middleName: profileLoaded.profile?.middleName || "",
+      lastName: profileLoaded.profile?.lastName || "",
+      email: profileLoaded.email || "",
+      phoneNumber: profileLoaded.profile?.phoneNumber || "",
+    });
+  }
+
+  // Sync notification preferences when profileData loads
+  if (profileLoaded && !preferencesInitialized) {
+    const emailPrefs = profileLoaded.preferences?.notifications?.email;
+    const notifPrefs = profileLoaded.preferences?.notifications;
+    setPreferences({
+      stockAlert: emailPrefs?.stockAlert ?? true,
+      orderStatus: emailPrefs?.orderStatus ?? true,
+      pendingReviews: emailPrefs?.pendingReviews ?? true,
+      paymentUpdates: emailPrefs?.paymentUpdates ?? true,
+      newsletter: emailPrefs?.newsletter ?? true,
+      push: notifPrefs?.push ?? true,
+      sms: notifPrefs?.sms ?? false,
+      marketing: profileLoaded.preferences?.marketing ?? false,
+    });
+    setPreferencesInitialized(true);
+  }
 
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
@@ -174,6 +220,60 @@ export default function SettingsPage() {
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveProfile = async () => {
+    setProfileSaving(true);
+    try {
+      // Only send fields that actually changed
+      const payload: Record<string, string> = {};
+      if (formData.firstName !== (profileData?.user?.profile?.firstName || "")) {
+        payload.firstName = formData.firstName;
+      }
+      if (formData.lastName !== (profileData?.user?.profile?.lastName || "")) {
+        payload.lastName = formData.lastName;
+      }
+      if (formData.phoneNumber !== (profileData?.user?.profile?.phoneNumber || "")) {
+        payload.phoneNumber = formData.phoneNumber;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        toast.success("No changes to save");
+        setIsEditingProfile(false);
+        setProfileSaving(false);
+        return;
+      }
+
+      const response = await fetchWithAuth(`${API_BASE_URL}/users/profile`, {
+        method: "PATCH",
+        body: JSON.stringify(payload),
+      });
+      const data = await response.json();
+      if (data.success) {
+        toast.success(data.message || "Profile updated successfully");
+        setIsEditingProfile(false);
+        // Update the user store so other components see the change
+        if (user) {
+          setUser({
+            ...user,
+            profile: {
+              ...user.profile,
+              ...(payload.firstName && { firstName: payload.firstName }),
+              ...(payload.lastName && { lastName: payload.lastName }),
+              ...(payload.phoneNumber && { phoneNumber: payload.phoneNumber }),
+            },
+          });
+        }
+        // Invalidate the React Query cache so profileData refreshes
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
+      } else {
+        toast.error(data.message || "Failed to update profile");
+      }
+    } catch {
+      toast.error("Failed to update profile");
+    } finally {
+      setProfileSaving(false);
+    }
   };
 
   const handleNewAddressChange = (field: string, value: string | boolean) => {
@@ -300,12 +400,20 @@ export default function SettingsPage() {
   };
 
   const handleNotificationChange = (field: string, checked: boolean) => {
-    const newPreferences = {
-      ...preferences,
-      [field]: checked,
-    };
-    setPreferences(newPreferences);
-    updateNotificationPreferences.mutate(newPreferences);
+    setPreferences((prev) => ({ ...prev, [field]: checked }));
+    setNotifDirty(true);
+  };
+
+  const handleSaveNotifications = async () => {
+    setNotifSaving(true);
+    try {
+      await updateNotificationPreferences.mutateAsync(preferences);
+      setNotifDirty(false);
+    } catch {
+      // toast is handled by the mutation hook
+    } finally {
+      setNotifSaving(false);
+    }
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -333,6 +441,7 @@ export default function SettingsPage() {
       const data = await response.json();
       if (data.success && data.avatarUrl) {
         setUser({ ...user, profile: { ...user?.profile, avatar: data.avatarUrl } });
+        queryClient.invalidateQueries({ queryKey: ["userProfile"] });
         toast.success("Avatar updated");
       } else {
         toast.error(data.message || "Failed to upload avatar");
@@ -440,7 +549,8 @@ export default function SettingsPage() {
             <div className="flex flex-col gap-1">
               <Label className="font-roboto text-xs text-gray-600">Credit Balance</Label>
               <p className="font-roboto font-semibold text-sm">
-                {profileData?.fiatWallet?.currency || "₦"} {profileData?.fiatWallet?.balances?.available?.toLocaleString() || "0.00"}
+                {balanceUSD}
+                {balanceApprox && <span className="font-normal text-xs text-gray-500 ml-1">{balanceApprox}</span>}
               </p>
             </div>
           </div>
@@ -463,9 +573,20 @@ export default function SettingsPage() {
             </Button>
             <h2 className="font-roboto text-base font-semibold">Account Information</h2>
           </div>
-          <Button variant="ghost" size="sm">
+          <Button variant="ghost" size="sm" onClick={() => {
+            if (!isEditingProfile) {
+              setFormData({
+                firstName: profileData?.user?.profile?.firstName || "",
+                middleName: profileData?.user?.profile?.middleName || "",
+                lastName: profileData?.user?.profile?.lastName || "",
+                email: profileData?.user?.email || "",
+                phoneNumber: profileData?.user?.profile?.phoneNumber || "",
+              });
+            }
+            setIsEditingProfile(!isEditingProfile);
+          }}>
             <Edit className="w-4 h-4" />
-            <span className="font-roboto text-xs">Edit</span>
+            <span className="font-roboto text-xs">{isEditingProfile ? "Cancel" : "Edit"}</span>
           </Button>
         </div>
 
@@ -510,18 +631,20 @@ export default function SettingsPage() {
               <Label htmlFor="firstName" className="font-roboto text-xs">First Name</Label>
               <Input
                 id="firstName"
-                value={profileData?.user?.profile?.firstName || ""}
+                value={isEditingProfile ? formData.firstName : (profileData?.user?.profile?.firstName || "")}
                 onChange={(e) => handleInputChange("firstName", e.target.value)}
                 className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1"
+                readOnly={!isEditingProfile}
               />
             </div>
             <div>
               <Label htmlFor="lastName" className="font-roboto text-xs">Last Name</Label>
               <Input
                 id="lastName"
-                value={profileData?.user?.profile?.lastName || ""}
+                value={isEditingProfile ? formData.lastName : (profileData?.user?.profile?.lastName || "")}
                 onChange={(e) => handleInputChange("lastName", e.target.value)}
                 className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1 focus:border-[0.5px] focus:outline-0"
+                readOnly={!isEditingProfile}
               />
             </div>
           </div>
@@ -543,11 +666,32 @@ export default function SettingsPage() {
             <Label htmlFor="phoneNumber" className="font-roboto text-xs">Phone Number</Label>
             <Input
               id="phoneNumber"
-              value={profileData?.user?.profile?.phoneNumber || ""}
+              value={isEditingProfile ? formData.phoneNumber : (profileData?.user?.profile?.phoneNumber || "")}
               onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
               className="font-roboto text-xs bg-[#E2E8F0] border-0 mt-1"
+              readOnly={!isEditingProfile}
             />
           </div>
+
+          {isEditingProfile && (
+            <div className="flex space-x-2">
+              <Button
+                size="sm"
+                onClick={handleSaveProfile}
+                disabled={profileSaving}
+                className="bg-blue-600 hover:bg-blue-700 text-white"
+              >
+                {profileSaving ? "Saving..." : "Save Changes"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setIsEditingProfile(false)}
+              >
+                Cancel
+              </Button>
+            </div>
+          )}
 
           {/* Language Preference */}
           <div>
@@ -601,7 +745,8 @@ export default function SettingsPage() {
               <Label className="font-roboto text-xs">Credit Balance</Label>
               <div className="bg-[#E2E8F0] p-3 rounded mt-1">
                 <p className="font-roboto font-semibold text-sm">
-                  {profileData?.fiatWallet?.currency || "₦"} {profileData?.fiatWallet?.balances?.available?.toLocaleString() || "0.00"}
+                  {balanceUSD}
+                  {balanceApprox && <span className="font-normal text-xs text-gray-500 ml-1">{balanceApprox}</span>}
                 </p>
               </div>
             </div>
@@ -1026,10 +1171,7 @@ export default function SettingsPage() {
         </div>
 
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h3 className="font-roboto text-sm font-medium">Email Notifications</h3>
-            <Switch defaultChecked />
-          </div>
+          <h3 className="font-roboto text-sm font-medium">Email Notifications</h3>
 
           <div className="space-y-4">
             {[
@@ -1060,7 +1202,7 @@ export default function SettingsPage() {
                 <p className="font-roboto text-xs text-gray-500">Receive browser push notifications</p>
               </div>
               <Switch
-                defaultChecked={profileData?.user?.preferences?.notifications?.push !== false}
+                checked={preferences.push}
                 onCheckedChange={(checked) =>
                   handleNotificationChange("push", checked)
                 }
@@ -1072,7 +1214,7 @@ export default function SettingsPage() {
                 <p className="font-roboto text-xs text-gray-500">Receive text message alerts</p>
               </div>
               <Switch
-                defaultChecked={profileData?.user?.preferences?.notifications?.sms === true}
+                checked={preferences.sms}
                 onCheckedChange={(checked) =>
                   handleNotificationChange("sms", checked)
                 }
@@ -1088,7 +1230,7 @@ export default function SettingsPage() {
                 <p className="font-roboto text-xs text-gray-500">Receive promotional offers and updates</p>
               </div>
               <Switch
-                defaultChecked={profileData?.user?.preferences?.marketing === true}
+                checked={preferences.marketing}
                 onCheckedChange={(checked) =>
                   handleNotificationChange("marketing", checked)
                 }
@@ -1098,6 +1240,21 @@ export default function SettingsPage() {
               <p className="text-xs text-amber-600 mt-2">
                 Note: Critical emails (password reset, email verification) will still be sent.
               </p>
+            )}
+          </div>
+
+          {/* Save Button */}
+          <div className="border-t pt-4">
+            <Button
+              size="sm"
+              onClick={handleSaveNotifications}
+              disabled={!notifDirty || notifSaving}
+              className="bg-blue-600 hover:bg-blue-700 text-white"
+            >
+              {notifSaving ? "Saving..." : "Save Preferences"}
+            </Button>
+            {notifDirty && (
+              <p className="text-xs text-amber-600 mt-2">You have unsaved changes.</p>
             )}
           </div>
         </div>

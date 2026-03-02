@@ -246,9 +246,12 @@ const OTPModal: React.FC<OTPModalProps> = ({
 
         <X onClick={close} className="cursor-pointer text-black" size={20} />
       </div>
-      <p className="text-xs text-black text-center mb-[10px] md:mb-[24px]">
+      <p className="text-xs text-black text-center mb-[10px] md:mb-[16px]">
         {" "}
         Provide the One Time Password sent to your email
+      </p>
+      <p className="text-xs text-gray-500 text-center mb-[10px] md:mb-[24px]">
+        Can&apos;t find it? Check your spam or junk folder.
       </p>
 
       {/* OTP Input */}

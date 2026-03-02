@@ -485,7 +485,7 @@ export default function DashboardPage() {
                       // Parse device information from metadata
                       const metadata = activity.metadata || {};
                       const userAgent = metadata.userAgent || '';
-                      const location = metadata.location || 'Unknown';
+                      const location = metadata.location || '';
                       const deviceType = metadata.device || 'desktop';
                       
                       // Use browser/os from metadata if available (backend now stores these)
@@ -503,6 +503,21 @@ export default function DashboardPage() {
                       const baseActivity = activity.activity?.split(' from ')[0] || activity.activity;
                       const formattedActivity = formatActivityText(baseActivity);
 
+                      // Build metadata description — only show parts that have real values
+                      const metaParts: string[] = [];
+                      if (location && location !== 'Unknown') metaParts.push(location);
+                      if (browser && browser !== 'Unknown') {
+                        if (os && os !== 'Unknown') {
+                          metaParts.push(`${browser} on ${os}`);
+                        } else {
+                          metaParts.push(browser);
+                        }
+                      } else if (os && os !== 'Unknown') {
+                        metaParts.push(os);
+                      }
+                      if (deviceType && deviceType !== 'unknown') metaParts.push(deviceType);
+                      const metaDescription = metaParts.length > 0 ? metaParts.join(' • ') : null;
+
                       return (
                         <tr
                           key={activity.id || activity._id || index}
@@ -518,9 +533,11 @@ export default function DashboardPage() {
                                 <span className="font-roboto text-xs font-medium">
                                   {formattedActivity}
                                 </span>
-                                <span className="font-roboto text-[10px] text-gray-500">
-                                  {location} • {browser} on {os} ({deviceType})
-                                </span>
+                                {metaDescription && (
+                                  <span className="font-roboto text-[10px] text-gray-500">
+                                    {metaDescription}
+                                  </span>
+                                )}
                                 <div className="font-roboto sm:hidden text-[10px] text-gray-500 mt-1">
                                   {activityTime} • {activityDateStr}
                                 </div>

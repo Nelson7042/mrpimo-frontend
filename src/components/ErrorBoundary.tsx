@@ -40,39 +40,39 @@ class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoundarySta
       }
 
       return (
-        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+        <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4 font-roboto">
           <div className="max-w-md w-full bg-white rounded-lg shadow-lg p-6 text-center">
-            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-red-600" />
+            <div className="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+              <AlertTriangle className="w-6 h-6 text-red-600" />
             </div>
-            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+            <h2 className="text-base font-semibold text-gray-900 mb-1 font-roboto">
               Something went wrong
             </h2>
-            <p className="text-gray-600 mb-6">
+            <p className="text-xs text-gray-600 mb-4 font-roboto">
               We encountered an unexpected error. Please try refreshing the page.
             </p>
-            <div className="space-y-3">
+            <div className="space-y-2">
               <Button 
                 onClick={this.resetError}
-                className="w-full"
+                className="w-full text-xs font-roboto"
               >
-                <RefreshCw className="w-4 h-4 mr-2" />
+                <RefreshCw className="w-3 h-3 mr-1.5" />
                 Try Again
               </Button>
               <Button 
                 variant="outline"
                 onClick={() => window.location.href = '/'}
-                className="w-full"
+                className="w-full text-xs font-roboto"
               >
                 Go Home
               </Button>
             </div>
             {process.env.NODE_ENV === 'development' && this.state.error && (
-              <details className="mt-4 text-left">
-                <summary className="cursor-pointer text-sm text-gray-500">
+              <details className="mt-3 text-left">
+                <summary className="cursor-pointer text-[10px] text-gray-500 font-roboto">
                   Error Details (Development)
                 </summary>
-                <pre className="mt-2 text-xs bg-gray-100 p-2 rounded overflow-auto">
+                <pre className="mt-1.5 text-[10px] bg-gray-100 p-2 rounded overflow-auto font-roboto">
                   {this.state.error.stack}
                 </pre>
               </details>

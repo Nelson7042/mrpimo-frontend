@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
+import { API_BASE_URL } from '@/utils/config';
+
+const API_BASE = API_BASE_URL;
 
 type Props = {
   onComplete: (updatedUser: any) => void;
@@ -21,7 +23,7 @@ const DisableTwoFactor = ({ onComplete, onCancel }: Props) => {
 
     setLoading(true);
     try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/two-factor/disable`, {
+      const response = await fetchWithAuth(`${API_BASE}/two-factor/disable`, {
         method: 'POST',
         body: JSON.stringify({ token: code })
       });

@@ -10,6 +10,8 @@ import TopUpModal from '@/components/wallet/TopUpModal'
 import PaymentMethodManager from '@/components/wallet/PaymentMethodManager'
 import WalletSettings from '@/components/wallet/WalletSettings'
 import { useWalletBalance, useWalletTransactions, usePaymentMethods, IWalletTransaction, TransactionFilters } from '@/hooks/useWallet'
+import { useWalletDisplay } from '@/hooks/useWalletBalance'
+import { useUserStore } from '@/stores/useUserStore'
 
 const getTransactionIcon = (type: string) => {
   const iconMap: Record<string, React.ComponentType<any>> = {
@@ -65,6 +67,11 @@ export default function WalletPage() {
   const { data: transactionsData, isLoading: transactionsLoading } = useWalletTransactions(filters)
   console.log(transactionsData)
   const { data: paymentMethodsData } = usePaymentMethods()
+  const { user } = useUserStore()
+  const { usdDisplay: balanceUSD, approxDisplay: balanceApprox } = useWalletDisplay(
+    walletData?.wallet?.balances?.available,
+    user?.preferences?.currency
+  )
 
   const handleRefresh = () => {
     refetchWallet()
@@ -145,12 +152,15 @@ export default function WalletPage() {
               <p className="text-blue-100 text-sm">Available Balance</p>
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <p className="text-2xl sm:text-3xl font-bold break-all">
-                  {showBalance ? `$${walletData?.wallet?.balances?.available?.toFixed(2) || '0.00'}` : "$****.**"}
+                  {showBalance ? balanceUSD : "$****.**"}
                 </p>
                 <Button variant="ghost" size="sm" onClick={() => setShowBalance(!showBalance)}>
                   {showBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </Button>
               </div>
+              {showBalance && balanceApprox && (
+                <p className="text-blue-200 text-sm mt-1">{balanceApprox}</p>
+              )}
               {(walletData?.wallet?.balances?.pending || 0) > 0 && (
                 <p className="text-blue-200 text-sm mt-1">
                   ${(walletData?.wallet?.balances?.pending || 0).toFixed(2)} pending

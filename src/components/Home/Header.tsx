@@ -40,6 +40,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { resetAllStores } from "@/stores/resetStore";
 import { toast } from "react-toastify";
 import { convertFromUSD, getCurrencySymbol } from "@/utils/currencyService";
+import { useWalletDisplay } from "@/hooks/useWalletBalance";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useLocalityFilter } from "@/hooks/useLocalityFilter";
 
@@ -68,6 +69,10 @@ const Header = () => {
   const { user } = useUserStore();
   const { vendor } = useVendorStore();
   const { data: profileData } = useUserProfile(!!user);
+  const { usdDisplay: balanceUSD, approxDisplay: balanceApprox } = useWalletDisplay(
+    profileData?.fiatWallet?.balances?.available,
+    user?.preferences?.currency
+  );
   const debouncedQuery = useDebounce(searchQuery, 300);
   const { data: suggestionsData } = useSearchSuggestions(debouncedQuery, 5);
   const { setAuthType } = useAuthModalStore();
@@ -298,8 +303,9 @@ const Header = () => {
                   <div className="px-4 py-2 border-b border-gray-100">
                     <p className="text-xs text-gray-500">Wallet Balance</p>
                     <p className="text-sm font-semibold text-gray-900">
-                      {getCurrencySymbol(user?.preferences?.currency || 'USD')} {convertedBalance?.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 }) || "0.00"}
+                      {balanceUSD}
                     </p>
+                    {balanceApprox && <p className="text-xs text-gray-500">{balanceApprox}</p>}
                   </div>
                   <button
                     onClick={() => {

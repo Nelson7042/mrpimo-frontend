@@ -6,11 +6,14 @@ import { API_BASE_URL } from '@/utils/config';
 
 const BASE_URL = `${API_BASE_URL}/notifications`;
 interface NotificationPreferences {
-  stockAlert: boolean;
-  orderStatus: boolean;
-  pendingReviews: boolean;
-  paymentUpdates: boolean;
-  newsletter: boolean;
+  stockAlert?: boolean;
+  orderStatus?: boolean;
+  pendingReviews?: boolean;
+  paymentUpdates?: boolean;
+  newsletter?: boolean;
+  push?: boolean;
+  sms?: boolean;
+  marketing?: boolean;
 }
 
 // Queries
@@ -148,7 +151,7 @@ export const useUpdateNotificationPreferences = () => {
   
   return useMutation({
     mutationFn: async (preferences: NotificationPreferences) => {
-       const response = await fetchWithAuth(`${BASE_URL}/users/notifications/preferences`, {
+       const response = await fetchWithAuth(`${API_BASE_URL}/users/notifications/preferences`, {
       method: 'PATCH',
       body: JSON.stringify(preferences),
     });

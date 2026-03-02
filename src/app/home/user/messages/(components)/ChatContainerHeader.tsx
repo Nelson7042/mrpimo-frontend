@@ -77,10 +77,18 @@ const ChatContainerHeader = (props: Props) => {
               onClick={props.closeChat}
               className="opacity-80 lg:hidden"
             />
-            <div className="w-7 h-7 md:w-10 md:h-10 bg-primary rounded-full flex items-center justify-center">
-                  <span className="text-white font-semibold text-sm">
-                    {props.participantName.charAt(0).toUpperCase()}
-                  </span>
+            <div className="w-7 h-7 md:w-10 md:h-10 rounded-full flex items-center justify-center overflow-hidden bg-primary flex-shrink-0">
+                  {!props.currentGroup?.isVendor && props.currentGroup?.participantAvatar ? (
+                    <img
+                      src={props.currentGroup.participantAvatar}
+                      alt={props.participantName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <span className="text-white font-semibold text-sm">
+                      {props.participantName.charAt(0).toUpperCase()}
+                    </span>
+                  )}
                 </div>
             <div className="flex flex-col gap-y-1 items-start">
               <h1 className="font-semibold text-sm opacity-80">

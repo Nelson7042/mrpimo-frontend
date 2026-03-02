@@ -36,9 +36,10 @@ const addressApi = {
     address: Omit<Address, "_id">;
     duplicateForShipping?: boolean;
   }) => {
+    const { isDefault: _omit, ...addressFields } = data.address as any;
     const response = await fetchWithAuth(`${API_BASE}/users/address`, {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify({ ...data, address: addressFields }),
     });
     if (!response.ok) {
       const text = await response.text();

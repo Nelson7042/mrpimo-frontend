@@ -9,6 +9,7 @@ const API_BASE = `${API_BASE_URL}`;
 interface UserProfile {
   _id: string;
   email: string;
+  isEmailVerified: boolean;
   profile: {
     firstName: string;
     lastName: string;
