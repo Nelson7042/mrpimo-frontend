@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { useUserStore } from './useUserStore';
+import { ssrSafeStorage } from '@/utils/ssrSafeStorage';
 
 interface KybFormData {
   firstName: string;
@@ -97,6 +98,7 @@ export const useKybStore = create<KybStore>()(
     }),
     {
       name: 'kyb-registration',
+      storage: ssrSafeStorage,
     }
   )
 );

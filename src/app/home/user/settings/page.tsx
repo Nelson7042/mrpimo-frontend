@@ -33,7 +33,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import { useRouter, useSearchParams } from "next/navigation";
 import AddCardModal from "@/components/users/settings/AddCardModal";
 import { toast } from "react-hot-toast";
@@ -89,8 +89,6 @@ export default function SettingsPage() {
     marketing: false,
   });
   const [preferencesInitialized, setPreferencesInitialized] = useState(false);
-  const [notifDirty, setNotifDirty] = useState(false);
-  const [notifSaving, setNotifSaving] = useState(false);
 
   const [editingAddress, setEditingAddress] = useState<any>(null);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -310,6 +308,16 @@ export default function SettingsPage() {
             router.push(returnData.path);
           }, 1500);
         }
+
+        // Check if user came from checkout flow
+        const checkoutReturn = localStorage.getItem('checkoutReturn');
+        if (checkoutReturn) {
+          localStorage.removeItem('checkoutReturn');
+          toast.success('Address added! Redirecting back to checkout...');
+          setTimeout(() => {
+            router.push('/home/checkout');
+          }, 1500);
+        }
       },
     });
   };
@@ -399,20 +407,15 @@ export default function SettingsPage() {
     handleEditAddressChange("state", state?.name || "");
   };
 
-  const handleNotificationChange = (field: string, checked: boolean) => {
-    setPreferences((prev) => ({ ...prev, [field]: checked }));
-    setNotifDirty(true);
-  };
-
-  const handleSaveNotifications = async () => {
-    setNotifSaving(true);
+  const handleNotificationChange = async (field: string, checked: boolean) => {
+    const previousPrefs = { ...preferences };
+    const updated = { ...preferences, [field]: checked };
+    setPreferences(updated);
     try {
-      await updateNotificationPreferences.mutateAsync(preferences);
-      setNotifDirty(false);
+      await updateNotificationPreferences.mutateAsync(updated);
     } catch {
-      // toast is handled by the mutation hook
-    } finally {
-      setNotifSaving(false);
+      // Revert on failure — toast is handled by the mutation hook
+      setPreferences(previousPrefs);
     }
   };
 
@@ -881,7 +884,7 @@ export default function SettingsPage() {
                     handleNewAddressChange("street", e.target.value)
                   }
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     placeholder="City"
                     value={newAddress.city}
@@ -897,7 +900,7 @@ export default function SettingsPage() {
                     }
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <SearchableSelect
                       options={countries.map((country) => ({
@@ -979,7 +982,7 @@ export default function SettingsPage() {
                     handleEditAddressChange("street", e.target.value)
                   }
                 />
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <Input
                     value={editingAddress.city}
                     onChange={(e) =>
@@ -993,7 +996,7 @@ export default function SettingsPage() {
                     }
                   />
                 </div>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <SearchableSelect
                       options={countries.map((country) => ({
@@ -1170,25 +1173,30 @@ export default function SettingsPage() {
           <h2 className="font-roboto text-base font-semibold ml-4">Notifications</h2>
         </div>
 
+        <p className="text-xs text-gray-500 mb-4">Control which notifications you receive. Changes are saved automatically.</p>
+
         <div className="space-y-6">
           <h3 className="font-roboto text-sm font-medium">Email Notifications</h3>
 
           <div className="space-y-4">
             {[
-              { key: "stockAlert", label: "New Stock Alert" },
-              { key: "orderStatus", label: "Order Status Alert" },
-              { key: "pendingReviews", label: "Pending Reviews" },
-              { key: "paymentUpdates", label: "Payment Alert" },
-              { key: "newsletter", label: "Newsletter" },
+              { key: "stockAlert", label: "New Stock Alert", description: "Get notified when products you follow are back in stock or have price drops" },
+              { key: "orderStatus", label: "Order Status Alert", description: "Get notified when your order status changes (processing, shipped, delivered)" },
+              { key: "pendingReviews", label: "Pending Reviews", description: "Get reminded about products you purchased that are awaiting your review" },
+              { key: "paymentUpdates", label: "Payment Alert", description: "Get notified about wallet top-ups, payouts, and other payment activity" },
+              { key: "newsletter", label: "Newsletter", description: "Receive our periodic newsletter with platform updates and featured products" },
             ].map((item) => (
-              <div key={item.key} className="flex items-center space-x-3">
-                <Checkbox
+              <div key={item.key} className="flex items-center justify-between">
+                <div>
+                  <p className="font-roboto text-xs font-medium">{item.label}</p>
+                  <p className="font-roboto text-xs text-gray-500">{item.description}</p>
+                </div>
+                <Switch
                   checked={preferences[item.key as keyof typeof preferences]}
                   onCheckedChange={(checked) =>
-                    handleNotificationChange(item.key, checked as boolean)
+                    handleNotificationChange(item.key, checked)
                   }
                 />
-                <Label className="font-roboto text-xs">{item.label}</Label>
               </div>
             ))}
           </div>
@@ -1199,7 +1207,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-roboto text-xs font-medium">Push Notifications</p>
-                <p className="font-roboto text-xs text-gray-500">Receive browser push notifications</p>
+                <p className="font-roboto text-xs text-gray-500">Receive browser push notifications for real-time updates</p>
               </div>
               <Switch
                 checked={preferences.push}
@@ -1211,7 +1219,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-roboto text-xs font-medium">SMS Notifications</p>
-                <p className="font-roboto text-xs text-gray-500">Receive text message alerts</p>
+                <p className="font-roboto text-xs text-gray-500">Receive text message alerts for critical events</p>
               </div>
               <Switch
                 checked={preferences.sms}
@@ -1227,7 +1235,7 @@ export default function SettingsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="font-roboto text-xs font-medium">Marketing Communications</p>
-                <p className="font-roboto text-xs text-gray-500">Receive promotional offers and updates</p>
+                <p className="font-roboto text-xs text-gray-500">Receive promotional offers, deals, and platform updates</p>
               </div>
               <Switch
                 checked={preferences.marketing}
@@ -1240,21 +1248,6 @@ export default function SettingsPage() {
               <p className="text-xs text-amber-600 mt-2">
                 Note: Critical emails (password reset, email verification) will still be sent.
               </p>
-            )}
-          </div>
-
-          {/* Save Button */}
-          <div className="border-t pt-4">
-            <Button
-              size="sm"
-              onClick={handleSaveNotifications}
-              disabled={!notifDirty || notifSaving}
-              className="bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {notifSaving ? "Saving..." : "Save Preferences"}
-            </Button>
-            {notifDirty && (
-              <p className="text-xs text-amber-600 mt-2">You have unsaved changes.</p>
             )}
           </div>
         </div>

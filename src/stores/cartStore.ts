@@ -6,6 +6,7 @@ import { useUserStore } from "./useUserStore";
 import { toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
 import { toast } from "react-toastify";
 import { getDisplayPrice } from "@/utils/priceUtils";
+import { ssrSafeStorage } from "@/utils/ssrSafeStorage";
 
 const KEY_SEPARATOR = "::";
 
@@ -569,6 +570,7 @@ export const useCartStore = create<CartState>()(
     }),
      {
       name: "mprimo-cart",
+      storage: ssrSafeStorage,
       partialize: (state) => ({
         items: state.items,
       }),

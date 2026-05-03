@@ -12,7 +12,7 @@ export const resetAllStores = () => {
   // Then clear all localStorage to remove persisted data
   // This must come AFTER store resets to prevent persist middleware
   // from re-writing stale state
-  localStorage.clear();
+  if (typeof window !== "undefined") localStorage.clear();
 };
 
 export const softResetAllStores = () => {

@@ -18,7 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import {
   useProducts,
   useCategoryBySlug,

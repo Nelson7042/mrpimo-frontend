@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import { useUserBids, BidFilter } from "@/hooks/useBids";
 import Pagination from "@/components/Pagination";
 import { getCurrencySymbol } from "@/utils/currency";

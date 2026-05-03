@@ -6,7 +6,7 @@ import { Search } from "lucide-react";
 import { AllProduct } from "@/utils/config";
 import { ProductType } from "@/types/product.type";
 import { ProductCard } from "@/components/Home/ProductCard";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import { useRouter } from "next/navigation";
 import { fetchPublic } from "@/utils/fetchPublic";
 

@@ -31,7 +31,7 @@ export const SelectInput: React.FC<InputProps> = ({
         className="bg-[#E2E8F0] w-full rounded-lg py-2 md:py-3 px-2 md:px-3 outline-none text-[#21212180] text-sm"
       >
         {data?.map((item) => (
-          <option value={item?.value}>{item?.name}</option>
+          <option key={item?.value} value={item?.value}>{item?.name}</option>
         ))}
       </select>
     </div>

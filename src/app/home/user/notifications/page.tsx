@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import { useRouter } from "next/navigation";
 import { MessageSquare, Trash2, CheckCheck } from "lucide-react";
 import { useNotifications, useDeleteNotification, useDeleteAllNotifications, useMarkNotificationAsRead, useBulkMarkAsRead, useBulkDeleteNotifications } from "@/hooks/useNotifications";

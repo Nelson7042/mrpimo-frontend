@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Breadcrumbs, BreadcrumbItem } from "@/components/BraedCrumbs";
+import { Breadcrumbs, BreadcrumbItem } from "@/components/BreadCrumbs";
 import Pagination from "@/components/Pagination";
 import { disputeService } from "@/services/disputeService";
 import { Loader2, AlertTriangle } from "lucide-react";

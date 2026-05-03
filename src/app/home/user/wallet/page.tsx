@@ -4,9 +4,10 @@ import { useState, useEffect } from "react"
 import { Eye, EyeOff, ChevronDown, Settings, Plus, ArrowRight, CreditCard, Building2, ShoppingCart, RefreshCw, Lock, Unlock, ArrowUpRight, ArrowDownLeft } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs"
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs"
 import { useRouter } from "next/navigation"
 import TopUpModal from '@/components/wallet/TopUpModal'
+import TransferModal from '@/components/wallet/TransferModal'
 import PaymentMethodManager from '@/components/wallet/PaymentMethodManager'
 import WalletSettings from '@/components/wallet/WalletSettings'
 import { useWalletBalance, useWalletTransactions, usePaymentMethods, IWalletTransaction, TransactionFilters } from '@/hooks/useWallet'
@@ -49,6 +50,7 @@ const formatDate = (dateString: string) => {
 export default function WalletPage() {
   const [showBalance, setShowBalance] = useState(false)
   const [showTopUp, setShowTopUp] = useState(false)
+  const [showTransferModal, setShowTransferModal] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   const [showPaymentMethods, setShowPaymentMethods] = useState(false)
   const [filters, setFilters] = useState<TransactionFilters>({
@@ -63,9 +65,7 @@ export default function WalletPage() {
   const router = useRouter()
   
   const { data: walletData, isLoading: walletLoading, refetch: refetchWallet } = useWalletBalance()
-  console.log(walletData)
   const { data: transactionsData, isLoading: transactionsLoading } = useWalletTransactions(filters)
-  console.log(transactionsData)
   const { data: paymentMethodsData } = usePaymentMethods()
   const { user } = useUserStore()
   const { usdDisplay: balanceUSD, approxDisplay: balanceApprox } = useWalletDisplay(
@@ -193,7 +193,10 @@ export default function WalletPage() {
               <p className="text-xs sm:text-sm text-gray-600">Manage cards & banks</p>
             </div>
           </button>
-          <button className="p-3 sm:p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3">
+          <button
+            onClick={() => setShowTransferModal(true)}
+            className="p-3 sm:p-4 border rounded-lg hover:bg-gray-50 flex items-center gap-3"
+          >
             <div className="text-left">
               <p className="font-medium text-sm sm:text-base">Send Money</p>
               <p className="text-xs sm:text-sm text-gray-600">Transfer to other users</p>
@@ -490,6 +493,12 @@ export default function WalletPage() {
             onClose={() => setShowTopUp(false)}
             onSuccess={handleRefresh}
             paymentMethods={paymentMethodsData?.paymentMethods || []}
+          />
+        )}
+        {showTransferModal && (
+          <TransferModal
+            onClose={() => setShowTransferModal(false)}
+            onSuccess={handleRefresh}
           />
         )}
         {showSettings && (

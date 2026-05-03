@@ -9,7 +9,7 @@ import {
 
 
 import { categoriesConfig } from "@/lib/categories-config";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import { useRouter } from "next/navigation";
 import { useCategories } from "@/hooks/queries";
 import { Category } from "@/types/product.type";

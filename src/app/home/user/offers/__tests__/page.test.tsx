@@ -59,7 +59,7 @@ vi.mock("date-fns", () => ({
 }));
 
 // ── Mock Breadcrumbs ────────────────────────────────────────────────────────
-vi.mock("@/components/BraedCrumbs", () => ({
+vi.mock("@/components/BreadCrumbs", () => ({
   Breadcrumbs: ({ items }: any) => (
     <nav data-testid="breadcrumbs">
       {items?.map((item: any, i: number) => (

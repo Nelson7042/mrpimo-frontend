@@ -66,6 +66,12 @@ const navItems = [
     iconfilled: "solar:wallet-bold",
   },
   {
+    name: "Subscription",
+    href: "/vendor/dashboard/subscription",
+    icon: "ph:credit-card-light",
+    iconfilled: "ph:credit-card-fill",
+  },
+  {
     name: "Settings",
     href: "/vendor/dashboard/settings",
     icon: "mingcute:settings-5-line",

@@ -15,15 +15,9 @@ import SocketService from "@/utils/socketService";
 import { useRouter } from "next/navigation";
 import { ClipLoader } from "react-spinners";
 import { BidModal1 } from "./BidModal";
-import { useMakeBid } from "@/hooks/mutations";
+import { useMakeBid, useBuyNow } from "@/hooks/mutations";
 import { toast } from "react-hot-toast";
 import VariantDisplay from "@/components/VariantDisplay";
-import {
-  useBuyNow,
-  useCreateBuyNowPaymentIntent,
-  useCreateBuyNowOrder,
-} from "@/hooks/mutations";
-import BuyNowStripeModal from "@/components/BuyNowStripeModal";
 import BuyNowSummary from "@/components/BuyNowSummary";
 import { calculateTotalQuantity } from "@/utils/productUtils";
 import OfferModal from "./OfferModal";
@@ -144,15 +138,11 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   const [isBuyingNow, setIsBuyingNow] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
 
-  const [buyNowOrderData, setBuyNowOrderData] = useState<any>(null);
   const [summaryData, setSummaryData] = useState<any>(null);
-  const [walletData, setWalletData] = useState<any>(null);
   const [showOfferModal, setShowOfferModal] = useState(false);
   const [isSubmittingOffer, setIsSubmittingOffer] = useState(false);
 
   const buyNowMutation = useBuyNow();
-  const createPaymentIntentMutation = useCreateBuyNowPaymentIntent();
-  const createOrderMutation = useCreateBuyNowOrder();
   const makeBidMutation = useMakeBid();
 
   useEffect(() => {
@@ -325,9 +315,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     }
   };
 
-
-      console.log("Shipping address", user )
-
   const handleBuyNow = async () => {
     if (!user) {
       openModal();
@@ -343,9 +330,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     const shippingAddress = user?.addresses?.find(
       (addr) => addr.type === "shipping" && addr.isDefault
     );
-
-
-    console.log("Shipping address", shippingAddress);
     if (!shippingAddress) {
       toast.error("Please add a shipping address to continue with your order");
       // Store current product info for return
@@ -396,17 +380,12 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
         return;
       }
 
-      const { pricing, userFiatWallet, item, product } = buyNowData.buyNow;
-      const priceInfo = product?.priceInfo || (productData as any)?.priceInfo;
-
-      setBuyNowOrderData({
-        ...orderData,
-        price: item.price,
-        exchangeRate: priceInfo?.exchangeRate,
-      });
-      setWalletData(userFiatWallet?.balances || userFiatWallet);
+      const { pricing, item } = buyNowData.buyNow;
 
       setSummaryData({
+        productId: productData._id as string,
+        variantId: variant._id || variant.id,
+        optionId: option.id || option._id,
         product: {
           name: productData.name,
           images: productData.images,
@@ -434,115 +413,6 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       console.error("Buy now error:", error);
       toast.error(error.message || "Failed to process buy now");
       setIsBuyingNow(false);
-    }
-  };
-
-  const handleWalletPayment = async () => {
-    if (!buyNowOrderData || !summaryData || !walletData) return;
-
-    try {
-      const availableBalance = walletData?.available || 0;
-
-      if (availableBalance >= summaryData.totalAmount) {
-        const paymentIntent = await createPaymentIntentMutation.mutateAsync({
-          productId: buyNowOrderData.productId,
-          variantId: buyNowOrderData.variantId,
-          optionId: buyNowOrderData.optionId,
-          quantity: buyNowOrderData.quantity,
-          paymentMethod: "wallet",
-        });
-
-        if (paymentIntent.success) {
-          const cleanedItems: any[] = [
-            {
-              productId: buyNowOrderData.productId,
-              quantity: buyNowOrderData.quantity,
-            },
-          ];
-          if (buyNowOrderData.variantId)
-            cleanedItems[0].variantId = buyNowOrderData.variantId;
-          if (buyNowOrderData.optionId)
-            cleanedItems[0].optionId = buyNowOrderData.optionId;
-
-          const orderPaymentData: any = {
-            type: "wallet",
-            amount: summaryData.pricing.total,
-          };
-          if (paymentIntent.paymentData) {
-            Object.assign(orderPaymentData, paymentIntent.paymentData);
-          }
-
-          const shippingAddr = user?.addresses?.find(
-            (addr) => addr.type === "shipping" && addr.isDefault
-          );
-
-          const order = await createOrderMutation.mutateAsync({
-            validatedItems: cleanedItems,
-            pricing: {
-              subtotal: summaryData.pricing.subtotal,
-              shipping: summaryData.pricing.shipping,
-              tax: summaryData.pricing.tax,
-              total: summaryData.pricing.total,
-              currency: summaryData.currency,
-            },
-            paymentData: {
-              type: "wallet",
-            },
-            address: {
-              street: shippingAddr?.street,
-              city: shippingAddr?.city,
-              state: shippingAddr?.state,
-              country: shippingAddr?.country,
-              postalCode: shippingAddr?.postalCode,
-              type: shippingAddr?.type,
-            },
-            isBuyNow: true,
-          });
-
-          if (order.success) {
-            toast.success("Order placed successfully!");
-            setShowSummary(false);
-            router.push(`/home/user/orders/${order.order._id}`);
-          } else {
-            toast.error("Failed to create order");
-          }
-        } else {
-          toast.error("Payment processing failed");
-        }
-      } else {
-        toast.error("Insufficient wallet balance");
-      }
-    } catch (error: any) {
-      console.error("Wallet payment error:", error);
-      toast.error(error.message || "Payment failed");
-    }
-  };
-
-  const handleStripePayment = async () => {
-    if (!buyNowOrderData || !summaryData || !productData.variants?.[0]) return;
-
-    try {
-      const variant = productData.variants[0];
-      const option = variant.options?.find(
-        (opt: any) => (opt.id || opt._id) === buyNowOrderData.optionId
-      );
-
-      if (!option) {
-        toast.error("Product option not found");
-        return;
-      }
-
-      await addToCart(productData, buyNowOrderData.quantity, {
-        variantId: buyNowOrderData.variantId,
-        optionId: buyNowOrderData.optionId,
-        variantName: variant.name,
-        optionValue: option.value,
-        price: option.salePrice || option.price,
-      });
-      router.push("/home/checkout");
-    } catch (error: any) {
-      console.error("Add to cart error:", error);
-      toast.error(error.message || "Failed to proceed to checkout");
     }
   };
 
@@ -1070,7 +940,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
 
           {/* Action Buttons */}
           {productData?.inventory?.listing?.type !== "auction" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-7 gap-3">
+            <div className={`grid grid-cols-1 ${acceptOffer ? 'sm:grid-cols-8' : 'sm:grid-cols-7'} gap-3`}>
               <button
                 onClick={handleMessageSeller}
                 disabled={isJoiningChat}
@@ -1081,7 +951,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
               <button
                 onClick={handleBuyNow}
                 disabled={isBuyingNow || getSelectedOptionStock() === 0}
-                className="font-roboto bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors sm:col-span-3 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                className={`font-roboto bg-blue-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-blue-700 transition-colors ${acceptOffer ? 'sm:col-span-2' : 'sm:col-span-3'} cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2`}
               >
                 {isBuyingNow ? (
                   <>
@@ -1105,6 +975,15 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                   ? "Out of Stock"
                   : "Add To Cart"}
               </button>
+              {acceptOffer && (
+                <button
+                  onClick={() => setShowOfferModal(true)}
+                  disabled={getSelectedOptionStock() === 0}
+                  className="font-roboto bg-green-600 text-white px-4 py-2 rounded-lg text-xs font-medium hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed sm:col-span-2 cursor-pointer"
+                >
+                  Make Offer
+                </button>
+              )}
             </div>
           ) : (
             <div className="flex justify-between items-center gap-4">
@@ -1173,14 +1052,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
         <BuyNowSummary
           isOpen={showSummary}
           onClose={() => setShowSummary(false)}
-          onPayWithWallet={handleWalletPayment}
-          onPayWithStripe={handleStripePayment}
           orderData={summaryData}
-          walletBalance={walletData?.available || 0}
-          isProcessing={
-            createPaymentIntentMutation.isPending ||
-            createOrderMutation.isPending
-          }
         />
       )}
 

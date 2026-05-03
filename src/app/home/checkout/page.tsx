@@ -1,33 +1,28 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import Link from "next/link";
 import Image from "next/image";
-import {  Copy, Check, Loader2, CreditCard, Truck } from "lucide-react";
+import {  Copy, Check, Loader2, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { SearchableSelect } from "@/components/ui/searchable-select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import { useRouter } from "next/navigation";
 import { useCartStore } from "@/stores/cartStore";
 import { useCreateOrder, useCreatePaymentIntent, useValidateCart, useCalculateShipping } from "@/hooks/useCheckout";
-import { useAddAddress, useAddresses } from "@/hooks/useAddress";
+import { useBuyNowShippingEstimate } from "@/hooks/useBuyNowShippingEstimate";
+import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
+import { useAddAddress, useAddresses, useUpdateAddress } from "@/hooks/useAddress";
 import { useCountries } from "@/hooks/useCountries";
 import { useUserCurrency } from "@/hooks/useUserCurrency";
 import { Country, State } from "country-state-city";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { getCountryFromCurrency } from "@/utils/currency";
+import { getProviderByCurrency } from "@/utils/paymentProvider";
 import { Elements } from "@stripe/react-stripe-js";
 import { loadStripe } from "@stripe/stripe-js";
 import StripePaymentForm from "@/components/StripePaymentForm";
@@ -51,15 +46,46 @@ export default function CheckoutPage() {
   const billingAddress = user?.addresses?.find(addr => addr.type === "billing");
   const { data: userCurrencyData } = useUserCurrency();
 
-  // Check if user is authorized to access checkout
+  // --- Buy Now Mode Detection ---
+  const [buyNowData, setBuyNowData] = useState<any>(null);
+  // Track whether we've finished reading sessionStorage so the auth check
+  // doesn't fire before buyNowData is resolved (race condition fix).
+  const [sessionLoaded, setSessionLoaded] = useState(false);
+  const isBuyNowMode = !!buyNowData;
+
   useEffect(() => {
+    try {
+      const stored = sessionStorage.getItem("buyNowData");
+      if (stored) {
+        setBuyNowData(JSON.parse(stored));
+      }
+    } catch {
+      // Not in buy-now mode
+    } finally {
+      setSessionLoaded(true);
+    }
+  }, []);
+
+  // Buy Now hooks
+  const buyNowShippingMutation = useBuyNowShippingEstimate();
+  const buyNowCheckout = useBuyNowCheckout();
+
+  // Check if user is authorized to access checkout.
+  // Only runs after sessionStorage has been read so buyNowData is accurate.
+  useEffect(() => {
+    if (!sessionLoaded) return;
+
     const checkAuthorization = () => {
-      const authorized = sessionStorage.getItem('checkoutAuthorized');
+      // In buy-now mode, check buyNowCheckoutAuthorized instead
+      const authKey = buyNowData ? 'buyNowCheckoutAuthorized' : 'checkoutAuthorized';
+      const authorized = sessionStorage.getItem(authKey);
       const timestamp = sessionStorage.getItem('checkoutTimestamp');
       
       if (!authorized || !timestamp) {
-        toast.error("Please validate your cart before proceeding to checkout");
-        router.replace("/home/my-cart");
+        toast.error(buyNowData
+          ? "Please initiate Buy Now from the product page"
+          : "Please validate your cart before proceeding to checkout");
+        router.replace(buyNowData ? "/home" : "/home/my-cart");
         return;
       }
       
@@ -69,10 +95,12 @@ export default function CheckoutPage() {
       const thirtyMinutes = 30 * 60 * 1000;
       
       if (now - authTime > thirtyMinutes) {
-        sessionStorage.removeItem('checkoutAuthorized');
+        sessionStorage.removeItem(authKey);
         sessionStorage.removeItem('checkoutTimestamp');
-        toast.error("Your checkout session has expired. Please validate your cart again.");
-        router.replace("/home/my-cart");
+        toast.error(buyNowData
+          ? "Your checkout session has expired. Please try again."
+          : "Your checkout session has expired. Please validate your cart again.");
+        router.replace(buyNowData ? "/home" : "/home/my-cart");
         return;
       }
       
@@ -80,7 +108,7 @@ export default function CheckoutPage() {
     };
     
     checkAuthorization();
-  }, [router]);
+  }, [router, buyNowData, sessionLoaded]);
   
   const [formData, setFormData] = useState({
     firstName: user?.profile?.firstName || "",
@@ -138,6 +166,7 @@ export default function CheckoutPage() {
   const createPaymentIntentMutation = useCreatePaymentIntent();
   const calculateShippingMutation = useCalculateShipping();
   const addAddressMutation = useAddAddress();
+  const updateAddressMutation = useUpdateAddress();
   const { data: addressData } = useAddresses();
   const { data: countries = [] } = useCountries();
   const allCountries = Country.getAllCountries();
@@ -158,17 +187,23 @@ export default function CheckoutPage() {
     }
   }, [billingAddress]);
 
-  // Get user's shipping address
-  const userShippingAddress = (addressData?.addresses || user?.addresses || []).find(
-    (addr: any) => addr.type === "shipping" && addr.isDefault
+  // Get user's shipping addresses
+  const allShippingAddresses = (addressData?.addresses || user?.addresses || []).filter(
+    (addr: any) => addr.type === "shipping"
   );
+  const userShippingAddress = allShippingAddresses.find((addr: any) => addr.isDefault) || allShippingAddresses[0];
   const hasShippingAddress = !!userShippingAddress;
 
+  // Handle setting a shipping address as default from checkout
+  const handleSetDefaultShipping = (address: any) => {
+    updateAddressMutation.mutate({ ...address, isDefault: true });
+  };
+
   useEffect(() => {
-    if (cartItems.length > 0) {
+    if (!isBuyNowMode && cartItems.length > 0) {
       validateCart();
     }
-  }, [cartItems.length]);
+  }, [cartItems.length, isBuyNowMode, userShippingAddress?._id]);
 
   // Handle same as shipping checkbox
   useEffect(() => {
@@ -219,12 +254,18 @@ export default function CheckoutPage() {
     }
   }, [sameAsShipping, addressData, user?.addresses]);
 
-  const checkout = validationData?.checkout;
-  const subtotal = checkout?.pricing?.subtotal || 0;
-  const baseShipping = checkout?.pricing?.shipping || 0;
-  const tax = checkout?.pricing?.tax || 0;
-  const currency = checkout?.pricing?.currency || "USD";
-  const deliveryOptions = checkout?.deliveryOptions;
+  const checkout = isBuyNowMode ? null : validationData?.checkout;
+  const subtotal = isBuyNowMode ? (buyNowData?.pricing?.subtotal || 0) : (checkout?.pricing?.subtotal || 0);
+  const baseShipping = isBuyNowMode ? (buyNowData?.pricing?.shipping || 0) : (checkout?.pricing?.shipping || 0);
+  const tax = isBuyNowMode ? (buyNowData?.pricing?.tax || 0) : (checkout?.pricing?.tax || 0);
+  const currency = isBuyNowMode ? (buyNowData?.pricing?.currency || "USD") : (checkout?.pricing?.currency || "USD");
+  const currencySymbol = isBuyNowMode ? (buyNowData?.pricing?.currencySymbol || currency) : currency;
+  const deliveryOptions = isBuyNowMode ? null : checkout?.deliveryOptions;
+
+  // Compute hasExactLocation for both modes
+  const hasExactLocation = isBuyNowMode
+    ? !!(userShippingAddress?.coordinates?.latitude && userShippingAddress?.coordinates?.longitude)
+    : !!deliveryOptions?.hasExactLocation;
 
   // Delivery method state - must be declared before useEffects that reference it
   const [deliveryMethod, setDeliveryMethod] = useState<string>("");
@@ -232,20 +273,53 @@ export default function CheckoutPage() {
   // Use calculated shipping if available, otherwise use base shipping
   const [calculatedShipping, setCalculatedShipping] = useState<number | null>(null);
   const [shippingEstimatedDays, setShippingEstimatedDays] = useState<string>('5-7 business days');
+  const [shippingWarnings, setShippingWarnings] = useState<string[]>([]);
+  const [shippingIsFallback, setShippingIsFallback] = useState(false);
   const shipping = calculatedShipping !== null ? calculatedShipping : baseShipping;
   const total = subtotal + tax + shipping;
 
   // Set default delivery method based on user's location capabilities
   useEffect(() => {
-    if (deliveryOptions && !deliveryMethod) {
-      // Default to station pickup if no exact location, otherwise standard
-      setDeliveryMethod(deliveryOptions.hasExactLocation ? 'standard' : 'pickup');
+    if (!deliveryMethod) {
+      if (isBuyNowMode) {
+        // In buy-now mode, default to pickup since we don't have deliveryOptions from cart validation
+        const hasExactLocation = userShippingAddress?.coordinates?.latitude && userShippingAddress?.coordinates?.longitude;
+        setDeliveryMethod(hasExactLocation ? 'standard' : 'pickup');
+      } else if (deliveryOptions) {
+        // Cart mode: use delivery options from cart validation
+        setDeliveryMethod(deliveryOptions.hasExactLocation ? 'standard' : 'pickup');
+      }
     }
-  }, [deliveryOptions, deliveryMethod]);
+  }, [deliveryOptions, deliveryMethod, isBuyNowMode, userShippingAddress]);
 
-  // Calculate shipping when delivery method changes
+  // Calculate shipping when delivery method or default address changes
   useEffect(() => {
-    if (deliveryMethod && cartItems.length > 0) {
+    if (isBuyNowMode && deliveryMethod && buyNowData) {
+      // Buy Now mode: use buy-now shipping estimate
+      setShippingWarnings([]);
+      setShippingIsFallback(false);
+      buyNowShippingMutation.mutate(
+        {
+          productId: buyNowData.productId,
+          variantId: buyNowData.variantId,
+          optionId: buyNowData.optionId,
+          quantity: buyNowData.quantity,
+          addressId: userShippingAddress?._id,
+          deliveryMethod,
+        },
+        {
+          onSuccess: (data) => {
+            if (data.success && data.estimate) {
+              setCalculatedShipping(data.estimate.shippingCost);
+              setShippingEstimatedDays(data.estimate.estimatedDays || '5-7 business days');
+              setShippingWarnings(data.estimate.warnings || []);
+              setShippingIsFallback(data.estimate.estimationType === 'fallback');
+            }
+          },
+        }
+      );
+    } else if (!isBuyNowMode && deliveryMethod && cartItems.length > 0) {
+      // Cart mode: use cart shipping calculation
       calculateShippingMutation.mutate(deliveryMethod, {
         onSuccess: (data) => {
           if (data.success && data.shipping) {
@@ -255,7 +329,7 @@ export default function CheckoutPage() {
         }
       });
     }
-  }, [deliveryMethod]);
+  }, [deliveryMethod, isBuyNowMode, userShippingAddress?._id]);
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [orderId, setOrderId] = useState<string | null>(null);
@@ -263,6 +337,32 @@ export default function CheckoutPage() {
   const [showPaymentUI, setShowPaymentUI] = useState(false);
   const [orderProcessingStage, setOrderProcessingStage] = useState<'idle' | 'validating' | 'creating' | 'finalizing' | 'complete' | 'error'>('idle');
   const [showOrderProcessing, setShowOrderProcessing] = useState(false);
+
+  // Sync buy-now checkout stage with order processing modal
+  useEffect(() => {
+    if (isBuyNowMode && buyNowCheckout.stage !== 'idle') {
+      setOrderProcessingStage(buyNowCheckout.stage);
+      if (buyNowCheckout.stage !== 'idle') {
+        setShowOrderProcessing(true);
+      }
+      if (buyNowCheckout.stage === 'complete') {
+        // Cleanup and redirect after completion
+        sessionStorage.removeItem('buyNowData');
+        sessionStorage.removeItem('buyNowCheckoutAuthorized');
+        sessionStorage.removeItem('checkoutTimestamp');
+        setTimeout(() => {
+          setShowOrderProcessing(false);
+          router.push('/home/user/orders');
+        }, 1500);
+      }
+      if (buyNowCheckout.stage === 'error') {
+        setTimeout(() => {
+          setShowOrderProcessing(false);
+          buyNowCheckout.resetStage();
+        }, 2000);
+      }
+    }
+  }, [isBuyNowMode, buyNowCheckout.stage, router]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -305,6 +405,7 @@ export default function CheckoutPage() {
     const handleProceedToPayment = async () => {
     if (!user) {
       toast.error("You have to be logged in to proceed to checkout");
+      router.push(`/login?returnUrl=${encodeURIComponent(window.location.pathname)}`);
       return;
     }
 
@@ -348,9 +449,17 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (cartItems.length === 0) {
-      toast.error("Your cart is empty");
-      return;
+    // Cart mode: check cart items; Buy Now mode: check buyNowData
+    if (isBuyNowMode) {
+      if (!buyNowData) {
+        toast.error("Buy Now data is missing");
+        return;
+      }
+    } else {
+      if (cartItems.length === 0) {
+        toast.error("Your cart is empty");
+        return;
+      }
     }
 
     setIsProcessing(true);
@@ -364,6 +473,47 @@ export default function CheckoutPage() {
         });
       }
 
+      if (isBuyNowMode) {
+        // --- Buy Now Payment Flow ---
+        const shippingAddr = addresses.find(addr => addr.type === 'shipping');
+
+        if (paymentCategory === 'fiat') {
+          const piResponse = await buyNowCheckout.initiateCheckout({
+            productId: buyNowData.productId,
+            variantId: buyNowData.variantId,
+            optionId: buyNowData.optionId,
+            quantity: buyNowData.quantity,
+            paymentMethod: fiatProvider || 'stripe',
+            addressId: shippingAddr?._id,
+            deliveryMethod,
+          });
+
+          if (!piResponse) {
+            setIsProcessing(false);
+            return;
+          }
+
+          if (fiatProvider === 'paystack') {
+            // Paystack redirect flow
+            await buyNowCheckout.initializePaystackPayment(piResponse);
+          } else {
+            // Stripe flow - show Stripe modal
+            if (piResponse.paymentData?.clientSecret) {
+              setPaymentIntentData({
+                clientSecret: piResponse.paymentData.clientSecret,
+                paymentIntentId: piResponse.paymentData.paymentIntentId,
+                provider: fiatProvider,
+                items: piResponse.checkout.items,
+                pricing: piResponse.checkout.pricing,
+                orderId: piResponse.orderId,
+                isBuyNow: true,
+              });
+              setShowPaymentUI(true);
+            }
+          }
+        }
+      } else {
+        // --- Cart Payment Flow (existing) ---
       const items = checkout?.items?.map((item: any) => {
         const itemData: any = {
           productId: item.productId,
@@ -462,6 +612,7 @@ export default function CheckoutPage() {
           });
         }
       }
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to setup payment");
     } finally {
@@ -544,8 +695,15 @@ export default function CheckoutPage() {
         sessionStorage.removeItem('checkoutAuthorized');
         sessionStorage.removeItem('checkoutTimestamp');
         
-        await clearCart();
-        await useCartStore.getState().loadCart();
+        // Buy Now mode cleanup
+        if (isBuyNowMode) {
+          sessionStorage.removeItem('buyNowData');
+          sessionStorage.removeItem('buyNowCheckoutAuthorized');
+        } else {
+          await clearCart();
+          await useCartStore.getState().loadCart();
+        }
+        
         const { useUserStore } = await import('@/stores/useUserStore');
         await useUserStore.getState().refreshUser();
         
@@ -575,63 +733,16 @@ export default function CheckoutPage() {
     }
   };
 
-  const paymentCategories = [
-    { id: 'fiat', name: 'Fiat Currency', icon: CreditCard },
-  ];
-
-  const getProviderByCurrency = (currency: string): string => {
-    const curr = currency.toLowerCase();
-    
-    // Map currency to payment provider
-    const currencyProviderMap: { [key: string]: string } = {
-      // Paystack currencies
-      'ngn': 'paystack',
-      'ghs': 'paystack',
-      'kes': 'paystack',
-      'zar': 'paystack',
-      'xof': 'paystack',
-      // Stripe currencies (major global currencies)
-      'usd': 'stripe',
-      'eur': 'stripe',
-      'gbp': 'stripe',
-      'cad': 'stripe',
-      'aud': 'stripe',
-      'nzd': 'stripe',
-      'chf': 'stripe',
-      'sek': 'stripe',
-      'nok': 'stripe',
-      'dkk': 'stripe',
-      'jpy': 'stripe',
-      'sgd': 'stripe',
-      'hkd': 'stripe',
-      'inr': 'stripe',
-      'myr': 'stripe',
-      'php': 'stripe',
-      'thb': 'stripe',
-      'brl': 'stripe',
-      'mxn': 'stripe',
-      'pln': 'stripe',
-      'czk': 'stripe',
-      'huf': 'stripe',
-      'ron': 'stripe',
-      'ils': 'stripe',
-      'aed': 'stripe',
-      'sar': 'stripe',
-      // Airwallex for China
-      'cny': 'airwallex',
-    };
-    
-    return currencyProviderMap[curr] || 'stripe';
-  };
-
+  // Auto-detect payment method and provider on page load
   useEffect(() => {
-    if (currency && paymentCategory === 'fiat') {
-      // Use detected currency from backend if available, otherwise use checkout currency
-      const detectedCurrency = userCurrencyData?.currency || currency;
+    const detectedCurrency = userCurrencyData?.currency || currency;
+    if (detectedCurrency) {
+      setPaymentCategory('fiat');
+      setPaymentMethod('fiat');
       const provider = getProviderByCurrency(detectedCurrency.toLowerCase());
       setFiatProvider(provider);
     }
-  }, [currency, paymentCategory, userCurrencyData]);
+  }, [currency, userCurrencyData]);
 
   // Show loading while checking authorization
   if (!isAuthorized) {
@@ -861,24 +972,90 @@ export default function CheckoutPage() {
                   )}
                 </div>
 
-                {/* Shipping Address Display - Read-only */}
-                {hasShippingAddress && userShippingAddress && (
+                {/* Shipping Address Selection */}
+                {hasShippingAddress && (
                   <div className="mt-6 p-3 bg-gray-50 rounded-lg border border-gray-200">
                     <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
                       <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                       Shipping Address
                     </h3>
-                    <div className="text-xs text-gray-700 space-y-0.5">
-                      <p>{userShippingAddress.street}</p>
-                      <p>{userShippingAddress.city}, {userShippingAddress.state} {userShippingAddress.postalCode}</p>
-                      <p>{userShippingAddress.country}</p>
+                    <div className="space-y-2">
+                      {allShippingAddresses.map((addr: any) => (
+                        <div
+                          key={addr._id}
+                          className={`flex items-start justify-between p-2 rounded-md border cursor-pointer transition-colors ${
+                            addr.isDefault
+                              ? 'border-blue-500 bg-blue-50'
+                              : 'border-gray-200 hover:bg-gray-100'
+                          }`}
+                          onClick={() => {
+                            if (!addr.isDefault) handleSetDefaultShipping(addr);
+                          }}
+                        >
+                          <div className="flex items-start gap-2 flex-1 min-w-0">
+                            <input
+                              type="radio"
+                              name="shippingAddress"
+                              checked={addr.isDefault}
+                              onChange={() => {
+                                if (!addr.isDefault) handleSetDefaultShipping(addr);
+                              }}
+                              className="mt-1 w-3.5 h-3.5 text-blue-600"
+                              aria-label={`Select shipping address: ${addr.street}, ${addr.city}`}
+                            />
+                            <div className="text-xs text-gray-700 space-y-0.5">
+                              <p className="font-medium">{addr.street}</p>
+                              <p>{addr.city}, {addr.state} {addr.postalCode}</p>
+                              <p>{addr.country}</p>
+                            </div>
+                          </div>
+                          {addr.isDefault && (
+                            <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-medium shrink-0">
+                              Default
+                            </span>
+                          )}
+                        </div>
+                      ))}
                     </div>
-                    <Link
-                      href="/home/user/settings?section=shipping"
-                      className="text-xs text-blue-600 hover:text-blue-800 mt-1.5 inline-block"
+                    {updateAddressMutation.isPending && (
+                      <div className="flex items-center gap-1.5 mt-2 text-xs text-blue-600">
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                        Updating default address...
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.setItem('checkoutReturn', 'true');
+                        router.push('/home/user/settings?section=shipping');
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block"
                     >
-                      Change shipping address
-                    </Link>
+                      + Add new shipping address
+                    </button>
+                  </div>
+                )}
+
+                {/* No-address warning - only shown in buy-now mode */}
+                {isBuyNowMode && !hasShippingAddress && (
+                  <div className="mt-6 p-3 bg-yellow-50 rounded-lg border border-yellow-300">
+                    <h3 className="text-sm font-semibold mb-1 text-yellow-800 flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 bg-yellow-500 rounded-full"></span>
+                      Shipping Address Required
+                    </h3>
+                    <p className="text-xs text-yellow-700 mb-1.5">
+                      You need a shipping address before you can complete this purchase.
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.setItem('checkoutReturn', 'true');
+                        router.push('/home/user/settings?section=shipping');
+                      }}
+                      className="text-xs text-blue-600 hover:text-blue-800 font-medium"
+                    >
+                      Add a shipping address →
+                    </button>
                   </div>
                 )}
 
@@ -905,7 +1082,7 @@ export default function CheckoutPage() {
 
                     {/* Standard Delivery - Only if user has exact location */}
                     <div className={`flex items-start space-x-2 p-3 border rounded-lg ${
-                      deliveryOptions?.hasExactLocation 
+                      hasExactLocation 
                         ? `hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'standard' ? 'border-blue-500 bg-blue-50' : ''}`
                         : 'opacity-50 cursor-not-allowed bg-gray-50'
                     }`}>
@@ -913,12 +1090,12 @@ export default function CheckoutPage() {
                         value="standard" 
                         id="standard" 
                         className="mt-0.5"
-                        disabled={!deliveryOptions?.hasExactLocation}
+                        disabled={!hasExactLocation}
                       />
                       <Label htmlFor="standard" className="flex-1 cursor-pointer">
                         <p className="text-sm font-medium">Standard Delivery</p>
                         <p className="text-xs text-gray-500">
-                          {deliveryOptions?.hasExactLocation 
+                          {hasExactLocation 
                             ? 'Delivered to your address (5-7 business days)'
                             : 'Add exact location to enable home delivery'}
                         </p>
@@ -927,7 +1104,7 @@ export default function CheckoutPage() {
 
                     {/* Express Delivery - Only if user has exact location */}
                     <div className={`flex items-start space-x-2 p-3 border rounded-lg ${
-                      deliveryOptions?.hasExactLocation 
+                      hasExactLocation 
                         ? `hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'express' ? 'border-blue-500 bg-blue-50' : ''}`
                         : 'opacity-50 cursor-not-allowed bg-gray-50'
                     }`}>
@@ -935,12 +1112,12 @@ export default function CheckoutPage() {
                         value="express" 
                         id="express" 
                         className="mt-0.5"
-                        disabled={!deliveryOptions?.hasExactLocation}
+                        disabled={!hasExactLocation}
                       />
                       <Label htmlFor="express" className="flex-1 cursor-pointer">
                         <p className="text-sm font-medium">Express Delivery</p>
                         <p className="text-xs text-gray-500">
-                          {deliveryOptions?.hasExactLocation 
+                          {hasExactLocation 
                             ? 'Fast delivery (2-3 business days)'
                             : 'Add exact location to enable express delivery'}
                         </p>
@@ -948,64 +1125,40 @@ export default function CheckoutPage() {
                     </div>
                   </RadioGroup>
 
-                  {!deliveryOptions?.hasExactLocation && (
+                  {!hasExactLocation && (
                     <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
                       <p className="text-xs text-yellow-800">
                         💡 Add your exact location in{' '}
-                        <Link href="/home/user/settings?section=shipping" className="text-blue-600 underline">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            localStorage.setItem('checkoutReturn', 'true');
+                            router.push('/home/user/settings?section=shipping');
+                          }}
+                          className="text-blue-600 underline"
+                        >
                           shipping settings
-                        </Link>
+                        </button>
                         {' '}to unlock home delivery options.
                       </p>
                     </div>
                   )}
                 </div>
 
-                {/* Payment Method */}
+                {/* Payment Method - Auto-detected */}
                 <div className="mt-6">
                   <h3 className="text-sm font-semibold mb-1">Payment Method</h3>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Choose your preferred payment method
-                  </p>
-
-                  <RadioGroup
-                    value={paymentCategory}
-                    onValueChange={(value: any) => {
-                      setPaymentCategory(value);
-                      setPaymentMethod(value);
-                      if (value === 'fiat') {
-                        const provider = getProviderByCurrency(currency);
-                        setFiatProvider(provider);
-                      }
-                    }}
-                  >
-                    <div className="grid grid-cols-2 gap-4 mb-6">
-                      {paymentCategories.map((category) => (
-                        <div key={category.id}>
-                          <RadioGroupItem
-                            value={category.id}
-                            id={category.id}
-                            className="peer sr-only"
-                          />
-                          <Label
-                            htmlFor={category.id}
-                            className="flex flex-col items-center justify-center p-4 border-2 border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 peer-checked:border-blue-500 peer-checked:bg-blue-50"
-                          >
-                            <category.icon className="w-6 h-6 mb-2" />
-                            <span className="text-sm font-medium text-center">
-                              {category.name}
-                            </span>
-                          </Label>
-                        </div>
-                      ))}
-                    </div>
-                  </RadioGroup>
-
-                  {paymentCategory === 'fiat' && fiatProvider && (
-                    <div className="mb-6 p-4 bg-blue-50 rounded-lg">
+                  {fiatProvider ? (
+                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center gap-2">
+                      <CreditCard className="w-4 h-4 text-blue-600" />
                       <p className="text-sm text-gray-700">
-                        Payment provider: <span className="font-semibold capitalize">{fiatProvider}</span>
+                        Paying with <span className="font-semibold capitalize">{fiatProvider}</span>
                       </p>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
+                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
+                      <p className="text-sm text-gray-500">Detecting payment provider...</p>
                     </div>
                   )}
 
@@ -1093,7 +1246,33 @@ export default function CheckoutPage() {
                     <>
                       {/* Order Items */}
                       <div className="space-y-3 mb-4 max-h-[250px] overflow-y-auto">
-                        {checkout?.items?.map((item: any) => (
+                        {isBuyNowMode && buyNowData ? (
+                          // Buy Now mode: single product
+                          <div className="flex items-center space-x-2.5">
+                            <Image
+                              src={buyNowData.product?.images?.[0] || "/placeholder.svg"}
+                              alt={buyNowData.product?.name || "Product"}
+                              width={36}
+                              height={36}
+                              className="rounded object-cover"
+                            />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium leading-tight text-gray-800 line-clamp-1">
+                                {buyNowData.product?.name}
+                              </p>
+                              {buyNowData.variant && (
+                                <p className="text-[10px] text-gray-500">
+                                  {buyNowData.variant.name}: {buyNowData.variant.value}
+                                </p>
+                              )}
+                              <p className="text-[10px] text-blue-600">
+                                {buyNowData.quantity} x {currencySymbol} {buyNowData.variant?.price?.toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        ) : (
+                          // Cart mode: multiple items
+                          checkout?.items?.map((item: any) => (
                           <div
                             key={`${item.productId}-${item.variantId || 'no-variant'}-${item.optionId || 'no-option'}`}
                             className="flex items-center space-x-2.5"
@@ -1114,7 +1293,8 @@ export default function CheckoutPage() {
                               </p>
                             </div>
                           </div>
-                        ))}
+                          ))
+                        )}
                       </div>
 
                       {/* Order Totals */}
@@ -1125,7 +1305,7 @@ export default function CheckoutPage() {
                         </div>
                         <div className="flex justify-between text-xs text-gray-600">
                           <span>Shipping</span>
-                          {calculateShippingMutation.isPending ? (
+                          {(calculateShippingMutation.isPending || buyNowShippingMutation.isPending) ? (
                             <Loader2 className="w-3 h-3 animate-spin text-blue-600" />
                           ) : (
                             <span className="font-medium text-gray-800">
@@ -1133,6 +1313,16 @@ export default function CheckoutPage() {
                             </span>
                           )}
                         </div>
+                        {isBuyNowMode && (shippingWarnings.length > 0 || shippingIsFallback) && (
+                          <div className="mt-1 p-2 bg-yellow-50 border border-yellow-200 rounded text-[10px] text-yellow-800 space-y-0.5">
+                            {shippingIsFallback && (
+                              <p className="font-medium">⚠ Estimated shipping (GIGL unavailable)</p>
+                            )}
+                            {shippingWarnings.map((w, i) => (
+                              <p key={i}>{w}</p>
+                            ))}
+                          </div>
+                        )}
                         <div className="flex justify-between text-xs text-gray-600">
                           <span>Tax</span>
                           <span className="font-medium text-gray-800">{currency} {tax.toLocaleString()}</span>
@@ -1151,7 +1341,7 @@ export default function CheckoutPage() {
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-9"
                       onClick={handleProceedToPayment}
-                      disabled={isProcessing || cartItems.length === 0}
+                      disabled={isProcessing || buyNowCheckout.isProcessing || (isBuyNowMode ? (!buyNowData || !hasShippingAddress) : cartItems.length === 0)}
                     >
                       {isProcessing ? (
                         <>
@@ -1228,11 +1418,30 @@ export default function CheckoutPage() {
                                 amount={paymentIntentData.pricing.total}
                                 currency={paymentIntentData.pricing.currency}
                                 onSuccess={(paymentIntentId) => {
-                                  handleCreateOrder({
-                                    ...paymentIntentData,
-                                    type: 'fiat',
-                                    paymentIntentId,
-                                  });
+                                  if (paymentIntentData.isBuyNow) {
+                                    // Buy Now mode: order already created by payment intent
+                                    // Show processing stages and redirect
+                                    setShowPaymentUI(false);
+                                    setShowOrderProcessing(true);
+                                    setOrderProcessingStage('finalizing');
+                                    setTimeout(() => {
+                                      setOrderProcessingStage('complete');
+                                      // Cleanup buy-now session data
+                                      sessionStorage.removeItem('buyNowData');
+                                      sessionStorage.removeItem('buyNowCheckoutAuthorized');
+                                      sessionStorage.removeItem('checkoutTimestamp');
+                                      setTimeout(() => {
+                                        setShowOrderProcessing(false);
+                                        router.push('/home/user/orders');
+                                      }, 1500);
+                                    }, 1000);
+                                  } else {
+                                    handleCreateOrder({
+                                      ...paymentIntentData,
+                                      type: 'fiat',
+                                      paymentIntentId,
+                                    });
+                                  }
                                 }}
                                 onCancel={() => {
                                   setShowPaymentUI(false);

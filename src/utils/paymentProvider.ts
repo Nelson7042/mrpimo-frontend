@@ -55,3 +55,49 @@ export function getAvailablePaymentMethods(countryName: string): ('card' | 'bank
       return ['card'];
   }
 }
+
+
+export function getProviderByCurrency(currency: string): string {
+  const curr = currency.toLowerCase();
+
+  const currencyProviderMap: { [key: string]: string } = {
+    // Paystack currencies
+    'ngn': 'paystack',
+    'ghs': 'paystack',
+    'kes': 'paystack',
+    'zar': 'paystack',
+    'xof': 'paystack',
+    // Stripe currencies (major global currencies)
+    'usd': 'stripe',
+    'eur': 'stripe',
+    'gbp': 'stripe',
+    'cad': 'stripe',
+    'aud': 'stripe',
+    'nzd': 'stripe',
+    'chf': 'stripe',
+    'sek': 'stripe',
+    'nok': 'stripe',
+    'dkk': 'stripe',
+    'jpy': 'stripe',
+    'sgd': 'stripe',
+    'hkd': 'stripe',
+    'inr': 'stripe',
+    'myr': 'stripe',
+    'php': 'stripe',
+    'thb': 'stripe',
+    'brl': 'stripe',
+    'mxn': 'stripe',
+    'pln': 'stripe',
+    'czk': 'stripe',
+    'huf': 'stripe',
+    'ron': 'stripe',
+    'ils': 'stripe',
+    'aed': 'stripe',
+    'sar': 'stripe',
+    // Airwallex for China
+    'cny': 'airwallex',
+  };
+
+  return currencyProviderMap[curr] || 'stripe';
+}
+

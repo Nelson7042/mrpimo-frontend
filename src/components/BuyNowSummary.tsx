@@ -1,16 +1,16 @@
 "use client";
 
-import React, { useEffect, useState } from 'react';
-import { X, Package, CreditCard, Wallet, Shield } from 'lucide-react';
-import { fetchWithAuth } from '@/utils/fetchWithAuth';
-import { API_BASE_URL } from '@/utils/config';
+import React from 'react';
+import { X, ShoppingBag, Shield } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 
 interface BuyNowSummaryProps {
   isOpen: boolean;
   onClose: () => void;
-  onPayWithWallet: () => void;
-  onPayWithStripe: () => void;
   orderData: {
+    productId: string;
+    variantId: string;
+    optionId: string;
     product: {
       name: string;
       images: string[];
@@ -32,57 +32,44 @@ interface BuyNowSummaryProps {
     currency: string;
     currencySymbol: string;
   };
-  walletBalance?: number;
-  isProcessing: boolean;
 }
 
 export default function BuyNowSummary({
   isOpen,
   onClose,
-  onPayWithWallet,
-  onPayWithStripe,
   orderData,
-  walletBalance: initialWalletBalance,
-  isProcessing
 }: BuyNowSummaryProps) {
-  // Ensure walletBalance is always a number
-  const getNumericBalance = (value: any): number => {
-    if (value === null || value === undefined) return 0;
-    const num = typeof value === 'string' ? parseFloat(value) : Number(value);
-    return isNaN(num) ? 0 : num;
-  };
-
-  const [walletBalance, setWalletBalance] = useState(getNumericBalance(initialWalletBalance));
-  const [isLoadingWallet, setIsLoadingWallet] = useState(false);
-
-  useEffect(() => {
-    if (isOpen && !initialWalletBalance) {
-      fetchWalletBalance();
-    } else if (isOpen && initialWalletBalance !== undefined) {
-      // Update state if initialWalletBalance changes
-      setWalletBalance(getNumericBalance(initialWalletBalance));
-    }
-  }, [isOpen, initialWalletBalance]);
-
-  const fetchWalletBalance = async () => {
-    setIsLoadingWallet(true);
-    try {
-      const response = await fetchWithAuth(`${API_BASE_URL}/wallets/balance`);
-      const data = await response.json();
-      if (data.success) {
-        setWalletBalance(getNumericBalance(data.balance));
-      }
-    } catch (error) {
-      console.error('Failed to fetch wallet balance:', error);
-    } finally {
-      setIsLoadingWallet(false);
-    }
-  };
+  const router = useRouter();
 
   if (!isOpen) return null;
 
   const { product, variant, quantity, totalAmount, currency, currencySymbol } = orderData;
-  const canPayWithWallet = walletBalance >= totalAmount;
+
+  const handleProceedToCheckout = () => {
+    // Store buy now data in sessionStorage for the checkout page
+    const buyNowData = {
+      productId: orderData.productId,
+      variantId: orderData.variantId,
+      optionId: orderData.optionId,
+      quantity: orderData.quantity,
+      product: orderData.product,
+      variant: orderData.variant,
+      pricing: {
+        subtotal: orderData.pricing.subtotal,
+        tax: orderData.pricing.tax,
+        shipping: orderData.pricing.shipping,
+        total: orderData.pricing.total,
+        currency: orderData.currency,
+        currencySymbol: orderData.currencySymbol,
+      },
+    };
+
+    sessionStorage.setItem('buyNowData', JSON.stringify(buyNowData));
+    sessionStorage.setItem('buyNowCheckoutAuthorized', 'true');
+    sessionStorage.setItem('checkoutTimestamp', Date.now().toString());
+
+    router.push('/home/checkout');
+  };
 
   return (
     <div className="fixed inset-0 backdrop-blur-xs flex items-center justify-center z-60">
@@ -162,56 +149,19 @@ export default function BuyNowSummary({
           </div>
         </div>
 
-        {/* Wallet Balance */}
-        <div className="bg-gray-50 rounded-lg p-3 mb-6">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-700">Wallet Balance:</span>
-            {isLoadingWallet ? (
-              <span className="text-gray-500">Loading...</span>
-            ) : (
-              <span className={`font-medium ${canPayWithWallet ? 'text-green-600' : 'text-red-600'}`}>
-                {currencySymbol}{Number(walletBalance || 0).toFixed(2)}
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Payment Options */}
-        <div className="space-y-3">
-          <button
-            onClick={onPayWithWallet}
-            disabled={!canPayWithWallet || isProcessing}
-            className={`w-full p-4 rounded-lg border-2 flex items-center gap-3 transition-colors ${
-              canPayWithWallet 
-                ? 'border-green-500 bg-green-50 hover:bg-green-100 text-green-700' 
-                : 'border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed'
-            }`}
-          >
-            <Wallet className="w-5 h-5" />
-            <div className="text-left">
-              <div className="font-medium">Pay with Wallet</div>
-              <div className="text-sm opacity-75">
-                {canPayWithWallet ? 'Instant payment' : 'Insufficient balance'}
-              </div>
-            </div>
-          </button>
-
-          <button
-            onClick={onPayWithStripe}
-            disabled={isProcessing}
-            className="w-full p-4 rounded-lg border-2 border-blue-500 bg-blue-50 hover:bg-blue-100 text-blue-700 flex items-center gap-3 transition-colors"
-          >
-            <CreditCard className="w-5 h-5" />
-            <div className="text-left">
-              <div className="font-medium">Pay with other methods</div>
-            </div>
-          </button>
-        </div>
+        {/* Proceed to Checkout Button */}
+        <button
+          onClick={handleProceedToCheckout}
+          className="w-full p-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium flex items-center justify-center gap-2 transition-colors"
+        >
+          <ShoppingBag className="w-5 h-5" />
+          Proceed to Checkout
+        </button>
 
         <div className="mt-4 flex justify-center">
           <div className="bg-green-50 text-green-700 px-3 py-1 rounded-full flex items-center gap-1 text-xs">
             <Shield className="w-3 h-3" />
-            <span>Secure payment processing</span>
+            <span>Secure checkout</span>
           </div>
         </div>
       </div>

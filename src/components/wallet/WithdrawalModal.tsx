@@ -1,7 +1,10 @@
 "use client";
 
 import React, { useState } from 'react';
-import { X, CreditCard, Building, Bitcoin } from 'lucide-react';
+import { X, CreditCard, Building, Bitcoin, CheckCircle } from 'lucide-react';
+import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { API_BASE_URL } from '@/utils/config';
+import { CRYPTO_PAYMENTS_ENABLED } from '@/config/featureFlags';
 
 interface WithdrawalModalProps {
   onClose: () => void;
@@ -20,35 +23,67 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
     cryptoAddress: ''
   });
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState(false);
 
   const handleWithdrawal = async () => {
-    if (!amount || parseFloat(amount) <= 0) return;
-    
+    setError('');
+
+    if (!amount || parseFloat(amount) <= 0) {
+      setError('Please enter a valid amount greater than zero');
+      return;
+    }
+
     setLoading(true);
     try {
-      const response = await fetch('/api/wallet/withdraw', {
+      const response = await fetchWithAuth(`${API_BASE_URL}/wallet/withdraw`, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           amount: parseFloat(amount),
           method,
           accountDetails
         })
       });
-      
-      if (response.ok) {
+
+      const data = await response.json();
+
+      if (response.ok && data.success !== false) {
+        setSuccess(true);
         onSuccess();
-        onClose();
+      } else {
+        setError(data.message || data.error || 'Withdrawal failed. Please try again.');
       }
-    } catch (error) {
-      console.error('Withdrawal failed:', error);
+    } catch (err: any) {
+      setError(typeof err === 'string' ? err : err?.message || 'Withdrawal failed. Please try again.');
     } finally {
       setLoading(false);
     }
   };
+
+  if (success) {
+    return (
+      <div className="fixed inset-0 transition-opacity bg-[#29292938] flex items-center justify-center z-50">
+        <div className="bg-white rounded-lg p-6 w-full max-w-md">
+          <div className="text-center py-6">
+            <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+            <h3 className="text-xl font-bold text-gray-900 mb-2">Withdrawal Requested</h3>
+            <p className="text-gray-600 mb-1">
+              Your withdrawal of <span className="font-semibold">${parseFloat(amount).toFixed(2)}</span> is being processed.
+            </p>
+            <p className="text-gray-500 text-sm mb-6">
+              You will be notified once the withdrawal is complete.
+            </p>
+            <button
+              onClick={onClose}
+              className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              Done
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="fixed inset-0 transition-opacity bg-[#29292938]  flex items-center justify-center z-50">
@@ -66,9 +101,13 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
             <input
               type="number"
               value={amount}
-              onChange={(e) => setAmount(e.target.value)}
+              onChange={(e) => {
+                setAmount(e.target.value);
+                setError('');
+              }}
               placeholder="Enter amount"
               className="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             />
           </div>
 
@@ -81,6 +120,7 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
                   value="bank_transfer"
                   checked={method === 'bank_transfer'}
                   onChange={(e) => setMethod(e.target.value as any)}
+                  disabled={loading}
                 />
                 <Building className="w-4 h-4" />
                 Bank Transfer
@@ -91,20 +131,24 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
                   value="stripe"
                   checked={method === 'stripe'}
                   onChange={(e) => setMethod(e.target.value as any)}
+                  disabled={loading}
                 />
                 <CreditCard className="w-4 h-4" />
                 Stripe Account
               </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  value="crypto"
-                  checked={method === 'crypto'}
-                  onChange={(e) => setMethod(e.target.value as any)}
-                />
-                <Bitcoin className="w-4 h-4" />
-                Crypto Wallet
-              </label>
+              {CRYPTO_PAYMENTS_ENABLED && (
+                <label className="flex items-center gap-2">
+                  <input
+                    type="radio"
+                    value="crypto"
+                    checked={method === 'crypto'}
+                    onChange={(e) => setMethod(e.target.value as any)}
+                    disabled={loading}
+                  />
+                  <Bitcoin className="w-4 h-4" />
+                  Crypto Wallet
+                </label>
+              )}
             </div>
           </div>
 
@@ -116,6 +160,7 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
                 value={accountDetails.bankName}
                 onChange={(e) => setAccountDetails({...accountDetails, bankName: e.target.value})}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
               />
               <input
                 type="text"
@@ -123,6 +168,7 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
                 value={accountDetails.accountNumber}
                 onChange={(e) => setAccountDetails({...accountDetails, accountNumber: e.target.value})}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
               />
               <input
                 type="text"
@@ -130,6 +176,7 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
                 value={accountDetails.routingNumber}
                 onChange={(e) => setAccountDetails({...accountDetails, routingNumber: e.target.value})}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
               />
               <input
                 type="text"
@@ -137,6 +184,7 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
                 value={accountDetails.accountName}
                 onChange={(e) => setAccountDetails({...accountDetails, accountName: e.target.value})}
                 className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                disabled={loading}
               />
             </div>
           )}
@@ -148,25 +196,40 @@ export default function WithdrawalModal({ onClose, onSuccess }: WithdrawalModalP
               value={accountDetails.stripeAccountId}
               onChange={(e) => setAccountDetails({...accountDetails, stripeAccountId: e.target.value})}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             />
           )}
 
-          {method === 'crypto' && (
+          {CRYPTO_PAYMENTS_ENABLED && method === 'crypto' && (
             <input
               type="text"
               placeholder="Crypto Wallet Address"
               value={accountDetails.cryptoAddress}
               onChange={(e) => setAccountDetails({...accountDetails, cryptoAddress: e.target.value})}
               className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              disabled={loading}
             />
+          )}
+
+          {error && (
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <p className="text-sm text-red-600">{error}</p>
+            </div>
           )}
           
           <button
             onClick={handleWithdrawal}
             disabled={loading || !amount}
-            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center gap-2"
+            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
           >
-            {loading ? 'Processing...' : 'Request Withdrawal'}
+            {loading ? (
+              <>
+                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Processing...
+              </>
+            ) : (
+              'Request Withdrawal'
+            )}
           </button>
         </div>
       </div>

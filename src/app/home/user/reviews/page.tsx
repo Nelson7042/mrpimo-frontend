@@ -4,7 +4,7 @@ import { useState } from "react"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs"
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs"
 import { useRouter } from "next/navigation"
 
 const wishlistItems = [

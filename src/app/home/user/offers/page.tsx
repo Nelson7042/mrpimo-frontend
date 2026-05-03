@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { BreadcrumbItem, Breadcrumbs } from "@/components/BraedCrumbs";
+import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
 import { useUserOffers, OfferItem, OfferUser } from "@/hooks/useOffers";
 import Pagination from "@/components/Pagination";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";

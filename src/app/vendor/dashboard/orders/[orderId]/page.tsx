@@ -22,6 +22,7 @@ import { useUpdateOrderStatus } from "@/hooks/useVendor";
 import { useEffect } from "react";
 import { useVendorStore } from "@/stores/useVendorStore";
 import FulfillmentActionPanel from "@/components/vendor/FulfillmentActionPanel";
+import FulfillmentPanel from "@/components/vendor/FulfillmentPanel";
 import { IClientShipment } from "@/types/order.type";
 import { toast } from "react-hot-toast";
 
@@ -535,6 +536,18 @@ export default function OrderDetailsPage() {
           })}
         </section>
       )}
+
+      {/* Fulfillment Panel — multi-carrier fulfillment UI */}
+      <section className="mb-4">
+        <FulfillmentPanel
+          orderId={orderId}
+          shipmentStatus={
+            order?.shipments?.find(
+              (s: IClientShipment) => s.vendorId?._id === vendor?._id
+            )?.shipping?.status || "pending"
+          }
+        />
+      </section>
 
       <section className="space-y-4 w-full">
         <h2 className="text-lg font-semibold">

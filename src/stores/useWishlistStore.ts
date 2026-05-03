@@ -83,7 +83,7 @@ export const useWishlistStore = create<WishlistState>()(
         getItem: (name) => {
           if (typeof window === 'undefined') return null;
           try {
-            const value = localStorage.getItem(name);
+            const value = window.localStorage.getItem(name);
             return value ? JSON.parse(value) : null;
           } catch (error) {
             console.warn('Failed to get item from localStorage:', error);
@@ -93,7 +93,7 @@ export const useWishlistStore = create<WishlistState>()(
         setItem: (name, value) => {
           if (typeof window === 'undefined') return;
           try {
-            localStorage.setItem(name, JSON.stringify(value));
+            window.localStorage.setItem(name, JSON.stringify(value));
           } catch (error) {
             console.warn('Failed to set item in localStorage:', error);
           }
@@ -101,7 +101,7 @@ export const useWishlistStore = create<WishlistState>()(
         removeItem: (name) => {
           if (typeof window === 'undefined') return;
           try {
-            localStorage.removeItem(name);
+            window.localStorage.removeItem(name);
           } catch (error) {
             console.warn('Failed to remove item from localStorage:', error);
           }

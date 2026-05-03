@@ -56,13 +56,22 @@ const page = () => {
     return null;
   };
 
-  // Email notification preferences
+  // Notification preference descriptions
+  const notifPrefItems = [
+    { key: "newOrder", label: "New Order Received", description: "Get notified when a buyer places a new order for your products" },
+    { key: "orderStatusChange", label: "Order Status Changes", description: "Get notified when an order status changes (processing, shipped, delivered, cancelled)" },
+    { key: "payoutProcessed", label: "Payout Processed", description: "Get notified when a payout to your bank account has been processed" },
+    { key: "lowStockAlert", label: "Low Stock Alerts", description: "Get notified when your product inventory drops below the low stock threshold" },
+    { key: "disputeNotification", label: "Dispute Notifications", description: "Get notified when a buyer opens or updates a dispute on one of your orders" },
+  ];
+
+  // Initialize notification preferences from vendor profile
   const [notifPrefs, setNotifPrefs] = useState({
-    newOrder: true,
-    orderStatusChange: true,
-    payoutProcessed: true,
-    lowStockAlert: true,
-    disputeNotification: true,
+    newOrder: vendor?.notificationPreferences?.newOrder ?? true,
+    orderStatusChange: vendor?.notificationPreferences?.orderStatusChange ?? true,
+    payoutProcessed: vendor?.notificationPreferences?.payoutProcessed ?? true,
+    lowStockAlert: vendor?.notificationPreferences?.lowStockAlert ?? true,
+    disputeNotification: vendor?.notificationPreferences?.disputeNotification ?? true,
   });
 
   // Order settings
@@ -73,15 +82,20 @@ const page = () => {
   const [savingOrderSettings, setSavingOrderSettings] = useState(false);
 
   const handleNotifPrefChange = async (key: string, value: boolean) => {
+    const previousPrefs = { ...notifPrefs };
     const updated = { ...notifPrefs, [key]: value };
     setNotifPrefs(updated);
     try {
-      await fetchWithAuth(`${API_BASE_URL}/vendors/notification-preferences`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/vendors/notification-preferences`, {
         method: "PATCH",
         body: JSON.stringify({ [key]: value }),
       });
+      if (response && response.ok !== undefined && !response.ok) {
+        throw new Error("API returned error");
+      }
     } catch {
       toast.error("Failed to update notification preference", toastConfigError);
+      setNotifPrefs(previousPrefs);
     }
   };
 
@@ -220,19 +234,17 @@ const page = () => {
         </div>
       </div>
 
-      {/* Email Notification Preferences Section */}
+      {/* Notification Preferences Section */}
       <div className="w-full max-w-2xl mb-8 bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-bold mb-4">Email Notification Preferences</h3>
-        <div className="space-y-3">
-          {[
-            { key: "newOrder", label: "New Order Received" },
-            { key: "orderStatusChange", label: "Order Status Changes" },
-            { key: "payoutProcessed", label: "Payout Processed" },
-            { key: "lowStockAlert", label: "Low Stock Alerts" },
-            { key: "disputeNotification", label: "Dispute Notifications" },
-          ].map((item) => (
+        <h3 className="text-lg font-bold mb-4">Notification Preferences</h3>
+        <p className="text-xs text-gray-500 mb-4">Control which notifications you receive about your store activity</p>
+        <div className="space-y-4">
+          {notifPrefItems.map((item) => (
             <div key={item.key} className="flex items-center justify-between">
-              <span className="text-sm">{item.label}</span>
+              <div>
+                <p className="text-sm font-medium">{item.label}</p>
+                <p className="text-xs text-gray-500">{item.description}</p>
+              </div>
               <label className="relative inline-flex items-center cursor-pointer">
                 <input
                   type="checkbox"

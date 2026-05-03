@@ -56,7 +56,7 @@ vi.mock("@/components/ui/button", () => ({
   Button: ({ children, ...props }: any) => <button {...props}>{children}</button>,
 }));
 
-vi.mock("@/components/BraedCrumbs", () => ({
+vi.mock("@/components/BreadCrumbs", () => ({
   Breadcrumbs: ({ items, className }: any) => (
     <nav data-testid="breadcrumbs" className={className}>Breadcrumbs</nav>
   ),

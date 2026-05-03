@@ -2,9 +2,9 @@
 
 import LoginForm from "@/components/LoginForm";
 import Link from "next/link";
-import React, { useState } from "react";
+import React, { useState, Suspense } from "react";
 import { X } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "react-toastify";
 import { toastConfigInfo } from "@/app/config/toast.config";
@@ -19,8 +19,11 @@ const LoginPage = () => {
   const [userId, setUserId] = useState("");
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { user, setUser } = useUserStore();
   const { setVendor } = useProductStore();
+
+  const returnUrl = searchParams.get('returnUrl') || '/';
 
   if (user && user.role === "user" && !user.isEmailVerified) {
     router.push("/email-verification");
@@ -53,7 +56,7 @@ const LoginPage = () => {
     } else {
       setUser(userData.user);
       if (userData.vendor) setVendor(userData.vendor);
-      router.push("/");
+      router.push(returnUrl);
     }
   };
 
@@ -166,4 +169,10 @@ const LoginPage = () => {
   );
 };
 
-export default LoginPage;
+export default function Page() {
+  return (
+    <Suspense>
+      <LoginPage />
+    </Suspense>
+  );
+}

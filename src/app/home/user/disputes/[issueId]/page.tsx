@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Breadcrumbs, BreadcrumbItem } from "@/components/BraedCrumbs";
+import { Breadcrumbs, BreadcrumbItem } from "@/components/BreadCrumbs";
 import { disputeService } from "@/services/disputeService";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { API_BASE_URL } from "@/utils/config";

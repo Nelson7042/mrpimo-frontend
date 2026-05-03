@@ -4,9 +4,9 @@ import {IVendor} from "@/types/vendor.type";
 import { create } from "zustand";
 import {
   persist,
-  createJSONStorage,
   type PersistOptions,
 } from "zustand/middleware";
+import { ssrSafeStorage } from "@/utils/ssrSafeStorage";
 
 interface VendorState {
   vendor: IVendor | null;
@@ -22,7 +22,7 @@ type PersistedState = Pick<VendorState, "vendor" | "listedProducts">;
 // Define persist configuration
 const persistConfig: PersistOptions<VendorState, PersistedState> = {
   name: "vendor-storage",
-  storage: createJSONStorage(() => localStorage),
+  storage: ssrSafeStorage,
   partialize: (state) => ({
     vendor: state.vendor,
     listedProducts: state.listedProducts,
@@ -40,7 +40,7 @@ export const useVendorStore = create<VendorState>()(
     
       clearVendorStore: () => {
         set({ vendor: null, listedProducts: [] });
-        localStorage.removeItem("vendor-storage"); 
+        if (typeof window !== "undefined") localStorage.removeItem("vendor-storage"); 
       },
       resetStore: () => {
         useVendorStore.persist.clearStorage();

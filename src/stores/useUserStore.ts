@@ -3,10 +3,10 @@ import ICryptoWallet from "@/types/wallet.type";
 import { create } from "zustand";
 import {
   persist,
-  createJSONStorage,
   type PersistOptions,
 } from "zustand/middleware";
 import { refreshToken } from "@/utils/refreshToken";
+import { ssrSafeStorage } from "@/utils/ssrSafeStorage";
 
 interface UserState {
   user: User | null;
@@ -27,7 +27,7 @@ type PersistedState = Pick<UserState, "user" | "deviceId" | "wallet" >;
 // Define persist configuration
 const persistConfig: PersistOptions<UserState, PersistedState> = {
   name: "user-storage",
-  storage: createJSONStorage(() => localStorage),
+  storage: ssrSafeStorage,
   partialize: (state) => ({
     user: state.user,
     deviceId: state.deviceId,
