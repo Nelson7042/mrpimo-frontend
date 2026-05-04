@@ -5,7 +5,7 @@ import ProductJsonLd from '@/components/seo/ProductJsonLd';
 const BASE_URL = 'https://mprimo-one.vercel.app';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://mprimo-production.up.railway.app/api/v1';
 
-export async function fetchProduct(id: string) {
+async function fetchProduct(id: string) {
   try {
     const res = await fetch(`${API_URL}/products/${id}`, { next: { revalidate: 3600 } });
     if (!res.ok) return null;

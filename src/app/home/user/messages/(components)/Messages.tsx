@@ -16,7 +16,7 @@ interface MessagesProps {
 const Messages = ({ selectedChat, newMessages = [] }: MessagesProps) => {
   const [messagesPage, setMessagesPage] = useState(1);
   const { user } = useUserStore();
-  const { observeMessage } = useMessageRead(selectedChat?.chatId, user?._id);
+  const { observeMessage } = useMessageRead(selectedChat?.chatId, user?._id ?? null);
 
   const { data: messagesData, isLoading: messagesLoading } = useMessages(
     selectedChat?.chatId,

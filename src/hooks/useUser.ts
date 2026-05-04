@@ -12,9 +12,15 @@ interface UserProfile {
   isEmailVerified: boolean;
   profile: {
     firstName: string;
+    middleName?: string;
     lastName: string;
     phoneNumber: string;
     avatar?: string;
+  };
+  preferences?: {
+    notifications?: Record<string, any>;
+    marketing?: boolean;
+    [key: string]: any;
   };
   addresses: Array<{
     _id: string;

@@ -20,7 +20,7 @@ interface ProductModal {
 }
 
 // Helper function to format dates for display
-export const formatMessageTime = (date: Date): string => {
+const formatMessageTime = (date: Date): string => {
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
   const diffMins = Math.floor(diffMs / 60000);

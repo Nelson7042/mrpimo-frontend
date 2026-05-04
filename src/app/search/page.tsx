@@ -7,7 +7,7 @@ import { ProductCard } from "@/components/Home/ProductCard";
 import { Loader2, Filter } from "lucide-react";
 import ProductSearchBar from "@/components/ProductSearchBar";
 
-export function getSearchMetadata(query: string, count: number): { title: string; description: string } {
+function getSearchMetadata(query: string, count: number): { title: string; description: string } {
   if (query) {
     return {
       title: `Search: ${query} | Mprimo`,

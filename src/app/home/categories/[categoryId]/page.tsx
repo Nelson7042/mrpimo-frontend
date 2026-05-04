@@ -4,7 +4,7 @@ import CategoryClient from './CategoryClient';
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'https://mprimo-production.up.railway.app/api/v1';
 const BASE_URL = 'https://mprimo-one.vercel.app';
 
-export async function fetchCategory(slug: string) {
+async function fetchCategory(slug: string) {
   try {
     const res = await fetch(`${API_URL}/categories/slug/${slug}`, { next: { revalidate: 3600 } });
     if (!res.ok) return null;

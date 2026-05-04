@@ -155,10 +155,10 @@ const RegisterFormVendor = ({ setAuthState, close }: LoginProps) => {
     if (validateForm()) {
       const registrationData = {
         accountType,
-        firstName: accountType === "personal" ? firstName : undefined,
-        middleName: accountType === "personal" && middleName ? middleName : undefined,
-        lastName: accountType === "personal" ? lastName : undefined,
-        businessName: accountType === "business" ? businessName : undefined,
+        firstName: accountType === "personal" ? firstName : "",
+        middleName: accountType === "personal" && middleName ? middleName : "",
+        lastName: accountType === "personal" ? lastName : "",
+        businessName: accountType === "business" ? businessName : "",
         email,
         phoneNumber: `+${selectedCountry.phonecode}${phoneNumber}`,
         password,

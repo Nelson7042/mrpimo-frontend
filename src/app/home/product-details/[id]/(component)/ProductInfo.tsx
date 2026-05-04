@@ -223,8 +223,9 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   const totalQuantity = calculateTotalQuantity(productData);
 
   let totalUserOffers = 0;
-  if (offers && offers.length > 0) {
-    totalUserOffers = offers.length;
+  const offersArray = offers?.offers;
+  if (offersArray && offersArray.length > 0) {
+    totalUserOffers = offersArray.length;
   }
 
   const saleType = productData?.inventory?.listing?.type;
@@ -637,8 +638,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                   </span>
                 </div>
               ) : acceptOffer &&
-                offers &&
-                offers.length > 0 ? (
+                offersArray &&
+                offersArray.length > 0 ? (
                 <div className="flex justify-between sm:flex-col">
                   <span className="text-gray-600">Total Offers:</span>
                   <span className="font-medium">{totalUserOffers}</span>

@@ -313,7 +313,7 @@ export default function CheckoutPage() {
               setCalculatedShipping(data.estimate.shippingCost);
               setShippingEstimatedDays(data.estimate.estimatedDays || '5-7 business days');
               setShippingWarnings(data.estimate.warnings || []);
-              setShippingIsFallback(data.estimate.estimationType === 'fallback');
+              setShippingIsFallback((data.estimate.estimationType as string) === 'fallback');
             }
           },
         }
@@ -342,9 +342,7 @@ export default function CheckoutPage() {
   useEffect(() => {
     if (isBuyNowMode && buyNowCheckout.stage !== 'idle') {
       setOrderProcessingStage(buyNowCheckout.stage);
-      if (buyNowCheckout.stage !== 'idle') {
-        setShowOrderProcessing(true);
-      }
+      setShowOrderProcessing(true);
       if (buyNowCheckout.stage === 'complete') {
         // Cleanup and redirect after completion
         sessionStorage.removeItem('buyNowData');
