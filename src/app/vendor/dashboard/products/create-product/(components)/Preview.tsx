@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ArrowLeft, Heart, Star, MessageSquare, Package, Tag, Truck } from "lucide-react";
+import { ArrowLeft, Heart, Star, MessageSquare, Package, Tag, Truck, Loader2 } from "lucide-react";
 import Image from "next/image";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { useUserStore } from "@/stores/useUserStore";
@@ -7,9 +7,15 @@ import CategoryInfo from "./CategoryInfo";
 import { useVendorStore } from "@/stores/useVendorStore";
 import { NumericFormat } from "react-number-format";
 import VariantDisplay from "@/components/VariantDisplay";
+import { useProductMapper } from "./SubmitProduct";
+import { useCreateProduct } from "@/hooks/useCreateProduct";
+import { useDeleteDraft } from "@/hooks/mutations";
+import { toast } from "react-toastify";
+import { useRouter } from "next/navigation";
 
 type Props = {
   onHide: () => void;
+  onCreateProduct?: () => void;
 };
 
 type ImageProps = {
@@ -115,10 +121,53 @@ const Preview = (props: Props) => {
   const [activeTab, setActiveTab] = useState("Specifications");
   const [selectedImage, setSelectedImage] = useState(0);
   const [selectedOptions, setSelectedOptions] = useState<{ [key: string]: string }>({});
+  const [isCreating, setIsCreating] = useState(false);
 
-  const { productDetails } = useProductListing();
+  const { productDetails, draftId, resetProductDetails } = useProductListing();
   const { vendor } = useVendorStore();
   const { user } = useUserStore();
+  const router = useRouter();
+  
+  // Product creation hooks
+  const { mapProductDetailsToSchema } = useProductMapper();
+  const createProductMutation = useCreateProduct();
+  const deleteDraftMutation = useDeleteDraft();
+
+  // Handle product creation
+  const handleCreateProduct = async () => {
+    setIsCreating(true);
+    try {
+      console.log('Starting product creation from preview...');
+      const mappedData = mapProductDetailsToSchema();
+      console.log('Mapped data for API:', mappedData);
+      
+      const result = await createProductMutation.mutateAsync(mappedData);
+      console.log('API response:', result);
+      
+      if (result.success) {
+        // Delete draft if exists
+        if (draftId) {
+          try {
+            await deleteDraftMutation.mutateAsync(draftId);
+            console.log('Draft deleted successfully');
+          } catch (draftError) {
+            console.error('Failed to delete draft:', draftError);
+          }
+        }
+        
+        toast.success('Product created successfully!');
+        resetProductDetails();
+        router.push('/vendor/dashboard/products');
+      } else {
+        toast.error(result.message || 'Failed to create product');
+      }
+    } catch (error: any) {
+      console.error('Product creation error:', error);
+      toast.error(error.message || 'Failed to create product');
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   // Get user's currency preference for display
   const getUserCurrency = () => {
@@ -450,9 +499,9 @@ const Preview = (props: Props) => {
                     <div className="space-y-2">
                       {Object.entries(productDetails.productSpecifications).map(
                         ([key, value], index) => (
-                          <div key={index} className="flex justify-between text-sm py-1 border-b border-gray-100">
-                            <span className="text-gray-600 font-roboto">{key}</span>
-                            <span className="text-gray-900 font-medium font-roboto">{String(value)}</span>
+                          <div key={index} className="grid grid-cols-[120px_1fr] gap-3 text-sm py-2 border-b border-gray-100">
+                            <span className="text-gray-600 font-roboto font-medium">{key}</span>
+                            <span className="text-gray-900 font-roboto">{String(value)}</span>
                           </div>
                         )
                       )}
@@ -472,9 +521,9 @@ const Preview = (props: Props) => {
                     <div className="space-y-2">
                       {Object.entries(productDetails.additionalSpecifications).map(
                         ([key, value], index) => (
-                          <div key={index} className="flex justify-between text-sm py-1 border-b border-gray-100">
-                            <span className="text-gray-600 font-roboto">{key}</span>
-                            <span className="text-gray-900 font-medium font-roboto">{String(value)}</span>
+                          <div key={index} className="grid grid-cols-[140px_1fr] gap-3 text-sm py-2 border-b border-gray-100">
+                            <span className="text-gray-600 font-roboto font-medium">{key}</span>
+                            <span className="text-gray-900 font-roboto">{String(value)}</span>
                           </div>
                         )
                       )}
@@ -571,28 +620,55 @@ const Preview = (props: Props) => {
                   </h4>
                   {productDetails?.shippingDetails ? (
                     <div className="space-y-2 bg-gray-50 rounded-lg p-4">
-                      {Object.entries(productDetails.shippingDetails).map(
-                        ([key, value], index) => (
-                          <div key={index} className="text-sm">
-                            <span className="text-gray-600 font-roboto font-medium">{key}: </span>
-                            {typeof value === "object" && value !== null ? (
-                              <div className="ml-4 mt-1 space-y-1">
-                                {Object.entries(value).map(
-                                  ([subKey, subValue], subIndex) =>
-                                    subValue !== null &&
-                                    subValue !== undefined &&
-                                    subValue !== "" && (
-                                      <div key={subIndex} className="text-xs text-gray-500 font-roboto">
-                                        {subKey}: {String(subValue)}
-                                      </div>
-                                    )
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-gray-900 font-roboto">{String(value)}</span>
-                            )}
+                      {productDetails.shippingDetails.productLocation && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">Location</span>
+                          <span className="text-gray-900 font-roboto">{productDetails.shippingDetails.productLocation}</span>
+                        </div>
+                      )}
+                      {productDetails.shippingDetails.productWeight && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">Weight</span>
+                          <span className="text-gray-900 font-roboto">
+                            {productDetails.shippingDetails.productWeight} {productDetails.shippingDetails.weightUnit || 'kg'}
+                          </span>
+                        </div>
+                      )}
+                      {productDetails.shippingDetails.productDimensions && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">Dimensions</span>
+                          <span className="text-gray-900 font-roboto">
+                            {productDetails.shippingDetails.productDimensions.length || 0} × {productDetails.shippingDetails.productDimensions.width || 0} × {productDetails.shippingDetails.productDimensions.height || 0} {productDetails.shippingDetails.dimensionUnit || 'cm'}
+                          </span>
+                        </div>
+                      )}
+                      {productDetails.shippingDetails.restrictions && productDetails.shippingDetails.restrictions.length > 0 && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">Restrictions</span>
+                          <span className="text-gray-900 font-roboto">
+                            {productDetails.shippingDetails.restrictions.join(', ')}
+                          </span>
+                        </div>
+                      )}
+                      {productDetails.shippingDetails.warranty?.status && (
+                        <>
+                          <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                            <span className="text-gray-600 font-roboto font-medium">Warranty</span>
+                            <span className="text-gray-900 font-roboto">{productDetails.shippingDetails.warranty.status}</span>
                           </div>
-                        )
+                          {productDetails.shippingDetails.warranty.period && (
+                            <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                              <span className="text-gray-600 font-roboto font-medium">Period</span>
+                              <span className="text-gray-900 font-roboto">{productDetails.shippingDetails.warranty.period}</span>
+                            </div>
+                          )}
+                          {productDetails.shippingDetails.warranty.returnPolicy && (
+                            <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                              <span className="text-gray-600 font-roboto font-medium">Return Policy</span>
+                              <span className="text-gray-900 font-roboto">{productDetails.shippingDetails.warranty.returnPolicy}</span>
+                            </div>
+                          )}
+                        </>
                       )}
                     </div>
                   ) : (
@@ -605,15 +681,35 @@ const Preview = (props: Props) => {
                   <h4 className="text-sm font-semibold text-gray-900 font-roboto">
                     SEO Information
                   </h4>
-                  {productDetails?.seoSettings ? (
+                  {productDetails?.seoSettings && Object.keys(productDetails.seoSettings).length > 0 ? (
                     <div className="space-y-2 bg-gray-50 rounded-lg p-4">
-                      {Object.entries(productDetails.seoSettings).map(
-                        ([key, value], index) => (
-                          <div key={index} className="text-sm py-1">
-                            <span className="text-gray-600 font-roboto font-medium">{key}: </span>
-                            <span className="text-gray-900 font-roboto">{String(value)}</span>
-                          </div>
-                        )
+                      {productDetails.seoSettings.metaTitle && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">Meta Title</span>
+                          <span className="text-gray-900 font-roboto">{productDetails.seoSettings.metaTitle}</span>
+                        </div>
+                      )}
+                      {productDetails.seoSettings.metaDescription && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">Meta Description</span>
+                          <span className="text-gray-900 font-roboto">{productDetails.seoSettings.metaDescription}</span>
+                        </div>
+                      )}
+                      {productDetails.seoSettings.keywords && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">Keywords</span>
+                          <span className="text-gray-900 font-roboto">
+                            {Array.isArray(productDetails.seoSettings.keywords) 
+                              ? productDetails.seoSettings.keywords.join(', ')
+                              : productDetails.seoSettings.keywords}
+                          </span>
+                        </div>
+                      )}
+                      {productDetails.seoSettings.slug && (
+                        <div className="grid grid-cols-[120px_1fr] gap-3 text-sm py-1 border-b border-gray-100">
+                          <span className="text-gray-600 font-roboto font-medium">URL Slug</span>
+                          <span className="text-gray-900 font-roboto">{productDetails.seoSettings.slug}</span>
+                        </div>
                       )}
                     </div>
                   ) : (
@@ -627,12 +723,27 @@ const Preview = (props: Props) => {
       </div>
 
       {/* Footer */}
-      <div className="text-center md:text-end w-full px-4">
+      <div className="flex flex-col sm:flex-row justify-center sm:justify-end gap-3 w-full px-4 mt-4">
         <button
-          className="w-full md:w-auto px-8 border-2 border-[#002f7a] p-2 text-sm text-[#002f7a] rounded-lg hover:cursor-pointer hover:text-white hover:bg-[#002f7a] transition-colors font-roboto font-medium"
+          className="w-full sm:w-auto px-8 border-2 border-[#002f7a] p-2 text-sm text-[#002f7a] rounded-lg hover:cursor-pointer hover:text-white hover:bg-[#002f7a] transition-colors font-roboto font-medium"
           onClick={props.onHide}
+          disabled={isCreating}
         >
           Back to Edit
+        </button>
+        <button
+          className="w-full sm:w-auto px-8 bg-[#002f7a] p-2 text-sm text-white rounded-lg hover:cursor-pointer hover:bg-[#001f5a] transition-colors font-roboto font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+          onClick={handleCreateProduct}
+          disabled={isCreating || createProductMutation.isPending}
+        >
+          {isCreating || createProductMutation.isPending ? (
+            <>
+              <Loader2 size={16} className="animate-spin" />
+              Creating...
+            </>
+          ) : (
+            'Create Product'
+          )}
         </button>
       </div>
     </div>

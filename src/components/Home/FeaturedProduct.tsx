@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useRef, useState, useMemo } from "react";
 import { ArrowRight, Loader2 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Swiper, SwiperSlide } from "swiper/react";
@@ -16,10 +16,11 @@ type FeaturedCategory = {
   slug: string;
 };
 
-
+const ITEMS_PER_PAGE = 8;
 
 export default function FeaturedProducts() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [currentPage, setCurrentPage] = useState<number>(1);
 
   const { data: categories = [] } = useQuery({
     queryKey: ["featuredCategories"],
@@ -36,7 +37,7 @@ export default function FeaturedProducts() {
   } = useQuery({
     queryKey: ["featuredProducts", selectedCategory],
     queryFn: async () => {
-      const params = new URLSearchParams({ page: "1", limit: "12" });
+      const params = new URLSearchParams({ page: "1" });
       if (selectedCategory !== "all") params.append("category", selectedCategory);
       const response = await fetchPublic(`${AllProduct}/featured?${params}`);
       if (!response.ok) throw new Error("Failed to fetch featured products");
@@ -47,6 +48,42 @@ export default function FeaturedProducts() {
     retry: 2,
     staleTime: 5 * 60 * 1000,
   });
+
+  // Reset to page 1 when category changes
+  const handleCategoryChange = (category: string) => {
+    setSelectedCategory(category);
+    setCurrentPage(1);
+  };
+
+  // Pagination calculations
+  const totalPages = Math.ceil(featuredProducts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProducts = featuredProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Generate page numbers for display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (currentPage > 3) {
+        pages.push("...");
+      }
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
 
   const otherProductsSwiperRef = useRef<any>(null);
@@ -154,7 +191,7 @@ export default function FeaturedProducts() {
             {/* Desktop navigation */}
             <div className="hidden lg:flex items-center">
               <button
-                onClick={() => setSelectedCategory("all")}
+                onClick={() => handleCategoryChange("all")}
                 className={`px-2 py-2 text-xs font-medium transition-colors ${
                   selectedCategory === "all"
                     ? "text-gray-900 border-b-2 border-yellow-500"
@@ -166,7 +203,7 @@ export default function FeaturedProducts() {
               {categories?.data?.categories?.slice(0, 4).map((category: FeaturedCategory) => (
                 <button
                   key={category._id}
-                  onClick={() => setSelectedCategory(category.slug)}
+                  onClick={() => handleCategoryChange(category.slug)}
                   className={`px-2 py-2 text-xs font-medium transition-colors ${
                     selectedCategory === category.slug
                       ? "text-gray-900 border-b-2 border-yellow-500"
@@ -208,10 +245,61 @@ export default function FeaturedProducts() {
         </div>
 
         {/* Desktop Grid */}
-        <div className="hidden lg:grid grid-cols-4 gap-4">
-          {featuredProducts.slice(0, 8).map((product: ProductType) => (
-            <ProductCard key={product._id} product={product} />
-          ))}
+        <div className="hidden lg:block">
+          <div className="grid grid-cols-4 gap-4 sm:gap-6">
+            {paginatedProducts.map((product: ProductType) => (
+              <ProductCard key={product._id} product={product} />
+            ))}
+          </div>
+
+          {/* Pagination */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-6">
+              {/* Prev Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                disabled={currentPage === 1}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === 1
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Prev
+              </button>
+
+              {/* Page Numbers */}
+              {getPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  onClick={() => typeof page === "number" && setCurrentPage(page)}
+                  disabled={page === "..."}
+                  className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                    page === currentPage
+                      ? "bg-[#F6B76F] text-white"
+                      : page === "..."
+                      ? "bg-transparent text-gray-500 cursor-default"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Next Button */}
+              <button
+                onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                disabled={currentPage === totalPages}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  currentPage === totalPages
+                    ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                    : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                }`}
+              >
+                Next
+              </button>
+            </div>
+          )}
         </div>
       </div>
     ) : (

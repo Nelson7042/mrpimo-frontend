@@ -237,8 +237,9 @@ export const useVendorAnalytics= (vendorId: string, range?: string) => {
   });
 };
 
-const fetchUserNotifications = async() => {
-  const response = await fetchWithAuth(`${API_BASE_URL}/notifications`);
+const fetchUserNotifications = async(scope?: string) => {
+  const params = scope ? `?scope=${scope}` : '';
+  const response = await fetchWithAuth(`${API_BASE_URL}/notifications${params}`);
   if (!response.ok) {
     throw new Error('Failed to fetch user notifications');
   }
@@ -246,10 +247,10 @@ const fetchUserNotifications = async() => {
   return data.notifications;
 };
 
-export const useUserNotifications = (enabled: boolean = true) => {
+export const useUserNotifications = (enabled: boolean = true, scope?: string) => {
   return useQuery({
-    queryKey: ['userNotifications'],
-    queryFn: fetchUserNotifications,
+    queryKey: ['userNotifications', scope],
+    queryFn: () => fetchUserNotifications(scope),
     enabled: enabled,
     refetchOnWindowFocus: false,
     retry: 1,

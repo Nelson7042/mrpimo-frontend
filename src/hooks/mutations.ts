@@ -11,6 +11,8 @@ import { API_BASE_URL } from "@/utils/config";
 interface SignUpData {
   firstName: string;
   lastName: string;
+  middleName?: string;
+  sex?: string;
   email: string;
   password: string;
   role: string
@@ -60,7 +62,13 @@ const signUpUser = async (
 
   if (!response.ok) {
     const errorData = await response.json();
-    // Don't show toast here - let the component handle it via onError callback
+    // Log full validation error details for debugging
+    console.error('[Registration Error]', {
+      status: response.status,
+      statusText: response.statusText,
+      errorData,
+      requestPayload: { ...data, password: '[REDACTED]' },
+    });
     throw new Error(errorData.message);
   }
 
@@ -199,6 +207,7 @@ const signUpVendor = async (
      `${API_BASE_URL}/auth/register-vendor`,
     {
       method: "POST",
+      credentials: "include",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     }
@@ -564,7 +573,7 @@ const makeBid = async (
   const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}/bids`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ userId, amount }),
+    body: JSON.stringify({ userId, amount, currency: "USD" }),
   });
 
   if (!response.ok) {

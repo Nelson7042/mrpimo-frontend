@@ -45,6 +45,9 @@ export const ProductCard = ({
 }) => {
   const [isLiked, setIsLiked] = useState(false);
 
+  const discountPercent = product.priceInfo?.originalPrice && product.priceInfo?.displayPrice
+    ? Math.round(((product.priceInfo.originalPrice - product.priceInfo.displayPrice) / product.priceInfo.originalPrice) * 100)
+    : 0;
 
   return (
     <Link
@@ -76,6 +79,13 @@ export const ProductCard = ({
               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
             />
           </div>
+
+          {/* Discount Badge */}
+          {discountPercent > 0 && (
+            <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold z-10">
+              -{discountPercent}%
+            </div>
+          )}
 
           {/* Wishlist */}
           <div className="absolute top-1 right-1 sm:top-3 sm:right-3  rounded-full shadow-md hover:shadow-lg transition-all duration-200] flex items-center justify-center">
@@ -118,7 +128,7 @@ export const ProductCard = ({
           </p>
 
           <div className="flex items-center justify-between flex-wrap gap-2">
-            <div className="flex flex-col">
+            <div className="flex items-center gap-2">
               <span
                 className={`font-bold text-gray-900 ${
                   isLarge ? "text-xl sm:text-2xl" : "text-sm sm:text-lg"
@@ -129,6 +139,11 @@ export const ProductCard = ({
                   product.priceInfo?.originalPrice.toLocaleString()
                 }`}
               </span>
+              {discountPercent > 0 && (
+                <span className="text-xs text-gray-400 line-through">
+                  {product?.priceInfo?.currencySymbol || "₦"}{product.priceInfo?.originalPrice.toLocaleString()}
+                </span>
+              )}
             </div>
 
             <div className="flex items-center gap-2">

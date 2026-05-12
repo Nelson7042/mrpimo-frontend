@@ -1,14 +1,12 @@
 "use client";
 
 import React, { useRef, useMemo } from "react";
-import { ChevronLeft, ChevronRight, ArrowRight, Star } from "lucide-react";
+import { ChevronLeft, ChevronRight, ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { useCategories } from "@/hooks/queries";
 import { Category } from "@/types/product.type";
 import { Swiper, SwiperSlide } from "swiper/react";
 import "swiper/css";
-import { Button } from "@/components/ui/button";
-import { useLocalityFilter } from "@/hooks/useLocalityFilter";
 
 const ShopCategoriesComponent = () => {
   const categoryData = useCategories() || [];
@@ -27,10 +25,9 @@ const ShopCategoriesComponent = () => {
   }, [allCategories]);
 
   const categoriesSwiperRef = useRef<any>(null);
-  const { locality } = useLocalityFilter();
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-5 pb-3 md:py-10 lg:py-10">
+    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
       {/* Header Section */}
       <div className="flex flex-row items-center justify-between mb-8">
         <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
@@ -47,7 +44,16 @@ const ShopCategoriesComponent = () => {
       </div>
 
       {/* Categories Swiper */}
-      <div className="w-full">
+      <div className="relative w-full">
+        {/* Left navigation arrow - desktop only */}
+        <button
+          onClick={() => categoriesSwiperRef.current?.swiper?.slidePrev()}
+          className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white shadow rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
+          aria-label="Previous categories"
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
         <Swiper
           ref={categoriesSwiperRef}
           spaceBetween={16}
@@ -63,39 +69,31 @@ const ShopCategoriesComponent = () => {
           {categories.map((category: Category) => (
             <SwiperSlide key={category._id}>
               <Link href={`/home/categories/${category.slug}?categoryId=${category._id}`}>
-                <div className={`group relative rounded-lg border p-2 md:p-4 h-full hover:shadow-lg transition-all duration-300 transform hover:-translate-y-1 cursor-pointer ${
-                  category.featured
-                    ? "bg-gradient-to-br from-blue-50 to-indigo-100 border-blue-300 ring-1 ring-blue-200"
-                    : "bg-gradient-to-br from-gray-50 to-gray-100 border-[#ADADAD4D]"
-                }`}>
-                  <div className="flex flex-col items-center justify-center h-full space-y-4">
-                    {category.featured && (
-                      <div className="absolute top-1 right-1 md:top-2 md:right-2">
-                        <Star className="w-3 h-3 md:w-4 md:h-4 text-blue-500 fill-blue-500" />
-                      </div>
-                    )}
-                    <div className="w-16 h-16 md:w-20 md:h-20 bg-white rounded-xl flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
-                      <img
-                        src={category.icon || category.image || "/images/tv.png"}
-                        alt={category.name}
-                        className="w-12 h-12 md:w-16 md:h-16 object-contain"
-                      />
-                    </div>
-                    <h3 className="text-xs md:text-base whitespace-nowrap font-medium md:font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-center line-clamp-2">
-                      {category.name}
-                    </h3>
-                    {!locality && category.productCount > 0 && (
-                      <span className="text-[10px] md:text-xs text-gray-500">
-                        {category.productCount.toLocaleString()}{" "}
-                        {category.productCount === 1 ? "product" : "products"}
-                      </span>
-                    )}
+                <div className="flex flex-col items-center gap-2 cursor-pointer group">
+                  <div className="w-16 h-16 md:w-20 md:h-20 lg:w-24 lg:h-24 rounded-lg bg-gray-100 flex items-center justify-center group-hover:bg-blue-50 transition-colors">
+                    <img
+                      src={category.image || category.icon || "/images/tv.png"}
+                      alt={category.name}
+                      className="w-12 h-12 md:w-14 md:h-14 lg:w-16 lg:h-16 object-contain"
+                    />
                   </div>
+                  <span className="text-xs md:text-sm font-medium text-gray-700 text-center">
+                    {category.name}
+                  </span>
                 </div>
               </Link>
             </SwiperSlide>
           ))}
         </Swiper>
+
+        {/* Right navigation arrow - desktop only */}
+        <button
+          onClick={() => categoriesSwiperRef.current?.swiper?.slideNext()}
+          className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white shadow rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
+          aria-label="Next categories"
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
       </div>
     </div>
   );

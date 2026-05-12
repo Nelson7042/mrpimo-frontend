@@ -1,19 +1,93 @@
 "use client";
 
-import Image from "next/image";
-import React, { useState } from "react";
-import { Search, X } from "lucide-react";
+import React, { useState, useRef, useEffect } from "react";
+import { Search, X, LogOut, LayoutDashboard, Wallet, Store } from "lucide-react";
 import { FaBars } from "react-icons/fa";
 import NotificationBell from "@/components/NotificationBell";
 import { useVendorStore } from "@/stores/useVendorStore";
+import { useRouter } from "next/navigation";
+import { useLogoutUser } from "@/hooks/mutations";
+import { resetAllStores } from "@/stores/resetStore";
+import { toast } from "react-toastify";
 
 type Props = {
   onOpenSidebar?: () => void;
 };
 
+// Helper function to get initials from business name
+const getInitials = (name: string | undefined): string => {
+  if (!name) return "V";
+  const words = name.trim().split(/\s+/);
+  if (words.length === 1) {
+    return words[0].substring(0, 2).toUpperCase();
+  }
+  return (words[0][0] + words[1][0]).toUpperCase();
+};
+
+// Helper function to generate a consistent color based on name
+const getAvatarColor = (name: string | undefined): string => {
+  if (!name) return "bg-blue-600";
+  const colors = [
+    "bg-blue-600",
+    "bg-green-600",
+    "bg-purple-600",
+    "bg-orange-600",
+    "bg-pink-600",
+    "bg-teal-600",
+    "bg-indigo-600",
+    "bg-red-600",
+  ];
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  return colors[Math.abs(hash) % colors.length];
+};
+
 const Header = (props: Props) => {
   const [showSearch, setShowSearch] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+  const profileModalRef = useRef<HTMLDivElement>(null);
   const { vendor } = useVendorStore();
+  const router = useRouter();
+  const logoutMutation = useLogoutUser();
+
+  const businessName = vendor?.businessInfo?.name;
+  const initials = getInitials(businessName);
+  const avatarColor = getAvatarColor(businessName);
+
+  // Close profile modal on click outside
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (profileModalRef.current && !profileModalRef.current.contains(e.target as Node)) {
+        setShowProfileModal(false);
+      }
+    };
+    if (showProfileModal) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showProfileModal]);
+
+  const handleLogout = () => {
+    logoutMutation.mutate(undefined, {
+      onSuccess: () => {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
+        resetAllStores();
+        toast.success("Logout Successful");
+        window.location.href = "/home";
+      },
+      onError: () => {
+        document.cookie.split(";").forEach((c) => {
+          document.cookie = c.replace(/^ +/, "").replace(/=.*/, `=;expires=${new Date(0).toUTCString()};path=/`);
+        });
+        resetAllStores();
+        window.location.href = "/home";
+      },
+    });
+  };
 
 
   return (
@@ -79,16 +153,77 @@ const Header = (props: Props) => {
             {vendor?.businessInfo?.name}
           </div>
 
-          {/* Profile avatar */}
-          <div className="h-8 w-8 rounded-full overflow-hidden border">
-            <Image
-              src="/images/vendor-image.jpg"
-              alt="Profile"
-              className="h-full w-full object-cover"
-              width={32}
-              height={32}
-              priority
-            />
+          {/* Profile avatar with dropdown */}
+          <div className="relative" ref={profileModalRef}>
+            <button
+              onClick={() => setShowProfileModal((prev) => !prev)}
+              className={`h-9 w-9 rounded-full flex items-center justify-center text-white font-semibold text-sm ${avatarColor} hover:opacity-90 transition-opacity border-2 border-white/20`}
+            >
+              {initials}
+            </button>
+
+            {showProfileModal && (
+              <div className="absolute right-0 top-full mt-2 w-56 bg-white rounded-lg shadow-lg border border-gray-200 py-2 z-50">
+                {/* Business Info */}
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="text-sm font-semibold text-gray-900 truncate">
+                    {businessName || "My Business"}
+                  </p>
+                  <p className="text-xs text-gray-500">Vendor Account</p>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    router.push("/vendor/dashboard");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    router.push("/vendor/dashboard/wallets");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <Wallet className="w-4 h-4" />
+                  My Wallet
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    router.push("/vendor/dashboard/settings");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
+                >
+                  <Store className="w-4 h-4" />
+                  Store Settings
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    router.push("/home");
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-100 transition-colors border-t border-gray-100"
+                >
+                  <Store className="w-4 h-4" />
+                  Go to Store
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfileModal(false);
+                    handleLogout();
+                  }}
+                  className="w-full flex items-center gap-2 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Logout
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

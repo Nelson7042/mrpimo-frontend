@@ -24,6 +24,8 @@ interface SearchableSelectProps {
   disabled?: boolean;
   className?: string;
   emptyMessage?: string;
+  popoverClassName?: string;
+  modal?: boolean;
 }
 
 export function SearchableSelect({
@@ -35,6 +37,8 @@ export function SearchableSelect({
   disabled = false,
   className,
   emptyMessage = "No results found",
+  popoverClassName,
+  modal = false,
 }: SearchableSelectProps) {
   const [open, setOpen] = React.useState(false);
   const [search, setSearch] = React.useState("");
@@ -50,7 +54,7 @@ export function SearchableSelect({
   const selectedOption = options.find((opt) => opt.value === value);
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={setOpen} modal={modal}>
       <PopoverTrigger asChild disabled={disabled}>
         <button
           type="button"
@@ -70,7 +74,7 @@ export function SearchableSelect({
           <ChevronDown className="h-4 w-4 opacity-50" />
         </button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0 font-roboto" align="start">
+      <PopoverContent className={cn("w-[var(--radix-popover-trigger-width)] p-0 font-roboto", popoverClassName)} align="start">
         <div className="flex items-center border-b px-3">
           <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
           <Input

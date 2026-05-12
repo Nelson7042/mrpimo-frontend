@@ -181,8 +181,17 @@ export class ProductFormValidator {
     errors: Record<string, string>,
     warnings: Record<string, string>
   ): ValidationResult {
+    // Skip variant validation for auction products - they don't need variants
+    const isAuction = data.pricingInformation?.listingType === 'auction' || 
+                      (data as any).inventory?.listing?.type === 'auction';
+    
+    if (isAuction) {
+      // Auction products don't need variants
+      return { isValid: true, errors, warnings };
+    }
+    
     if (!data.variants || data.variants.length === 0) {
-      errors.variants = "At least one variant is required";
+      errors.variants = "At least one variant is required for instant sale products";
     }
 
     if (data.variants) {

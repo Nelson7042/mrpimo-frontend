@@ -6,6 +6,8 @@ import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { useResponsive } from "@/hooks/useResponsive";
 import ColorPicker from "./ColorPicker";
 import { scrollToFirstError } from "@/utils/scrollToError";
+import { useCountries } from "@/hooks/useCountries";
+import { useUserStore } from "@/stores/useUserStore";
 
 type Props = {
   onSaveDraft?: () => void;
@@ -13,9 +15,28 @@ type Props = {
 
 const PricingInformation = (props: Props) => {
   const { updateProductDetails, productDetails } = useProductListing();
+  const { data: countries = [] } = useCountries();
+  const { user } = useUserStore();
   const [listingType, setListingType] = React.useState<
     "auction" | "instantSale" | null
   >(null);
+
+  // Get currency symbol from vendor's country (user.country)
+  const getCurrencySymbol = () => {
+    const vendorCountry = user?.country;
+    if (vendorCountry && countries.length > 0) {
+      const selectedCountry = countries.find(
+        (c) => c.name === vendorCountry || c.isoCode === vendorCountry
+      );
+      if (selectedCountry?.currencySymbol) {
+        return selectedCountry.currencySymbol;
+      }
+    }
+    return '$'; // Default fallback
+  };
+
+  const currencySymbol = getCurrencySymbol();
+
   const [pricingInformation, setPricingInformation] = React.useState({
     listingType: productDetails?.pricingInformation?.listingType || null,
     storeQuantity: productDetails?.pricingInformation?.storeQuantity || "",
@@ -427,7 +448,7 @@ const PricingInformation = (props: Props) => {
               <div className="flex justify-between">
                 <span>Price Range:</span>
                 <span className="">
-                  {minPrice === maxPrice ? `$${minPrice}` : `$${minPrice} - $${maxPrice}`}
+                  {minPrice === maxPrice ? `${currencySymbol}${minPrice}` : `${currencySymbol}${minPrice} - ${currencySymbol}${maxPrice}`}
                 </span>
               </div>
               <div className="flex justify-between">

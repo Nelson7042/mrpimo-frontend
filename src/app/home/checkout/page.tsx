@@ -19,6 +19,7 @@ import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
 import { useAddAddress, useAddresses, useUpdateAddress } from "@/hooks/useAddress";
 import { useCountries } from "@/hooks/useCountries";
 import { useUserCurrency } from "@/hooks/useUserCurrency";
+import { useInvalidateWalletBalance } from "@/hooks/useWallet";
 import { Country, State } from "country-state-city";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { getCountryFromCurrency } from "@/utils/currency";
@@ -69,6 +70,7 @@ export default function CheckoutPage() {
   // Buy Now hooks
   const buyNowShippingMutation = useBuyNowShippingEstimate();
   const buyNowCheckout = useBuyNowCheckout();
+  const invalidateWalletBalance = useInvalidateWalletBalance();
 
   // Check if user is authorized to access checkout.
   // Only runs after sessionStorage has been read so buyNowData is accurate.
@@ -244,10 +246,14 @@ export default function CheckoutPage() {
 
         // Check if billing address already exists
         const existingBillingAddr = addresses.find(addr => addr.type === "billing");
-        if (!existingBillingAddr) {
+        if (!existingBillingAddr && !addAddressMutation.isPending) {
           addAddressMutation.mutate({
             address: billingAddressData,
             duplicateForShipping: false
+          }, {
+            onError: () => {
+              // Silently ignore "already exists" errors — billing address is already set
+            }
           });
         }
       }
@@ -276,7 +282,14 @@ export default function CheckoutPage() {
   const [shippingWarnings, setShippingWarnings] = useState<string[]>([]);
   const [shippingIsFallback, setShippingIsFallback] = useState(false);
   const shipping = calculatedShipping !== null ? calculatedShipping : baseShipping;
-  const total = subtotal + tax + shipping;
+
+  // Tax info from backend (updated after payment intent response)
+  const [taxName, setTaxName] = useState<string>("Tax");
+  const [taxRate, setTaxRate] = useState<number>(0);
+  const [isTaxInclusive, setIsTaxInclusive] = useState<boolean>(false);
+  const [calculatedTax, setCalculatedTax] = useState<number | null>(null);
+  const effectiveTax = calculatedTax !== null ? calculatedTax : tax;
+  const total = isTaxInclusive ? subtotal + shipping : subtotal + effectiveTax + shipping;
 
   // Set default delivery method based on user's location capabilities
   useEffect(() => {
@@ -476,19 +489,42 @@ export default function CheckoutPage() {
         const shippingAddr = addresses.find(addr => addr.type === 'shipping');
 
         if (paymentCategory === 'fiat') {
-          const piResponse = await buyNowCheckout.initiateCheckout({
-            productId: buyNowData.productId,
-            variantId: buyNowData.variantId,
-            optionId: buyNowData.optionId,
-            quantity: buyNowData.quantity,
-            paymentMethod: fiatProvider || 'stripe',
-            addressId: shippingAddr?._id,
-            deliveryMethod,
-          });
+          let piResponse;
+          
+          if (buyNowData.isOfferCheckout && buyNowData.offerId) {
+            // Offer checkout — use offer-specific endpoint with locked price
+            piResponse = await buyNowCheckout.initiateOfferCheckout({
+              offerId: buyNowData.offerId,
+              paymentMethod: fiatProvider || 'stripe',
+              addressId: shippingAddr?._id,
+              deliveryMethod,
+            });
+          } else {
+            // Regular buy-now checkout
+            piResponse = await buyNowCheckout.initiateCheckout({
+              productId: buyNowData.productId,
+              variantId: buyNowData.variantId,
+              optionId: buyNowData.optionId,
+              quantity: buyNowData.quantity,
+              paymentMethod: fiatProvider || 'stripe',
+              addressId: shippingAddr?._id,
+              deliveryMethod,
+            });
+          }
 
           if (!piResponse) {
             setIsProcessing(false);
             return;
+          }
+
+          // Update tax info from backend response
+          if (piResponse.checkout?.pricing) {
+            const p = piResponse.checkout.pricing;
+            if (p.taxName) setTaxName(p.taxName);
+            if (p.taxRate !== undefined) setTaxRate(p.taxRate);
+            if (p.isTaxInclusive !== undefined) setIsTaxInclusive(p.isTaxInclusive);
+            if (p.tax !== undefined) setCalculatedTax(p.tax);
+            if (p.shipping !== undefined) setCalculatedShipping(p.shipping);
           }
 
           if (fiatProvider === 'paystack') {
@@ -687,6 +723,7 @@ export default function CheckoutPage() {
         
         // Stage 4: Complete
         setOrderProcessingStage('complete');
+        invalidateWalletBalance();
         await new Promise(resolve => setTimeout(resolve, 1500));
         
         // Clear checkout authorization
@@ -1322,8 +1359,20 @@ export default function CheckoutPage() {
                           </div>
                         )}
                         <div className="flex justify-between text-xs text-gray-600">
-                          <span>Tax</span>
-                          <span className="font-medium text-gray-800">{currency} {tax.toLocaleString()}</span>
+                          <span>
+                            {taxRate > 0 
+                              ? `${taxName} (${taxRate}%)${isTaxInclusive ? ' incl.' : ''}`
+                              : "Tax"
+                            }
+                          </span>
+                          <span className="font-medium text-gray-800">
+                            {calculatedTax !== null 
+                              ? (effectiveTax > 0 
+                                ? `${isTaxInclusive ? 'Incl. ' : ''}${currency} ${effectiveTax.toLocaleString()}`
+                                : `${currency} 0`)
+                              : "Calculated at payment"
+                            }
+                          </span>
                         </div>
                         <hr className="border-gray-100" />
                         <div className="flex justify-between font-medium text-sm text-gray-900 pt-1">
@@ -1341,9 +1390,9 @@ export default function CheckoutPage() {
                       onClick={handleProceedToPayment}
                       disabled={isProcessing || buyNowCheckout.isProcessing || (isBuyNowMode ? (!buyNowData || !hasShippingAddress) : cartItems.length === 0)}
                     >
-                      {isProcessing ? (
+                      {(isProcessing || buyNowCheckout.isProcessing) ? (
                         <>
-                          <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" />
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                           Processing...
                         </>
                       ) : (
@@ -1422,6 +1471,7 @@ export default function CheckoutPage() {
                                     setShowPaymentUI(false);
                                     setShowOrderProcessing(true);
                                     setOrderProcessingStage('finalizing');
+                                    invalidateWalletBalance();
                                     setTimeout(() => {
                                       setOrderProcessingStage('complete');
                                       // Cleanup buy-now session data

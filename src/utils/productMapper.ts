@@ -106,7 +106,7 @@ export class ProductMapper {
       };
     } else {
       inventory.listing.instant = {
-        acceptOffer: pricingInfo.instantSale?.acceptOffers || false,
+        acceptOffer: pricingInfo.instantSale?.acceptOffer || false,
       };
     }
 
@@ -147,6 +147,12 @@ export class ProductMapper {
 
     // Create default variant from pricing information
     const pricingInfo = productDetails.pricingInformation;
+    
+    // For auction listings, NO variants are needed
+    if (pricingInfo && pricingInfo.listingType === 'auction') {
+      return []; // Auction products have no variants
+    }
+    
     if (pricingInfo && pricingInfo.listingType === 'instantSale') {
       const colors = pricingInfo.instantSale?.colors || [];
       
@@ -198,28 +204,34 @@ export class ProductMapper {
     if (!mappedData.shipping) errors.push('Shipping information is required');
     if (!mappedData.inventory?.listing?.type) errors.push('Listing type is required');
 
-    // Variants validation
-    if (!mappedData.variants || mappedData.variants.length === 0) {
-      errors.push('At least one variant is required');
-    } else {
-      mappedData.variants.forEach((variant: any, vIndex: number) => {
-        if (!variant.options || variant.options.length === 0) {
-          errors.push(`Variant ${vIndex + 1} must have at least one option`);
-        } else {
-          variant.options.forEach((option: any, oIndex: number) => {
-            if (!option.sku) {
-              errors.push(`Variant ${vIndex + 1}, Option ${oIndex + 1}: SKU is required`);
-            }
-            if (!option.price || option.price <= 0) {
-              errors.push(`Variant ${vIndex + 1}, Option ${oIndex + 1}: Price must be greater than 0`);
-            }
-            if (option.quantity === undefined || option.quantity < 0) {
-              errors.push(`Variant ${vIndex + 1}, Option ${oIndex + 1}: Quantity cannot be negative`);
-            }
-          });
-        }
-      });
+    // Variants validation - only required for instant sale listings
+    const isAuction = mappedData.inventory?.listing?.type === 'auction';
+    
+    if (!isAuction) {
+      // Instant sale requires variants
+      if (!mappedData.variants || mappedData.variants.length === 0) {
+        errors.push('At least one variant is required for instant sale listings');
+      } else {
+        mappedData.variants.forEach((variant: any, vIndex: number) => {
+          if (!variant.options || variant.options.length === 0) {
+            errors.push(`Variant ${vIndex + 1} must have at least one option`);
+          } else {
+            variant.options.forEach((option: any, oIndex: number) => {
+              if (!option.sku) {
+                errors.push(`Variant ${vIndex + 1}, Option ${oIndex + 1}: SKU is required`);
+              }
+              if (!option.price || option.price <= 0) {
+                errors.push(`Variant ${vIndex + 1}, Option ${oIndex + 1}: Price must be greater than 0`);
+              }
+              if (option.quantity === undefined || option.quantity < 0) {
+                errors.push(`Variant ${vIndex + 1}, Option ${oIndex + 1}: Quantity cannot be negative`);
+              }
+            });
+          }
+        });
+      }
     }
+    // Auction products don't need variants - skip variant validation
 
     // Auction-specific validation
     if (mappedData.inventory?.listing?.type === 'auction') {
@@ -309,7 +321,7 @@ export class ProductMapper {
         pricing.instantSale = {
           price: firstOption.price,
           salePrice: firstOption.salePrice,
-          acceptOffers: inventory.listing.instant?.acceptOffer || false,
+          acceptOffer: inventory.listing.instant?.acceptOffer || false,
         };
         pricing.storeQuantity = firstOption.quantity;
       }

@@ -143,7 +143,18 @@ export const useCartStore = create<CartState>()(
               throw new Error(`Only ${quantityCheck.data.quantity} items available`);
             }
 
-            // Add to backend
+            // Add to backend — use variant price for priceInfo, not product default
+            const productPriceInfo = (product as any).priceInfo;
+            const variantPriceInfo = productPriceInfo && selectedVariant?.price
+              ? {
+                  ...productPriceInfo,
+                  originalPrice: selectedVariant.price,
+                  displayPrice: parseFloat(
+                    (selectedVariant.price * (productPriceInfo.exchangeRate || 1)).toFixed(2)
+                  ),
+                }
+              : productPriceInfo;
+
             await cartService.addToCart({
               productId: product._id!,
               quantity,
@@ -154,25 +165,37 @@ export const useCartStore = create<CartState>()(
               images: product.images || [],
               variantName: selectedVariant?.variantName,
               optionValue: selectedVariant?.optionValue,
-              priceInfo: (product as any).priceInfo
+              priceInfo: variantPriceInfo
             });
             toast.success("Product Added to Cart Successfully", toastConfigSuccess);
             
             await get().loadCart();
           } else {
-            // Check available quantity from backend for offline users
+            // Offline/not-logged-in path
             if (!selectedVariant || !selectedVariant.optionId) {
               throw new Error('Product variant is required');
             }
 
-            const quantityCheck = await cartService.getOptionQuantity(
-              product._id!,
-              selectedVariant.variantId,
-              selectedVariant.optionId
-            );
-
-            if (!quantityCheck.success || !quantityCheck.data) {
-              throw new Error('Failed to verify product availability');
+            // Try to check available quantity from backend, but gracefully degrade if offline
+            let availableQuantity = Infinity;
+            try {
+              const quantityCheck = await cartService.getOptionQuantity(
+                product._id!,
+                selectedVariant.variantId,
+                selectedVariant.optionId
+              );
+              if (quantityCheck.success && quantityCheck.data) {
+                availableQuantity = quantityCheck.data.quantity;
+              }
+            } catch {
+              // Network unavailable — use local product data as fallback
+              const variant = product.variants?.find(
+                (v: any) => (v._id || v.id) === selectedVariant.variantId
+              ) || product.variants?.[0];
+              const option = variant?.options?.find(
+                (opt: any) => (opt.id || opt._id) === selectedVariant.optionId
+              );
+              availableQuantity = option?.quantity ?? Infinity;
             }
 
             const itemKey = generateCartItemKey(product._id!, selectedVariant.variantId, selectedVariant.optionId);
@@ -190,8 +213,8 @@ export const useCartStore = create<CartState>()(
             const currentQty = existingItemIndex > -1 ? items[existingItemIndex].quantity : 0;
             const newTotalQty = currentQty + quantity;
 
-            if (newTotalQty > quantityCheck.data.quantity) {
-              throw new Error(`Only ${quantityCheck.data.quantity} items available`);
+            if (newTotalQty > availableQuantity) {
+              throw new Error(`Only ${availableQuantity} items available`);
             }
 
             if (existingItemIndex > -1) {
@@ -199,12 +222,24 @@ export const useCartStore = create<CartState>()(
               updatedItems[existingItemIndex].quantity = newTotalQty;
               set({ items: updatedItems });
             } else {
+              // Build priceInfo using the selected variant's price, not the product default
+              const productPriceInfo = (product as any).priceInfo;
+              const variantPriceInfo = productPriceInfo && selectedVariant?.price
+                ? {
+                    ...productPriceInfo,
+                    originalPrice: selectedVariant.price,
+                    displayPrice: parseFloat(
+                      (selectedVariant.price * (productPriceInfo.exchangeRate || 1)).toFixed(2)
+                    ),
+                  }
+                : productPriceInfo;
+
               const newItem: CartItem = {
                 product,
                 quantity,
                 selectedVariant,
                 addedAt: new Date().toISOString(),
-                priceInfo: (product as any).priceInfo
+                priceInfo: variantPriceInfo
               };
               set({ items: [...items, newItem] });
             }
@@ -574,6 +609,12 @@ export const useCartStore = create<CartState>()(
       partialize: (state) => ({
         items: state.items,
       }),
+      onRehydrateStorage: () => (state) => {
+        // Recalculate summary after hydration so cart badge shows correct count
+        if (state) {
+          state.calculateSummary();
+        }
+      },
     }
   )
 );

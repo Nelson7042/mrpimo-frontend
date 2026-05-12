@@ -13,19 +13,39 @@ import { useUserNotifications, useVendorAnalytics } from "@/hooks/queries";
 import { useVendorStore } from "@/stores/useVendorStore";
 import KycModal from "@/components/KycModal";
 import KybModal from "@/components/KybModal";
+import AddBankDetailsModal from "@/components/AddBankDetailsModal";
 import OrderLimitIndicator from "@/components/vendor/OrderLimitIndicator";
 import OrderLimitWarningBanner from "@/components/vendor/OrderLimitWarningBanner";
 import OrderLimitUpgradeModal from "@/components/vendor/OrderLimitUpgradeModal";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
 type Props = {};
 
 const Page = (props: Props) => {
-  const { vendor } = useVendorStore();
+  const { vendor, setVendor } = useVendorStore();
   const socket = useSocket();
   const { data, isLoading } = useVendorAnalytics(vendor?._id!);
   const [showKybModal, setShowKybModal] = useState(false);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showBankDetailsModal, setShowBankDetailsModal] = useState(false);
   const [isWarningBannerDismissed, setIsWarningBannerDismissed] = useState(false);
+
+  // Refresh vendor profile from backend on mount to pick up admin-side changes (e.g. KYC approval)
+  useEffect(() => {
+    const refreshVendorProfile = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/vendors/profile`);
+        const data = await response.json();
+        if (data.success && data.vendor) {
+          setVendor(data.vendor);
+        }
+      } catch (error) {
+        // Silently fail — stale store data is still usable
+      }
+    };
+    refreshVendorProfile();
+  }, [setVendor]);
   const isPersonalAccount = vendor?.accountType === 'personal';
   
   // Order fulfillment data for personal accounts
@@ -60,7 +80,15 @@ const Page = (props: Props) => {
   
   const verificationStatus = getVerificationStatus();
 
-  const vendorCurrency = data?.dashboard?.salesTotal?.currency || vendor?.wallet?.currency || '';
+  // Check if vendor is verified but missing bank/payout details (for Paystack countries)
+  const PAYSTACK_COUNTRIES = ['NG', 'GH', 'ZA', 'KE', 'UG', 'TZ', 'RW', 'CI', 'SN'];
+  const vendorCountry = vendor?.identityVerification?.address?.countryCode || '';
+  const isPaystackCountry = PAYSTACK_COUNTRIES.includes(vendorCountry);
+  const isVerified = vendor?.kycStatus === 'verified';
+  const hasBankDetails = !!(vendor?.payStack?.paystackSubAccountCode && vendor?.payStack?.paystackStatus === 'verified');
+  const needsBankDetails = isPaystackCountry && isVerified && !hasBankDetails;
+
+  const vendorCurrency = data?.dashboard?.salesTotal?.currency || '';
 
   useUserNotifications(true);
 
@@ -129,11 +157,27 @@ const Page = (props: Props) => {
                 }
               </p>
               {verificationStatus !== 'requires_review' && (
-                <button onClick={() => setShowKybModal(true)} className="font-roboto text-blue-600 underline text-xs">
+                <button onClick={() => setShowKybModal(true)} className="font-roboto text-blue-600 underline text-xs cursor-pointer">
                   {verificationStatus === 'rejected' ? 'Retry' : verificationStatus === 'pending' ? 'Continue' : 'Start'} {isPersonalAccount ? 'KYC' : (vendor?.kycStatus === 'verified' ? 'KYB' : 'KYC/KYB')} Process
                 </button>
               )}
             </div>
+          </div>
+        )}
+
+        {/* Bank Details Banner - for verified vendors without payout setup */}
+        {needsBankDetails && (
+          <div className="border border-blue-200 bg-blue-50 rounded-lg p-2 md:p-5 mb-4 md:mb-5">
+            <h2 className="font-roboto font-bold text-base mb-2 text-blue-900">Add Bank Account</h2>
+            <p className="font-roboto text-xs text-blue-800 mb-4">
+              Your identity is verified! Add your bank account details to start receiving payouts.
+            </p>
+            <button
+              onClick={() => setShowBankDetailsModal(true)}
+              className="px-4 py-2 text-xs bg-blue-600 text-white rounded-md hover:bg-blue-700 font-medium"
+            >
+              Add Account Details
+            </button>
           </div>
         )}
 
@@ -151,7 +195,7 @@ const Page = (props: Props) => {
                 title="Sales Total"
                 percentageIncrease={data?.dashboard?.salesTotal}
                 amount={data?.dashboard?.salesTotal?.value}
-                currency={data?.dashboard?.salesTotal?.currency || vendor?.wallet?.currency}
+                currency={data?.dashboard?.salesTotal?.currency}
               />
               <AnalyticsCard
                 title="Total Orders"
@@ -201,6 +245,13 @@ const Page = (props: Props) => {
       ) : (
         <KybModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
       )}
+
+      {/* Bank Details Modal - for Paystack countries */}
+      <AddBankDetailsModal
+        isOpen={showBankDetailsModal}
+        onClose={() => setShowBankDetailsModal(false)}
+        countryCode={vendorCountry}
+      />
 
       {/* Order Limit Upgrade Modal - Only for personal accounts */}
       {isPersonalAccount && (

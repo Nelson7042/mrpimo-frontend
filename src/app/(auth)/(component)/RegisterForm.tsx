@@ -30,6 +30,7 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
   const [firstName, setFirstName] = useState("");
   const [middleName, setMiddleName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [sex, setSex] = useState("");
   const [email, setEmail] = useState("");
   const [phoneNumber, setPhoneNumber] = useState("");
   const [selectedCountry, setSelectedCountry] = useState(
@@ -45,6 +46,7 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
+    sex: "",
     email: "",
     phoneNumber: "",
     password: "",
@@ -108,6 +110,7 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
     const newErrors = {
       firstName: "",
       lastName: "",
+      sex: "",
       email: "",
       password: "",
       phoneNumber: "",
@@ -119,6 +122,9 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
     }
     if (!lastName.trim()) {
       newErrors.lastName = "Last name is required.";
+    }
+    if (!sex) {
+      newErrors.sex = "Gender is required.";
     }
     if (!email.trim()) {
       newErrors.email = "Email is required.";
@@ -157,6 +163,7 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
       const signupData: any = {
         firstName,
         lastName,
+        sex,
         email,
         phoneNumber: `+${selectedCountry.phonecode}${phoneNumber}`,
         password,
@@ -248,6 +255,27 @@ const RegisterForm = ({ setAuthState, close, onUserPendingVerification }: LoginP
         />
         {errors.lastName && (
           <p className="text-red-500 text-xs mt-1">{errors.lastName}</p>
+        )}
+      </div>
+
+      <div className="mb-[10px]">
+        <label className="text-[14px] md:text-[14px] xl:text-[16px] font-normal leading-[24px] text-[#000000] mb-[8px]">
+          Gender
+        </label>
+        <select
+          className="w-full h-[48px] px-[16px] py-[12px] text-[14px] text-[#344054] leading-[20px] bg-[#F7F9FC] placeholder:text-[#98A2B3] placeholder:text-[12px] border-[#D0D5DD] border-[0.2px] rounded-[8px] focus:outline-none focus:ring-primary focus:border-primary"
+          required
+          name="sex"
+          value={sex}
+          onChange={(e) => setSex(e.target.value)}
+        >
+          <option value="">Select gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Other">Other</option>
+        </select>
+        {errors.sex && (
+          <p className="text-red-500 text-xs mt-1">{errors.sex}</p>
         )}
       </div>
 

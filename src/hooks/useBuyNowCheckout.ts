@@ -55,6 +55,14 @@ export interface BuyNowPaymentIntentResponse {
   expiresAt: string;
 }
 
+export interface OfferCheckoutParams {
+  offerId: string;
+  paymentMethod: string;
+  addressId?: string;
+  deliveryMethod?: string;
+  tokenType?: string;
+}
+
 const createBuyNowPaymentIntent = async (
   params: BuyNowCheckoutParams
 ): Promise<BuyNowPaymentIntentResponse> => {
@@ -70,6 +78,26 @@ const createBuyNowPaymentIntent = async (
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.message || "Failed to create payment intent");
+  }
+
+  return response.json();
+};
+
+const createOfferPaymentIntent = async (
+  params: OfferCheckoutParams
+): Promise<BuyNowPaymentIntentResponse> => {
+  const response = await fetchWithAuth(
+    `${API_BASE_URL}/checkout/offer/payment-intent`,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    }
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.message || "Failed to create offer payment intent");
   }
 
   return response.json();
@@ -157,6 +185,36 @@ export const useBuyNowCheckout = () => {
       }
     },
     [paymentIntentMutation]
+  );
+
+  const initiateOfferCheckout = useCallback(
+    async (params: OfferCheckoutParams) => {
+      setStage("validating");
+
+      try {
+        const response = await createOfferPaymentIntent(params);
+
+        if (!response.success) {
+          setStage("error");
+          return null;
+        }
+
+        setOrderId(response.orderId);
+        setPaymentIntentData(response);
+
+        if (response.paymentData?.provider === 'airwallex') {
+          response.paymentData.provider = 'stripe';
+        }
+
+        setStage("creating");
+        return response;
+      } catch (error: any) {
+        toast.error(error.message || "Failed to initiate offer checkout");
+        setStage("error");
+        return null;
+      }
+    },
+    []
   );
 
   const handleWalletPayment = useCallback(
@@ -249,6 +307,7 @@ export const useBuyNowCheckout = () => {
     orderId,
     paymentIntentData,
     initiateCheckout,
+    initiateOfferCheckout,
     handleWalletPayment,
     initializePaystackPayment,
     resetStage,

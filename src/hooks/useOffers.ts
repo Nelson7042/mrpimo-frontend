@@ -24,9 +24,11 @@ export interface OfferItem {
   displayAmount: number;
   displayCurrency: string;
   role: 'buyer' | 'vendor';
-  status: 'pending' | 'accepted' | 'rejected' | 'expired';
+  status: 'pending' | 'accepted' | 'rejected' | 'expired' | 'payment_pending' | 'completed';
   type: 'offer' | 'counter-offer';
   expiresAt?: string;
+  paymentDeadline?: string;
+  paidAt?: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -35,6 +37,7 @@ export interface GroupedOffers {
   productId: string;
   name: string;
   slug: string;
+  image?: string;
   offers: OfferItem[];
   counterOffers: OfferItem[];
 }

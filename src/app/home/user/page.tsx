@@ -46,6 +46,7 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { parseUserAgent } from "@/utils/parseUserAgent";
 import { useUserStore } from "@/stores/useUserStore";
+import AddAddressModal from "@/components/users/settings/AddAddressModal";
 
 /**
  * Refactored DashboardPage
@@ -58,6 +59,7 @@ export default function DashboardPage() {
   const [showBalance, setShowBalance] = useState(false);
   const [showActivitiesModal, setShowActivitiesModal] = useState(false);
   const [showAddFundsModal, setShowAddFundsModal] = useState(false);
+  const [showAddAddressModal, setShowAddAddressModal] = useState(false);
   const [recentViewsPage, setRecentViewsPage] = useState(1);
   const [recommendationsPage, setRecommendationsPage] = useState(1);
   const [activitiesPage, setActivitiesPage] = useState(1);
@@ -327,7 +329,7 @@ export default function DashboardPage() {
               <Button 
                 variant="ghost" 
                 size="sm"
-                onClick={() => router.push("/home/user/settings")}
+                onClick={() => setShowAddAddressModal(true)}
                 className="hover:bg-white/20"
               >
                 <Edit className="w-4 h-4 text-white" />
@@ -368,7 +370,7 @@ export default function DashboardPage() {
             <div className="p-2 border-t">
               <Button
                 className="font-roboto cursor-pointer w-full bg-primary hover:bg-primary/90 text-xs"
-                onClick={() => router.push("/home/user/settings")}
+                onClick={() => setShowAddAddressModal(true)}
               >
                 Add Shipping Address
               </Button>
@@ -759,6 +761,11 @@ export default function DashboardPage() {
       {/* Uncomment modals when components exist */}
       {/* <ActivitiesModal isOpen={showActivitiesModal} onClose={() => setShowActivitiesModal(false)} />
             <AddFundsModal isOpen={showAddFundsModal} onClose={() => setShowAddFundsModal(false)} /> */}
+
+      <AddAddressModal
+        isOpen={showAddAddressModal}
+        onClose={() => setShowAddAddressModal(false)}
+      />
     </div>
   );
 }

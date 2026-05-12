@@ -1,11 +1,18 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { API_BASE_URL } from '@/utils/config';
+import { toast } from 'react-toastify';
 
 interface CreateProductResponse {
   success: boolean;
   product: any;
   message: string;
+}
+
+interface ValidationErrorResponse {
+  success: boolean;
+  message: string;
+  errors?: string[];
 }
 
 const createProductAPI = async (productData: any): Promise<CreateProductResponse> => {
@@ -15,8 +22,22 @@ const createProductAPI = async (productData: any): Promise<CreateProductResponse
   });
 
   if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || 'Failed to create product');
+    const errorData: ValidationErrorResponse = await response.json();
+    
+    // Log detailed validation errors to console
+    console.error('Product creation failed:', {
+      message: errorData.message,
+      errors: errorData.errors,
+      requestData: productData
+    });
+    
+    // Create a detailed error message
+    let errorMessage = errorData.message || 'Failed to create product';
+    if (errorData.errors && errorData.errors.length > 0) {
+      errorMessage = errorData.errors.join(', ');
+    }
+    
+    throw new Error(errorMessage);
   }
 
   return response.json();
@@ -37,8 +58,10 @@ export const useCreateProduct = () => {
       queryClient.invalidateQueries({ queryKey: ['vendor-analytics'] });
       queryClient.invalidateQueries({ queryKey: ['vendorAnalytics'] });
     },
-    onError: (error) => {
-      console.error('Failed to create product:', error);
+    onError: (error: Error) => {
+      console.error('Failed to create product:', error.message);
+      // Show detailed error in toast
+      toast.error(error.message || 'Failed to create product');
     },
   });
 };

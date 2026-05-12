@@ -5,7 +5,10 @@ import { API_BASE_URL } from '@/utils/config';
 interface Country {
   _id: string;
   name: string;
-  code: string;
+  code?: string;
+  isoCode?: string;
+  currency?: string;
+  currencySymbol?: string;
 }
 
 export const useCountries = () => {

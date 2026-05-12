@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +19,8 @@ import {
   XCircle,
   AlertCircle,
   ExternalLink,
+  CreditCard,
+  Timer,
 } from "lucide-react";
 import { format } from "date-fns";
 
@@ -26,7 +28,11 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case "pending":
       return "bg-yellow-100 text-yellow-800 hover:bg-yellow-100";
+    case "payment_pending":
+      return "bg-blue-100 text-blue-800 hover:bg-blue-100";
     case "accepted":
+      return "bg-green-100 text-green-800 hover:bg-green-100";
+    case "completed":
       return "bg-green-100 text-green-800 hover:bg-green-100";
     case "rejected":
       return "bg-red-100 text-red-800 hover:bg-red-100";
@@ -41,7 +47,11 @@ const getStatusIcon = (status: string) => {
   switch (status) {
     case "pending":
       return <Clock className="w-3 h-3" />;
+    case "payment_pending":
+      return <Timer className="w-3 h-3" />;
     case "accepted":
+      return <CheckCircle className="w-3 h-3" />;
+    case "completed":
       return <CheckCircle className="w-3 h-3" />;
     case "rejected":
       return <XCircle className="w-3 h-3" />;
@@ -53,6 +63,49 @@ const getStatusIcon = (status: string) => {
 };
 
 const limitOptions = [5, 10, 20, 50];
+
+// Countdown timer component for payment deadline
+function CountdownTimer({ deadline }: { deadline: string }) {
+  const [timeLeft, setTimeLeft] = useState("");
+
+  useEffect(() => {
+    const updateTimer = () => {
+      const now = new Date().getTime();
+      const end = new Date(deadline).getTime();
+      const diff = end - now;
+
+      if (diff <= 0) {
+        setTimeLeft("Expired");
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+
+      if (hours > 0) {
+        setTimeLeft(`${hours}h ${minutes}m remaining`);
+      } else if (minutes > 0) {
+        setTimeLeft(`${minutes}m ${seconds}s remaining`);
+      } else {
+        setTimeLeft(`${seconds}s remaining`);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  const isUrgent = new Date(deadline).getTime() - Date.now() < 6 * 60 * 60 * 1000; // < 6 hours
+
+  return (
+    <span className={`text-xs font-medium ${isUrgent ? "text-red-600" : "text-orange-600"}`}>
+      <Timer className="w-3 h-3 inline mr-1" />
+      {timeLeft}
+    </span>
+  );
+}
 
 export default function OffersPage() {
   const router = useRouter();
@@ -80,6 +133,55 @@ export default function OffersPage() {
   const handleLimitChange = (newLimit: number) => {
     setItemsPerPage(newLimit);
     setCurrentPage(1);
+  };
+
+  const handlePayNow = (offer: OfferItem, group: any) => {
+    // Store offer data in sessionStorage for the checkout page
+    const offerCheckoutData = {
+      offerId: offer._id,
+      productId: group.productId,
+      productName: group.name,
+      productSlug: group.slug,
+      productImage: group.image,
+      variantId: offer.variantId,
+      optionId: offer.optionId,
+      amount: offer.displayAmount,
+      currency: offer.displayCurrency,
+      paymentDeadline: offer.paymentDeadline,
+    };
+    sessionStorage.setItem("offerCheckoutData", JSON.stringify(offerCheckoutData));
+    sessionStorage.setItem("buyNowCheckoutAuthorized", "true");
+    sessionStorage.setItem("checkoutTimestamp", Date.now().toString());
+
+    // Also store as buyNowData so the checkout page can handle it
+    const buyNowData = {
+      productId: group.productId,
+      variantId: offer.variantId,
+      optionId: offer.optionId,
+      quantity: 1,
+      offerId: offer._id,
+      isOfferCheckout: true,
+      product: {
+        name: group.name,
+        images: group.image ? [group.image] : [],
+      },
+      variant: {
+        name: "Offer",
+        value: "Accepted",
+        price: offer.displayAmount,
+      },
+      pricing: {
+        subtotal: offer.displayAmount,
+        shipping: 0,
+        tax: 0, // Real tax calculated by backend at payment time
+        total: offer.displayAmount, // Preliminary — backend recalculates with tax + shipping
+        currency: offer.displayCurrency,
+        currencySymbol: getCurrencySymbol(offer.displayCurrency),
+      },
+    };
+    sessionStorage.setItem("buyNowData", JSON.stringify(buyNowData));
+
+    router.push("/home/checkout");
   };
 
   const handleAcceptCounterOffer = async (
@@ -192,10 +294,19 @@ export default function OffersPage() {
                 key={group.productId}
                 className="bg-white rounded-xl border border-gray-200 overflow-hidden"
               >
-                <div className="p-4 md:p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                  <h2 className="font-semibold text-sm md:text-base text-gray-900">
-                    {group.name}
-                  </h2>
+                <div className="p-3 md:p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                  <div className="flex items-center gap-3 min-w-0">
+                    {group.image && (
+                      <img
+                        src={group.image}
+                        alt={group.name}
+                        className="w-10 h-10 md:w-12 md:h-12 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                      />
+                    )}
+                    <h2 className="font-semibold text-sm md:text-base text-gray-900 truncate">
+                      {group.name}
+                    </h2>
+                  </div>
                 </div>
                 <div className="divide-y divide-gray-100">
                   {group.offers.map((offer) => {
@@ -245,6 +356,27 @@ export default function OffersPage() {
                               <ExternalLink className="w-3 h-3 mr-1" />
                               Go to Product
                             </Button>
+                          )}
+                          {offer.status === "payment_pending" && (
+                            <div className="flex flex-col sm:items-end gap-2">
+                              <Button
+                                size="sm"
+                                onClick={() => handlePayNow(offer, group)}
+                                className="bg-blue-600 hover:bg-blue-700 text-white w-full sm:w-auto"
+                              >
+                                <CreditCard className="w-3 h-3 mr-1" />
+                                Pay Now
+                              </Button>
+                              {offer.paymentDeadline && (
+                                <CountdownTimer deadline={offer.paymentDeadline} />
+                              )}
+                            </div>
+                          )}
+                          {offer.status === "completed" && (
+                            <Badge className="bg-green-100 text-green-800 px-2 py-1">
+                              <CheckCircle className="w-3 h-3 mr-1" />
+                              Paid
+                            </Badge>
                           )}
                         </div>
 
@@ -320,15 +452,34 @@ export default function OffersPage() {
                           .map((co) => (
                             <div
                               key={co._id}
-                              className="mt-2 p-2 bg-gray-50 rounded-lg text-xs text-gray-600"
+                              className={`mt-2 p-3 rounded-lg text-xs ${co.status === "payment_pending" ? "bg-blue-50 border border-blue-200" : "bg-gray-50 text-gray-600"}`}
                             >
-                              Counter offer of {getCurrencySymbol(co.displayCurrency)}{co.displayAmount.toFixed(2)} —{" "}
-                              <Badge className={`${getStatusColor(co.status)} px-1.5 py-0 text-xs`}>
-                                <span className="flex items-center gap-1">
-                                  {getStatusIcon(co.status)}
-                                  <span className="capitalize">{co.status}</span>
-                                </span>
-                              </Badge>
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                  Counter offer of {getCurrencySymbol(co.displayCurrency)}{co.displayAmount.toFixed(2)} —{" "}
+                                  <Badge className={`${getStatusColor(co.status)} px-1.5 py-0 text-xs`}>
+                                    <span className="flex items-center gap-1">
+                                      {getStatusIcon(co.status)}
+                                      <span className="capitalize">{co.status === "payment_pending" ? "Pay Now" : co.status}</span>
+                                    </span>
+                                  </Badge>
+                                </div>
+                                {co.status === "payment_pending" && (
+                                  <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 w-full sm:w-auto">
+                                    <Button
+                                      size="sm"
+                                      onClick={() => handlePayNow(co, group)}
+                                      className="bg-blue-600 hover:bg-blue-700 text-white text-xs w-full sm:w-auto"
+                                    >
+                                      <CreditCard className="w-3 h-3 mr-1" />
+                                      Pay Now
+                                    </Button>
+                                    {co.paymentDeadline && (
+                                      <CountdownTimer deadline={co.paymentDeadline} />
+                                    )}
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           ))}
                       </div>

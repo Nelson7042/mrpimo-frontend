@@ -34,7 +34,7 @@ export interface StripeAccountData {
 }
 
 export interface VerificationDocument {
-  type: 'passport' | 'drivers_license' | 'national_id' | 'voters_card';
+  type: 'passport' | 'drivers_license' | 'national_id' | 'voters_card' | 'nin' | 'bvn';
   frontFile: File | null;
   backFile?: File | null; // For documents that have two sides
   documentNumber: string;

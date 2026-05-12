@@ -130,6 +130,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
           `${API_BASE_URL}/products/upload`,
           formData,
           {
+            timeout: 120000, // 2 minute timeout for large files
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
             onUploadProgress: (progressEvent) => {
               if (progressEvent.total) {
                 const progress = Math.round(
@@ -158,12 +163,29 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
             toastConfigError
           );
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error uploading image:", error);
-        toast.error(
-          "Error uploading image. Please try again.",
-          toastConfigError
-        );
+        setPreview(null);
+        
+        // Provide specific error messages based on error type
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+          toast.error(
+            "Upload timed out. Please check your connection and try again.",
+            toastConfigError
+          );
+        } else if (error.response?.status === 413) {
+          toast.error(
+            "File too large. Maximum size is 10MB.",
+            toastConfigError
+          );
+        } else if (error.response?.data?.message) {
+          toast.error(error.response.data.message, toastConfigError);
+        } else {
+          toast.error(
+            "Error uploading image. Please try again.",
+            toastConfigError
+          );
+        }
       } finally {
         setLoading(false);
         setUploadProgress(0);
@@ -228,6 +250,11 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
           `${API_BASE_URL}/products/upload`,
           formData,
           {
+            timeout: 120000, // 2 minute timeout for large files
+            withCredentials: true,
+            headers: {
+              'Content-Type': 'multipart/form-data',
+            },
             onUploadProgress: (progressEvent) => {
               if (progressEvent.total) {
                 const progress = Math.round(
@@ -257,17 +284,37 @@ const ImageUploader: React.FC<ImageUploaderProps> = ({ src }) => {
             toastConfigSuccess
           );
         } else {
+          // Remove the preview since upload failed
+          setAdditionalImages((prev) => prev.filter((_, i) => i !== tempIndex));
           toast.error(
             "An error occurred while uploading additional image",
             toastConfigError
           );
         }
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error uploading additional image:", error);
-        toast.error(
-          "Error uploading additional image. Using local preview.",
-          toastConfigError
-        );
+        // Remove the preview since upload failed
+        setAdditionalImages((prev) => prev.filter((_, i) => i !== tempIndex));
+        
+        // Provide specific error messages based on error type
+        if (error.code === 'ECONNABORTED' || error.message?.includes('timeout')) {
+          toast.error(
+            "Upload timed out. Please check your connection and try again.",
+            toastConfigError
+          );
+        } else if (error.response?.status === 413) {
+          toast.error(
+            "File too large. Maximum size is 10MB.",
+            toastConfigError
+          );
+        } else if (error.response?.data?.message) {
+          toast.error(error.response.data.message, toastConfigError);
+        } else {
+          toast.error(
+            "Error uploading additional image. Please try again.",
+            toastConfigError
+          );
+        }
       } finally {
         setAdditionalLoading(null);
         setAdditionalUploadProgress(0);

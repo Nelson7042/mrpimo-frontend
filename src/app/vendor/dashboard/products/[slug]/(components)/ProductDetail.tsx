@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import Image from "next/image";
 import { getCurrencySymbol } from "@/utils/currency";
+import { useRouter } from "next/navigation";
 
 type Props = {
   slug: string;
@@ -66,6 +67,8 @@ const AnalyticsCard = ({
 );
 
 const ProductDetail = ({ slug }: Props) => {
+  const router = useRouter();
+  
   const {
     data: productData,
     isError: productError,
@@ -105,7 +108,13 @@ const ProductDetail = ({ slug }: Props) => {
             {product && (
               <div className="rounded-lg border border-gray-200 p-4 text-sm">
                 <div className="flex gap-x-2">
-                  <ArrowLeftIcon />
+                  <button 
+                    onClick={() => router.push('/vendor/dashboard/products')}
+                    className="hover:bg-gray-100 rounded p-1 transition-colors cursor-pointer"
+                    aria-label="Back to products"
+                  >
+                    <ArrowLeftIcon className="w-5 h-5" />
+                  </button>
                   <div>
                     <h3>Product Details</h3>
                     <p>{product?.name}</p>

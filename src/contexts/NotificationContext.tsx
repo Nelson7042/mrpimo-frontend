@@ -43,12 +43,12 @@ function playChime() {
   }
 }
 
-export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const NotificationProvider: React.FC<{ children: React.ReactNode; scope?: "user" | "vendor" }> = ({ children, scope }) => {
   const [socket, setSocket] = useState<Socket | null>(null);
   const [notifications, setNotifications] = useState<INotification[]>([]);
   const [ringing, setRinging] = useState(false);
   const { user } = useUserStore();
-  const { data: userNotifications } = useUserNotifications(!!user?._id);
+  const { data: userNotifications } = useUserNotifications(!!user?._id, scope);
   const markAsReadMutation = useMarkNotificationAsRead();
   const markAllAsReadMutation = useMarkAllNotificationsAsRead();
   
@@ -74,15 +74,21 @@ export const NotificationProvider: React.FC<{ children: React.ReactNode }> = ({ 
     if (!socket) return;
     
     const handleNotification = (notification: INotification) => {
-      playChime();
-      setRinging(true);
-      setTimeout(() => setRinging(false), 1000);
-      setNotifications(prev => [
-        notification,
-        ...prev
-      ]);
+      // Filter by scope — only show notifications relevant to current dashboard
+      const notifScope = (notification as any).scope || "general";
+      const shouldShow = !scope || notifScope === scope || notifScope === "general";
       
-      // Show browser notification if permission granted
+      if (shouldShow) {
+        playChime();
+        setRinging(true);
+        setTimeout(() => setRinging(false), 1000);
+        setNotifications(prev => [
+          notification,
+          ...prev
+        ]);
+      }
+      
+      // Show browser notification for ALL scopes regardless of dashboard
       if (Notification.permission === 'granted') {
         const browserNotification = new Notification(notification.title, {
           body: notification.message,

@@ -25,6 +25,7 @@ import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { API_BASE_URL } from "@/utils/config";
 import { usePriceInfo } from "@/hooks/usePriceInfo";
 import { useProductBids, useProductOffers } from '@/hooks/useProductBidsOffers';
+import { useQueryClient } from '@tanstack/react-query';
 
 export const AuctionCountdown = ({ auction }: { auction: any }) => {
   const [timeLeft, setTimeLeft] = useState<string>("");
@@ -87,6 +88,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   const { openModal } = useAuthModalStore();
   const { user } = useUserStore();
   const router = useRouter();
+  const queryClient = useQueryClient();
 
   // Console log product data in ProductInfo component
   useEffect(() => {
@@ -311,6 +313,22 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
         };
       }
       await addToCart(productData, quantity, selectedVariantObj);
+      // Optimistic update: bump addToCart count locally without refetching
+      if (productData._id) {
+        queryClient.setQueryData(['product', productData._id], (oldData: any) => {
+          if (!oldData?.product) return oldData;
+          return {
+            ...oldData,
+            product: {
+              ...oldData.product,
+              analytics: {
+                ...oldData.product.analytics,
+                addToCart: (oldData.product.analytics?.addToCart || 0) + 1,
+              },
+            },
+          };
+        });
+      }
     } catch (error: any) {
       toast.error(error.message || "Failed to add to cart");
     }
@@ -469,6 +487,18 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       return;
     }
 
+    // Debug: Log price comparison
+    const displayPrice = (productData as any)?.priceInfo?.displayPrice;
+    const originalPrice = (productData as any)?.priceInfo?.originalPrice;
+    const exchangeRate = (productData as any)?.priceInfo?.exchangeRate;
+    const displayCurrency = (productData as any)?.priceInfo?.displayCurrency;
+    const originalCurrency = (productData as any)?.priceInfo?.originalCurrency;
+    console.log('[Offer Debug] Product displayed price (user currency):', displayPrice, displayCurrency);
+    console.log('[Offer Debug] Product original price (vendor currency):', originalPrice, originalCurrency);
+    console.log('[Offer Debug] Exchange rate:', exchangeRate);
+    console.log('[Offer Debug] User entered offer amount:', offerAmount);
+    console.log('[Offer Debug] Offer in vendor currency would be:', offerAmount / (exchangeRate || 1));
+
     setIsSubmittingOffer(true);
     try {
       const response = await fetchWithAuth(
@@ -483,13 +513,17 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       );
 
       if (!response.ok) {
-        throw new Error("Failed to submit offer");
+        const errorData = await response.json().catch(() => ({}));
+        console.log('[Offer Debug] Backend error response:', errorData);
+        throw new Error(errorData.message || "Failed to submit offer");
       }
 
+      const successData = await response.json().catch(() => ({}));
+      console.log('[Offer Debug] Backend success response:', successData);
       toast.success("Offer submitted successfully!");
       setShowOfferModal(false);
     } catch (error: any) {
-      console.error("Offer error:", error);
+      console.error("[Offer Debug] Offer error:", error);
       toast.error(error.message || "Failed to submit offer");
     } finally {
       setIsSubmittingOffer(false);

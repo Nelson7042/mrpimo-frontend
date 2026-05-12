@@ -94,7 +94,7 @@ export const vendorService = {
       ...(status && { status })
     });
     
-    const response = await fetchWithAuth(`${API_BASE_URL}/vendor/${vendorId}/orders?${params}`);
+    const response = await fetchWithAuth(`${API_BASE_URL}/orders/vendors/${vendorId}?${params}`);
     return handleApiResponse(response, 'Failed to fetch vendor orders');
   },
 
@@ -112,7 +112,7 @@ export const vendorService = {
       limit: limit.toString(),
     });
     
-    const response = await fetchWithAuth(`${API_BASE_URL}/vendor/${vendorId}/products?${params}`);
+    const response = await fetchWithAuth(`${API_BASE_URL}/products/vendor/${vendorId}?${params}`);
     return handleApiResponse(response, 'Failed to fetch vendor products');
   },
 

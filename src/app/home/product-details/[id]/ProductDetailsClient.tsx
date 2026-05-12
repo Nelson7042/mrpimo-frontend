@@ -21,7 +21,9 @@ const ProductDetailsClient: React.FC = () => {
   // Console log product details
   useEffect(() => {
     if (productData?.product) {
-      // Product data loaded successfully
+      console.log('[Product Detail Debug] Full product data:', productData.product);
+      console.log('[Product Detail Debug] Analytics field:', productData.product.analytics);
+      console.log('[Product Detail Debug] PriceInfo field:', productData.product.priceInfo);
     }
   }, [productData]);
 

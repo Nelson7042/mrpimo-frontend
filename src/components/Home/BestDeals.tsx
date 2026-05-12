@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useRef } from "react";
 import { Star, ArrowRight } from "lucide-react";
 import { useBestDeals } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
@@ -10,56 +10,6 @@ import "swiper/css";
 import "swiper/css/navigation";
 import { Button } from "@/components/ui/button";
 import Wishlist from "@/components/client-component/Wishlist";
-
-const CountdownTimer = () => {
-  const [timeLeft, setTimeLeft] = useState({
-    days: 16,
-    hours: 21,
-    minutes: 57,
-    seconds: 23,
-  });
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev.seconds > 0) {
-          return { ...prev, seconds: prev.seconds - 1 };
-        } else if (prev.minutes > 0) {
-          return { ...prev, minutes: prev.minutes - 1, seconds: 59 };
-        } else if (prev.hours > 0) {
-          return { ...prev, hours: prev.hours - 1, minutes: 59, seconds: 59 };
-        } else if (prev.days > 0) {
-          return {
-            ...prev,
-            days: prev.days - 1,
-            hours: 23,
-            minutes: 59,
-            seconds: 59,
-          };
-        }
-        return prev;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, []);
-
-  return (
-    <div className="hidden md:block text-white px-3 py-2 rounded-lg font-normal text-sm sm:text-base">
-      <span className="hidden text-black sm:inline">Deals ends in: </span>
-      <span className="sm:hidden">Ends in </span>
-      <span className="font-normal bg-[#7EA5F8] py-1 px-2 ">
-        <span className="hidden sm:inline">
-          {timeLeft.days}d : {timeLeft.hours}h : {timeLeft.minutes}m :{" "}
-          {timeLeft.seconds}s
-        </span>
-        <span className="sm:hidden">
-          {timeLeft.days}d {timeLeft.hours}h {timeLeft.minutes}m
-        </span>
-      </span>
-    </div>
-  );
-};
 
 const StarRating = ({
   rating,
@@ -130,6 +80,13 @@ const ProductCard = ({
               className={`w-full h-full object-cover group-hover:scale-105 transition-transform duration-300`}
             />
           </div>
+
+          {/* Discount Badge */}
+          {(product as any).discountPercentage > 0 && (
+            <div className="absolute top-1 left-1 sm:top-2 sm:left-2 bg-red-500 text-white px-1.5 py-0.5 rounded text-[10px] sm:text-xs font-semibold z-10">
+              {Math.round((product as any).discountPercentage)}% OFF
+            </div>
+          )}
 
           {/* Wishlist */}
           <div
@@ -282,7 +239,7 @@ export default function BestDeals() {
 
   if (isLoading) {
     return (
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-5 pb-3 md:py-10 lg:py-10">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
         {/* Header Skeleton */}
         <div className="flex flex-row items-center justify-between element-spacing gap-4 mb-6">
           <div className="flex flex-row items-center gap-3 sm:gap-6">
@@ -365,10 +322,9 @@ export default function BestDeals() {
         {/* Header */}
         <div className="flex flex-row items-center justify-between element-spacing gap-4">
           <div className="flex flex-row items-center gap-3 sm:gap-6">
-            <h2 className="text-responsive-xl font-semibold text-gray-900">
+            <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
               Our Best Deals
             </h2>
-            {/* <CountdownTimer /> */}
           </div>
           <Link href="/home/best-deals">
             <button className="btn-mobile flex items-center gap-2 text-blue-600 hover:text-blue-700 font-normal transition-colors group self-start sm:self-auto underline">
@@ -401,7 +357,7 @@ export default function BestDeals() {
               <ProductCard product={products[0]} isLarge={true} />
             </div>
           </div>
-          <div className="lg:w-2/3 grid grid-cols-3 gap-4">
+          <div className="lg:w-2/3 grid grid-cols-3 gap-4 sm:gap-6">
             {otherProducts.slice(0, 6)?.map((product: any) => (
               <ProductCard key={product._id} product={product} />
             ))}

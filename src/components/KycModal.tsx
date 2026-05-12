@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { X, Upload, CheckCircle, Clock } from 'lucide-react';
 import { useKybStore } from '@/stores/useKybStore';
 import { useKybRegistration } from '@/hooks/useKybRegistration';
+import { useVendorStore } from '@/stores/useVendorStore';
 
 interface KycModalProps {
   isOpen: boolean;
@@ -12,16 +13,29 @@ interface KycModalProps {
 
 const KycModal: React.FC<KycModalProps> = ({ isOpen, onClose }) => {
   const { formData, currentStep, setFormData, setCurrentStep, resetForm, initializeFromUser } = useKybStore();
+  const { vendor, setVendor } = useVendorStore();
   const kycMutation = useKybRegistration();
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Track if middle name was originally provided (to make it read-only if so)
+  const [originalMiddleName, setOriginalMiddleName] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     if (isOpen && currentStep === 1) {
       initializeFromUser();
       // Ensure account type is personal for this modal
       setFormData({ accountType: 'personal' });
+      
+      // Store the original middle name to determine if it should be editable
+      // Middle name is only editable if it wasn't already provided
+      const user = vendor;
+      if (user?.identityVerification?.middleName) {
+        setOriginalMiddleName(user.identityVerification.middleName);
+      } else {
+        setOriginalMiddleName(null);
+      }
     }
-  }, [isOpen, currentStep, initializeFromUser, setFormData]);
+  }, [isOpen, currentStep, initializeFromUser, setFormData, vendor]);
 
   if (!isOpen) return null;
 
@@ -89,6 +103,11 @@ const KycModal: React.FC<KycModalProps> = ({ isOpen, onClose }) => {
     formDataToSend.append('nationalIDNumber', formData.nationalIDNumber);
     formDataToSend.append('accountType', 'personal');
     
+    // Document type for Nigeria
+    if (formData.countryCode === 'NG' && formData.documentType) {
+      formDataToSend.append('documentType', formData.documentType);
+    }
+    
     // Country-specific fields
     if (formData.dateOfBirth) formDataToSend.append('dateOfBirth', formData.dateOfBirth);
     if (formData.phoneNumber) formDataToSend.append('phoneNumber', formData.phoneNumber);
@@ -103,8 +122,24 @@ const KycModal: React.FC<KycModalProps> = ({ isOpen, onClose }) => {
     try {
       const result = await kycMutation.mutateAsync(formDataToSend);
       if (result.success) {
+        // Update vendor store with fresh data so dashboard reflects verified status
+        if (result.data?.vendor && vendor) {
+          setVendor({
+            ...vendor,
+            kycStatus: result.data.vendor.kycStatus,
+            identityVerification: result.data.vendor.identityVerification,
+          });
+        }
         setCurrentStep(2); // Success
       } else if (result.requiresReview) {
+        // Update vendor store with requires_review status
+        if (result.data?.vendor && vendor) {
+          setVendor({
+            ...vendor,
+            kycStatus: result.data.vendor.kycStatus,
+            identityVerification: result.data.vendor.identityVerification,
+          });
+        }
         setCurrentStep(3); // Pending review
       }
     } catch (error) {
@@ -138,10 +173,11 @@ const KycModal: React.FC<KycModalProps> = ({ isOpen, onClose }) => {
                   <input
                     type="text"
                     value={formData.firstName}
-                    onChange={(e) => handleInputChange('firstName', e.target.value)}
-                    className={`w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 ${errors.firstName ? 'border-red-500' : 'border-gray-300'}`}
+                    readOnly
+                    disabled
+                    className="w-full border rounded-md px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
                   />
-                  {errors.firstName && <p className="text-red-500 text-xs mt-0.5">{errors.firstName}</p>}
+                  <p className="text-gray-400 text-xs mt-0.5">Name from your profile</p>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -150,21 +186,35 @@ const KycModal: React.FC<KycModalProps> = ({ isOpen, onClose }) => {
                   <input
                     type="text"
                     value={formData.lastName}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className={`w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 ${errors.lastName ? 'border-red-500' : 'border-gray-300'}`}
+                    readOnly
+                    disabled
+                    className="w-full border rounded-md px-3 py-2 text-sm bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300"
                   />
-                  {errors.lastName && <p className="text-red-500 text-xs mt-0.5">{errors.lastName}</p>}
+                  <p className="text-gray-400 text-xs mt-0.5">Name from your profile</p>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-medium text-gray-700 mb-1">Middle Name</label>
+                <label className="block text-xs font-medium text-gray-700 mb-1">
+                  Middle Name
+                  {originalMiddleName && <span className="text-gray-400 text-xs ml-1">(from profile)</span>}
+                </label>
                 <input
                   type="text"
                   value={formData.middleName}
                   onChange={(e) => handleInputChange('middleName', e.target.value)}
-                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600"
+                  readOnly={!!originalMiddleName}
+                  disabled={!!originalMiddleName}
+                  className={`w-full border rounded-md px-3 py-2 text-sm ${
+                    originalMiddleName 
+                      ? 'bg-gray-100 text-gray-600 cursor-not-allowed border-gray-300' 
+                      : 'border-gray-300 focus:ring-2 focus:ring-blue-600 focus:border-blue-600'
+                  }`}
+                  placeholder={originalMiddleName ? '' : 'Enter middle name (optional)'}
                 />
+                {!originalMiddleName && (
+                  <p className="text-gray-400 text-xs mt-0.5">You can add your middle name if not already set</p>
+                )}
               </div>
 
               <div>
@@ -196,15 +246,48 @@ const KycModal: React.FC<KycModalProps> = ({ isOpen, onClose }) => {
                 {errors.countryCode && <p className="text-red-500 text-xs mt-0.5">{errors.countryCode}</p>}
               </div>
 
+              {/* Nigeria: Document Type Selection */}
+              {formData.countryCode === 'NG' && (
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Verification Method <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    value={formData.documentType || 'nin'}
+                    onChange={(e) => handleInputChange('documentType', e.target.value)}
+                    className="w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 border-gray-300"
+                  >
+                    <option value="nin">National Identification Number (NIN)</option>
+                    <option value="bvn">Bank Verification Number (BVN)</option>
+                    <option value="passport">International Passport</option>
+                    <option value="drivers_license">Driver&apos;s License</option>
+                  </select>
+                  <p className="text-gray-400 text-xs mt-0.5">Choose one verification method</p>
+                </div>
+              )}
+
               <div>
                 <label className="block text-xs font-medium text-gray-700 mb-1">
-                  National ID Number <span className="text-red-500">*</span>
+                  {formData.countryCode === 'NG' 
+                    ? (formData.documentType === 'bvn' ? 'BVN Number' 
+                      : formData.documentType === 'passport' ? 'Passport Number'
+                      : formData.documentType === 'drivers_license' ? "Driver's License Number"
+                      : 'NIN Number')
+                    : 'National ID Number'
+                  } <span className="text-red-500">*</span>
                 </label>
                 <input
                   type="text"
                   value={formData.nationalIDNumber}
                   onChange={(e) => handleInputChange('nationalIDNumber', e.target.value)}
-                  placeholder="Enter your national ID number"
+                  placeholder={
+                    formData.countryCode === 'NG'
+                      ? (formData.documentType === 'bvn' ? 'Enter your 11-digit BVN'
+                        : formData.documentType === 'passport' ? 'Enter your passport number'
+                        : formData.documentType === 'drivers_license' ? "Enter your driver's license number"
+                        : 'Enter your 11-digit NIN')
+                      : 'Enter your national ID number'
+                  }
                   className={`w-full border rounded-md px-3 py-2 text-sm focus:ring-2 focus:ring-blue-600 focus:border-blue-600 ${errors.nationalIDNumber ? 'border-red-500' : 'border-gray-300'}`}
                 />
                 {errors.nationalIDNumber && <p className="text-red-500 text-xs mt-0.5">{errors.nationalIDNumber}</p>}

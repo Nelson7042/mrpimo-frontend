@@ -32,7 +32,8 @@ const VariantDisplay: React.FC<VariantDisplayProps> = ({
     }
     // Fallback to calculating from option price with exchange rate
     if (priceInfo?.exchangeRate && option?.price) {
-      return option.price * priceInfo.exchangeRate;
+      const effectivePrice = (option.salePrice && option.salePrice < option.price) ? option.salePrice : option.price;
+      return effectivePrice * priceInfo.exchangeRate;
     }
     // Last resort: use option price or salePrice
     return option?.salePrice || option?.price || 0;

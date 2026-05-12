@@ -323,7 +323,7 @@ export default function CartPage() {
                             alt={item?.product?.name || "product image"}
                             width={64}
                             height={64}
-                            className="rounded-lg object-cover flex-shrink-0"
+                            className="rounded-lg object-cover flex-shrink-0 w-16 h-16"
                           />
                           <div className="flex-1 min-w-0 pr-5">
                             <h3 className="font-medium text-xs leading-tight mb-0.5 text-gray-800 line-clamp-1">
@@ -445,7 +445,7 @@ export default function CartPage() {
                           as={`/home/product-details/${item?.product._id}`}
                           className="flex items-center space-x-2.5"
                         >
-                          <div className="relative">
+                          <div className="relative flex-shrink-0 w-14 h-14">
                             <Image
                               src={
                                 item?.product?.images?.[0] || "/placeholder.svg"
@@ -453,7 +453,7 @@ export default function CartPage() {
                               alt={item?.product?.name || "product image"}
                               width={56}
                               height={56}
-                              className="rounded-lg object-cover"
+                              className="rounded-lg object-cover w-14 h-14"
                             />
                           </div>
                           <div>

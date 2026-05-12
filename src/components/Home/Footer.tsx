@@ -13,12 +13,12 @@ const Footer: React.FC = () => {
 
   return ( 
     <footer className="w-full bg-gradient-to-t from-[#B4CCFF] to-[#EDF2FB]">
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-10 md:py-16">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
         {/* Newsletter Section */}
         <div className="mb-16">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
             <div className="md:max-w-sm">
-              <h2 className="text-lg md:text-2xl lg:3xl font-bold text-gray-900 mb-4">
+              <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900 mb-4">
                 Join our newsletter
               </h2>
               <p className="text-gray-600 text-sm md:text-lg">

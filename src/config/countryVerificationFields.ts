@@ -40,19 +40,12 @@ export const COUNTRY_VERIFICATION_FIELDS: Record<string, CountryVerificationConf
     country: 'Nigeria',
     personal: {
       documents: [
+        { value: 'nin', label: 'National Identification Number (NIN)', requiresBack: false },
+        { value: 'bvn', label: 'Bank Verification Number (BVN)', requiresBack: false },
         { value: 'passport', label: 'International Passport', requiresBack: false },
         { value: 'drivers_license', label: "Driver's License", requiresBack: true },
-        { value: 'national_id', label: 'National ID Card', requiresBack: true },
-        { value: 'nin', label: 'National Identification Number (NIN)', requiresBack: false },
       ],
-      additionalFields: [
-        {
-          name: 'bvn',
-          label: 'Bank Verification Number (BVN)',
-          type: 'text',
-          required: false,
-        },
-      ],
+      additionalFields: [],
     },
     business: {
       documents: [

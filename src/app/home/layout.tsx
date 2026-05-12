@@ -18,7 +18,7 @@ const Homepage = ({ children }: HomepageProps) => {
   const { isOpen, closeModal } = useAuthModalStore();
   const { user } = useUserStore();
   
-  useAuth();
+  const { isAuthLoading } = useAuth();
   useCartSync();
 
   return (
@@ -31,7 +31,7 @@ const Homepage = ({ children }: HomepageProps) => {
      </div>
      <Footer />
 
-      {!user && (
+      {!user && !isAuthLoading && (
         <AuthenticationModal
           isOpen={isOpen} 
           close={closeModal} 

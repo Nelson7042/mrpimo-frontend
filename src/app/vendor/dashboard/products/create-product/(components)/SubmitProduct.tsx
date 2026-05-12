@@ -80,6 +80,8 @@ export const useProductMapper = () => {
       }
       
       console.log('Mapped data:', mappedData);
+      console.log('Listing type:', mappedData.inventory?.listing?.type);
+      console.log('Variants:', mappedData.variants);
       return mappedData;
     } catch (error) {
       console.error('Error in comprehensive mapping, falling back to legacy:', error);
@@ -165,18 +167,20 @@ export const useProductMapper = () => {
           },
           restrictions: productDetails.shippingDetails?.restrictions || ["none"],
         },
-        variants: productDetails.variants?.map((variant: any, index: number) => ({
-          name: variant.name,
-          isDefault: variant.isDefault || index === 0,
-          options: variant.options.map((option: any, optionIndex: number) => ({
-            value: option.value,
-            price: Number(option.price),
-            salePrice: Number(option.salePrice || option.price),
-            quantity: Number(option.quantity),
-            sku: option.sku || `${variant.name?.substring(0, 3).toUpperCase() || "VAR"}-${option.value?.substring(0, 3).toUpperCase() || "OPT"}-${Date.now()}`,
-            isDefault: option.isDefault || optionIndex === 0,
+        variants: productDetails.pricingInformation?.listingType === "auction" 
+          ? [] // Auction products have no variants
+          : productDetails.variants?.map((variant: any, index: number) => ({
+            name: variant.name,
+            isDefault: variant.isDefault || index === 0,
+            options: variant.options.map((option: any, optionIndex: number) => ({
+              value: option.value,
+              price: Number(option.price),
+              salePrice: Number(option.salePrice || option.price),
+              quantity: Number(option.quantity),
+              sku: option.sku || `${variant.name?.substring(0, 3).toUpperCase() || "VAR"}-${option.value?.substring(0, 3).toUpperCase() || "OPT"}-${Date.now()}`,
+              isDefault: option.isDefault || optionIndex === 0,
+            })),
           })),
-        })),
       };
     }
   };

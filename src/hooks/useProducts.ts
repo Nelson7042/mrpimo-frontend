@@ -152,7 +152,7 @@ const placeBid = async (productId: string, maxBid: number) => {
     headers: {
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({ maxBid }),
+    body: JSON.stringify({ maxBid, currency: "USD" }),
   });
   if (!response.ok) {
     const error = await response.json();

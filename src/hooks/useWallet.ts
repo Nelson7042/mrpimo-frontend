@@ -1,6 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { API_BASE_URL } from '@/utils/config';
+import { useCallback } from 'react';
+
+export const WALLET_BALANCE_QUERY_KEY = ['walletBalance'];
 
 export interface IWalletTransaction {
   id: string;
@@ -63,11 +66,19 @@ const fetchWalletBalance = async (): Promise<{ wallet: IWallet }> => {
 
 export const useWalletBalance = () => {
   return useQuery({
-    queryKey: ['walletBalance'],
+    queryKey: WALLET_BALANCE_QUERY_KEY,
     queryFn: fetchWalletBalance,
     refetchOnWindowFocus: false,
     retry: 1,
   });
+};
+
+export const useInvalidateWalletBalance = () => {
+  const queryClient = useQueryClient();
+  const invalidateWalletBalance = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: WALLET_BALANCE_QUERY_KEY });
+  }, [queryClient]);
+  return invalidateWalletBalance;
 };
 
 // Fetch wallet transactions

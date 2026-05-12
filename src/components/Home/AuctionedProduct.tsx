@@ -2,7 +2,7 @@ import { useProductsOnAuction } from "@/hooks/queries";
 import { ProductType } from "@/types/product.type";
 import { Star, Loader2, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useMemo } from "react";
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Navigation, Pagination } from "swiper/modules";
 import "swiper/css";
@@ -10,6 +10,8 @@ import "swiper/css/navigation";
 import "swiper/css/pagination";
 import { Button } from "@/components/ui/button";
 import Wishlist from "@/components/client-component/Wishlist";
+
+const ITEMS_PER_PAGE = 8;
 
 const AuctionTimer = ({ product }: { product: ProductType }) => {
   const [timeLeft, setTimeLeft] = useState({
@@ -177,16 +179,68 @@ const AuctionedProduct = () => {
   const [status, setStatus] = React.useState<"upcoming" | "live" | "ended">(
     "live"
   );
+  const [currentPage, setCurrentPage] = useState<number>(1);
+
+  // Visibility check queries - fetch minimal data to determine if section should render
+  const { data: liveProducts, isLoading: isLiveLoading } = useProductsOnAuction({ page: 1, limit: 1, status: "live" });
+  const { data: upcomingProducts, isLoading: isUpcomingLoading } = useProductsOnAuction({ page: 1, limit: 1, status: "upcoming" });
+
   const {
     data: auctionProducts,
     isLoading,
     isError,
   } = useProductsOnAuction({
     page: 1,
-    limit: 12,
     status,
   });
   const auctionSwiperRef = useRef<any>(null);
+
+  // Reset to page 1 when status changes
+  const handleStatusChange = (newStatus: "upcoming" | "live" | "ended") => {
+    setStatus(newStatus);
+    setCurrentPage(1);
+  };
+
+  // Pagination calculations
+  const allAuctionProducts = auctionProducts || [];
+  const totalPages = Math.ceil(allAuctionProducts.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedProducts = allAuctionProducts.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+  // Generate page numbers for display
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    if (totalPages <= 5) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      if (currentPage > 3) {
+        pages.push("...");
+      }
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      if (currentPage < totalPages - 2) {
+        pages.push("...");
+      }
+      pages.push(totalPages);
+    }
+    return pages;
+  };
+
+  // Return null during loading to avoid layout shift
+  if (isLiveLoading || isUpcomingLoading) {
+    return null;
+  }
+
+  // Hide section entirely if no live AND no upcoming products exist
+  if ((!liveProducts || liveProducts.length === 0) && (!upcomingProducts || upcomingProducts.length === 0)) {
+    return null;
+  }
 
   // Reusable swiper component
   const AuctionSwiper = ({
@@ -271,7 +325,7 @@ const AuctionedProduct = () => {
               <button
                 key={statusOption}
                 onClick={() =>
-                  setStatus(statusOption as "upcoming" | "live" | "ended")
+                  handleStatusChange(statusOption as "upcoming" | "live" | "ended")
                 }
                 className={`px-3 py-2 text-xs font-medium transition-colors capitalize ${
                   status === statusOption
@@ -293,13 +347,76 @@ const AuctionedProduct = () => {
           </p>
         </div>
       ) : (
-        <AuctionSwiper
-          items={auctionProducts}
-          renderItem={(product: ProductType) => <ProductCard product={product} />}
-          swiperRef={auctionSwiperRef}
-          prevClass="auction-products-prev"
-          nextClass="auction-products-next"
-        />
+        <>
+          {/* Mobile Swiper */}
+          <div className="lg:hidden">
+            <AuctionSwiper
+              items={auctionProducts}
+              renderItem={(product: ProductType) => <ProductCard product={product} />}
+              swiperRef={auctionSwiperRef}
+              prevClass="auction-products-prev"
+              nextClass="auction-products-next"
+            />
+          </div>
+
+          {/* Desktop Grid with Pagination */}
+          <div className="hidden lg:block">
+            <div className="grid grid-cols-4 gap-4 sm:gap-6">
+              {paginatedProducts.map((product: ProductType) => (
+                <ProductCard key={product._id} product={product} />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-6">
+                {/* Prev Button */}
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === 1
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  Prev
+                </button>
+
+                {/* Page Numbers */}
+                {getPageNumbers().map((page, index) => (
+                  <button
+                    key={index}
+                    onClick={() => typeof page === "number" && setCurrentPage(page)}
+                    disabled={page === "..."}
+                    className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                      page === currentPage
+                        ? "bg-[#F6B76F] text-white"
+                        : page === "..."
+                        ? "bg-transparent text-gray-500 cursor-default"
+                        : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                    }`}
+                  >
+                    {page}
+                  </button>
+                ))}
+
+                {/* Next Button */}
+                <button
+                  onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    currentPage === totalPages
+                      ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+                      : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  }`}
+                >
+                  Next
+                </button>
+              </div>
+            )}
+          </div>
+        </>
       )}
     </div>
   );

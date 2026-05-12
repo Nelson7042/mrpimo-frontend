@@ -8,7 +8,7 @@ export default function Cta() {
       <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-7 lg:gap-12 items-center">
           {/* Left Content */}
-          <div className="text-white py-8  md:py-8 lg:py-10">
+          <div className="text-white py-8 md:py-10 lg:py-10">
             <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight mb-4 md:mb-6">
               Enjoy Maximum Shopping Experience Today
             </h2>

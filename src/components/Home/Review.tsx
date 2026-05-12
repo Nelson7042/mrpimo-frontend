@@ -1,156 +1,157 @@
 "use client"
 
-import { useState } from "react"
-import { ChevronLeft, ChevronRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
+import { useRef } from "react"
+import { Star } from "lucide-react"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import Skeleton from "@/components/ui/Skeleton"
+import { useFeaturedReviews } from "@/hooks/useReviews"
+import { Swiper, SwiperSlide } from "swiper/react"
+import "swiper/css"
 
-interface Review {
-  id: number
-  name: string
-  avatar: string
-  content: string
+function ReviewsLoadingSkeleton() {
+  return (
+    <section className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
+      <div className="text-center mb-8">
+        <Skeleton className="h-7 w-48 mx-auto" />
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+        {Array.from({ length: 3 }).map((_, i) => (
+          <div key={i} className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm">
+            <div className="flex items-center gap-3 mb-3">
+              <Skeleton className="w-10 h-10 rounded-full" />
+              <div>
+                <Skeleton className="h-4 w-24 mb-1" />
+                <Skeleton className="h-3 w-20" />
+              </div>
+            </div>
+            <Skeleton className="h-4 w-full mb-1" />
+            <Skeleton className="h-4 w-3/4" />
+          </div>
+        ))}
+      </div>
+    </section>
+  )
 }
 
-const reviews: Review[] = [
-  {
-    id: 1,
-    name: "Joy Chinedu",
-    avatar: "/placeholder.svg?height=80&width=80",
-    content:
-      "I have been using Mbrimo for a year now, and it has transformed the way I manage my shopping experience, and the ability to sell my item",
-  },
-  {
-    id: 2,
-    name: "Joy Chinedu",
-    avatar: "/placeholder.svg?height=80&width=80",
-    content:
-      "You have been using Mbrimo for a year now, and it has transformed the way I manage my shopping experience, and the ability to sell my item",
-  },
-  {
-    id: 3,
-    name: "Joy Chinedu",
-    avatar: "/placeholder.svg?height=80&width=80",
-    content:
-      "I have been using Mbrimo for a year now, and it has transformed the way I manage my shopping experience, and the ability to sell my item",
-  },
+function ReviewStarRating({ rating }: { rating: number }) {
+  return (
+    <div className="flex items-center gap-0.5">
+      {Array.from({ length: 5 }).map((_, index) => (
+        <Star
+          key={index}
+          size={12}
+          className={`${
+            index < Math.floor(rating)
+              ? "fill-yellow-400 text-yellow-400"
+              : index < rating
+              ? "fill-yellow-200 text-yellow-400"
+              : "text-gray-300"
+          }`}
+        />
+      ))}
+    </div>
+  )
+}
+
+const AVATAR_COLORS = [
+  "bg-blue-500",
+  "bg-green-500",
+  "bg-purple-500",
+  "bg-orange-500",
 ]
 
 export default function CustomerReviews() {
-  const [currentIndex, setCurrentIndex] = useState(1) // Start with middle review
+  const { reviews, isLoading, isError } = useFeaturedReviews()
+  const swiperRef = useRef<any>(null)
 
-  const nextReview = () => {
-    setCurrentIndex((prev) => (prev + 1) % reviews.length)
+  if (isLoading) {
+    return <ReviewsLoadingSkeleton />
   }
 
-  const prevReview = () => {
-    setCurrentIndex((prev) => (prev - 1 + reviews.length) % reviews.length)
-  }
-
-  const goToReview = (index: number) => {
-    setCurrentIndex(index)
+  if (isError || reviews.length === 0) {
+    return null
   }
 
   return (
-    <section className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8  md:py-8 lg:py-10">
-      <div className="text-center mb-12 lg:mb-16">
-        <h2 className="text-lg lg:text-2xl font-bold text-gray-900">Customer Reviews</h2>
+    <section className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
+      <div className="text-center mb-8">
+        <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">Customer Reviews</h2>
       </div>
 
-      <div className="relative">
-          <div className="flex items-center justify-center">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={prevReview}
-              className="absolute left-0 z-10 w-12 h-12 rounded-full bg-black text-white hover:bg-gray-800 hidden lg:flex"
-            >
-              <ChevronLeft className="w-6 h-6" />
-            </Button>
+      {/* Mobile: Swiper */}
+      <div className="lg:hidden">
+        <Swiper
+          ref={swiperRef}
+          spaceBetween={16}
+          slidesPerView={1.2}
+          breakpoints={{
+            480: { slidesPerView: 1.5 },
+            640: { slidesPerView: 2 },
+            768: { slidesPerView: 2.5 },
+          }}
+        >
+          {reviews.map((review, index) => {
+            const initials = review.reviewerName
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .slice(0, 2)
 
-            <div className="flex items-center justify-center w-full overflow-hidden">
-              <div className="flex transition-transform duration-500 ease-in-out w-full">
-                {reviews.map((review, index) => {
-                  const isActive = index === currentIndex
-                  const isPrev = index === (currentIndex - 1 + reviews.length) % reviews.length
-                  const isNext = index === (currentIndex + 1) % reviews.length
+            const avatarColor = AVATAR_COLORS[index % AVATAR_COLORS.length]
 
-                  let cardClasses = "transition-all duration-500 flex-shrink-0 px-4"
-
-                  if (isActive) {
-                    cardClasses += " w-full lg:w-[45%] opacity-100 scale-100"
-                  } else if (isPrev || isNext) {
-                    cardClasses += " w-0 lg:w-[27.5%] opacity-0 lg:opacity-60 scale-90 hidden lg:block"
-                  } else {
-                    cardClasses += " w-0 opacity-0 scale-75 hidden"
-                  }
-
-                  return (
-                    <div key={review.id} className={cardClasses}>
-                      <div
-                        className={`rounded-md p-4 md:p-6 lg:p-10 text-center  flex flex-col ${
-                          isActive ? "bg-[#D0D7E2] shadow-lg" : "bg-gradient-to-br flex from-[#3B73ED] to-[#e5eaf0]"
-                        }`}
-                      >
-                        <div className="mb-6">
-                          <span className="text-4xl lg:text-5xl text-blue-500 font-serif">"</span>
-                        </div>
-
-                        <blockquote className="text-lg lg:text-xl text-gray-800 leading-relaxed mb-8 font-medium">
-                          {review.content}
-                        </blockquote>
-
-                        <div className="flex flex-col items-center space-y-4">
-                          <Avatar className="w-16 h-16 lg:w-20 lg:h-20">
-                            <AvatarImage src={review.avatar || "/placeholder.svg"} alt={review.name} />
-                            <AvatarFallback className="text-lg font-semibold">
-                              {review.name
-                                .split(" ")
-                                .map((n) => n[0])
-                                .join("")}
-                            </AvatarFallback>
-                          </Avatar>
-                          <h4 className="text-lg lg:text-xl font-semibold text-gray-900">{review.name}</h4>
-                        </div>
-                      </div>
+            return (
+              <SwiperSlide key={review._id}>
+                <div className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm min-w-[280px]">
+                  <div className="flex items-center gap-3 mb-3">
+                    <Avatar className="w-10 h-10">
+                      <AvatarImage src={review.reviewerAvatar || ""} alt={review.reviewerName} />
+                      <AvatarFallback className={`${avatarColor} text-white text-sm font-semibold`}>
+                        {initials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <h4 className="font-semibold text-gray-900 text-sm">{review.reviewerName}</h4>
+                      <ReviewStarRating rating={review.rating} />
                     </div>
-                  )
-                })}
+                  </div>
+                  <p className="text-gray-600 text-sm line-clamp-3">{review.comment}</p>
+                </div>
+              </SwiperSlide>
+            )
+          })}
+        </Swiper>
+      </div>
+
+      {/* Desktop: Grid showing 3 cards */}
+      <div className="hidden lg:grid grid-cols-3 gap-4 sm:gap-6">
+        {reviews.slice(0, 3).map((review, index) => {
+          const initials = review.reviewerName
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .slice(0, 2)
+
+          const avatarColor = AVATAR_COLORS[index % AVATAR_COLORS.length]
+
+          return (
+            <div key={review._id} className="bg-white border border-gray-200 rounded-lg p-4 md:p-6 shadow-sm min-w-[280px]">
+              <div className="flex items-center gap-3 mb-3">
+                <Avatar className="w-10 h-10">
+                  <AvatarImage src={review.reviewerAvatar || ""} alt={review.reviewerName} />
+                  <AvatarFallback className={`${avatarColor} text-white text-sm font-semibold`}>
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h4 className="font-semibold text-gray-900 text-sm">{review.reviewerName}</h4>
+                  <ReviewStarRating rating={review.rating} />
+                </div>
               </div>
+              <p className="text-gray-600 text-sm line-clamp-3">{review.comment}</p>
             </div>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={nextReview}
-              className="absolute right-0 z-10 w-12 h-12 rounded-full bg-black text-white hover:bg-gray-800 hidden lg:flex"
-            >
-              <ChevronRight className="w-6 h-6" />
-            </Button>
-          </div>
-
-          <div className="flex justify-center space-x-4 mt-8 lg:hidden">
-            <Button variant="outline" size="icon" onClick={prevReview} className="w-10 h-10 rounded-full">
-              <ChevronLeft className="w-5 h-5" />
-            </Button>
-            <Button variant="outline" size="icon" onClick={nextReview} className="w-10 h-10 rounded-full">
-              <ChevronRight className="w-5 h-5" />
-            </Button>
-          </div>
-
-          <div className="flex justify-center space-x-2 mt-8">
-            {reviews.map((_, index) => (
-              <div
-                key={index}
-                onClick={() => goToReview(index)}
-                className={`w-4 h-2 rounded-full transition-all duration-300 ${
-                  index === currentIndex ? "bg-blue-500 scale-125" : "bg-gray-300 hover:bg-gray-400"
-                }`}
-                aria-label={`Go to review ${index + 1}`}
-              />
-            ))}
-          </div>
-        </div>
+          )
+        })}
+      </div>
     </section>
   )
 }

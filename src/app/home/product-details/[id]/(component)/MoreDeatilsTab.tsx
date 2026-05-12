@@ -95,21 +95,21 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       {/* Product Details Column */}
       <div className="lg:col-span-1 md:px-3">
         <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Product Details</h3>
-        <div className="space-y-1 md:space-y-3">
-          <div className="flex gap-1">
-            <span className="font-roboto text-xs text-gray-600">Brand:</span>
+        <div className="space-y-1 md:space-y-2">
+          <div className="grid grid-cols-[80px_1fr] gap-2 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs text-gray-600">Brand</span>
             <span className="font-roboto text-xs text-gray-900 font-medium">{productData?.brand}</span>
           </div>
-          <div className="flex gap-1">
-            <span className="font-roboto text-xs text-gray-600">Condition:</span>
+          <div className="grid grid-cols-[80px_1fr] gap-2 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs text-gray-600">Condition</span>
             <span className="font-roboto text-xs text-gray-900 font-medium capitalize">{productData?.condition}</span>
           </div>
-          <div className="flex gap-1">
-            <span className="font-roboto text-xs text-gray-600">SKU:</span>
+          <div className="grid grid-cols-[80px_1fr] gap-2 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs text-gray-600">SKU</span>
             <span className="font-roboto text-xs text-gray-900 font-medium">{productData?.inventory?.sku}</span>
           </div>
-          <div className="flex gap-1">
-            <span className="font-roboto text-xs text-gray-600">Category:</span>
+          <div className="grid grid-cols-[80px_1fr] gap-2 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs text-gray-600">Category</span>
             <span className="font-roboto text-xs text-gray-900 font-medium">{productData?.category?.main?.name}</span>
           </div>
         </div>
@@ -122,11 +122,11 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       {/* Product Specifications */}
       <div className="md:px-3">
         <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Product Specifications</h3>
-        <div className="space-y-1 md:space-y-3">
+        <div className="space-y-1 md:space-y-2">
           {productData?.specifications?.map((spec) => (
-            <div key={spec._id}>
-              <span className="font-roboto text-xs font-medium text-gray-900">{spec.key}:</span>
-              <span className="font-roboto text-xs text-gray-600 ml-2">{spec.value}</span>
+            <div key={spec._id} className="grid grid-cols-[120px_1fr] gap-3 py-1 border-b border-gray-100">
+              <span className="font-roboto text-xs font-medium text-gray-900">{spec.key}</span>
+              <span className="font-roboto text-xs text-gray-600">{spec.value}</span>
             </div>
           ))}
         </div>
@@ -135,20 +135,20 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       {/* Shipping Information */}
       <div className="md:px-3">
         <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Shipping Information</h3>
-        <div className="space-y-1 md:space-y-3">
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Weight:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.shipping?.weight} {productData?.shipping?.unit}</span>
+        <div className="space-y-1 md:space-y-2">
+          <div className="grid grid-cols-[120px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Weight</span>
+            <span className="font-roboto text-xs text-gray-600">{productData?.shipping?.weight} {productData?.shipping?.unit}</span>
           </div>
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Dimensions:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2">
+          <div className="grid grid-cols-[120px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Dimensions</span>
+            <span className="font-roboto text-xs text-gray-600">
               {productData?.shipping?.dimensions?.length} x {productData?.shipping?.dimensions?.width} x {productData?.shipping?.dimensions?.height} cm
             </span>
           </div>
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Restrictions:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.shipping?.restrictions?.join(', ')}</span>
+          <div className="grid grid-cols-[120px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Restrictions</span>
+            <span className="font-roboto text-xs text-gray-600">{productData?.shipping?.restrictions?.join(', ')}</span>
           </div>
         </div>
       </div>
@@ -160,14 +160,14 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       {/* Product Analytics */}
       <div>
         <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Product Analytics</h3>
-        <div className="space-y-1 md:space-y-3">
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Add to Cart:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.analytics?.addToCart}</span>
+        <div className="space-y-1 md:space-y-2">
+          <div className="grid grid-cols-[100px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Add to Cart</span>
+            <span className="font-roboto text-xs text-gray-600">{productData?.analytics?.addToCart}</span>
           </div>
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Purchases:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.analytics?.purchases}</span>
+          <div className="grid grid-cols-[100px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Purchases</span>
+            <span className="font-roboto text-xs text-gray-600">{productData?.analytics?.purchases}</span>
           </div>
         </div>
       </div>
@@ -175,21 +175,21 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       {/* Listing Information */}
       <div>
         <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Listing Information</h3>
-        <div className="space-y-1 md:space-y-3">
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Listing Type:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2 capitalize">{productData?.inventory?.listing?.type}</span>
+        <div className="space-y-1 md:space-y-2">
+          <div className="grid grid-cols-[100px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Listing Type</span>
+            <span className="font-roboto text-xs text-gray-600 capitalize">{productData?.inventory?.listing?.type}</span>
           </div>
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Status:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2 capitalize">{productData?.status}</span>
+          <div className="grid grid-cols-[100px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Status</span>
+            <span className="font-roboto text-xs text-gray-600 capitalize">{productData?.status}</span>
           </div>
-          <div>
-            <span className="font-roboto text-xs font-medium text-gray-900">Featured:</span>
-            <span className="font-roboto text-xs text-gray-600 ml-2">{productData?.isFeatured ? 'Yes' : 'No'}</span>
+          <div className="grid grid-cols-[100px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Featured</span>
+            <span className="font-roboto text-xs text-gray-600">{productData?.isFeatured ? 'Yes' : 'No'}</span>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="font-roboto text-xs font-medium text-gray-900">Rating:</span>
+          <div className="grid grid-cols-[100px_1fr] gap-3 py-1 border-b border-gray-100">
+            <span className="font-roboto text-xs font-medium text-gray-900">Rating</span>
             <div className="flex items-center gap-1">
               <div className="flex">{renderStars(productData?.rating || 0)}</div>
               <span className="font-roboto text-xs text-gray-600 ml-1">
@@ -209,14 +209,23 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
               <h4 className="font-roboto text-xs font-medium text-gray-900 mb-2">{variant.name}</h4>
               {variant.options?.map((option) => (
                 <div key={option._id} className="ml-4 space-y-1">
-                  <div>
-                    <span className="font-roboto text-xs text-gray-600">{getColorName(option.value)}:</span>
+                  <div className="flex items-center">
+                    {/^#[0-9A-F]{6}$/i.test(option.value) ? (
+                      <div className="flex items-center gap-1.5">
+                        <div
+                          className="w-4 h-4 rounded-full border border-gray-300 flex-shrink-0"
+                          style={{ backgroundColor: option.value }}
+                        />
+                      </div>
+                    ) : (
+                      <span className="font-roboto text-xs text-gray-600">{option.value}:</span>
+                    )}
                     <span className="font-roboto text-xs text-gray-900 ml-2">
                       {(productData as any)?.priceInfo?.currencySymbol || '$'}
                       {(option.displayPrice || option.salePrice || option.price)?.toLocaleString()}
                     </span>
                     {option.salePrice && option.price !== option.salePrice && (
-                      <span className="font-roboto text-xs text-gray-500 line-through ml-2">
+                      <span className="font-roboto text-[10px] text-gray-500 line-through ml-2">
                         {(productData as any)?.priceInfo?.currencySymbol || '$'}
                         {((option.price || 0) * ((productData as any)?.priceInfo?.exchangeRate || 1))?.toLocaleString()}
                       </span>

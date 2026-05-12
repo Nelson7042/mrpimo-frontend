@@ -23,7 +23,11 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case "pending":
       return "bg-yellow-100 text-yellow-800";
+    case "payment_pending":
+      return "bg-blue-100 text-blue-800";
     case "accepted":
+      return "bg-green-100 text-green-800";
+    case "completed":
       return "bg-green-100 text-green-800";
     case "rejected":
       return "bg-red-100 text-red-800";
@@ -38,7 +42,11 @@ const getStatusIcon = (status: string) => {
   switch (status) {
     case "pending":
       return <Clock className="w-3 h-3" />;
+    case "payment_pending":
+      return <Clock className="w-3 h-3" />;
     case "accepted":
+      return <CheckCircle className="w-3 h-3" />;
+    case "completed":
       return <CheckCircle className="w-3 h-3" />;
     case "rejected":
       return <XCircle className="w-3 h-3" />;
@@ -188,8 +196,17 @@ export default function VendorOffersPage() {
             <div className="mt-5 space-y-4">
               {offers.map((group) => (
                 <div key={group.productId} className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                  <div className="p-4 md:p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
-                    <h2 className="font-semibold text-sm md:text-base text-gray-900">{group.name}</h2>
+                  <div className="p-3 md:p-5 bg-gradient-to-r from-gray-50 to-gray-100 border-b">
+                    <div className="flex items-center gap-3 min-w-0">
+                      {group.image && (
+                        <img
+                          src={group.image}
+                          alt={group.name}
+                          className="w-10 h-10 md:w-12 md:h-12 object-cover rounded-lg border border-gray-200 flex-shrink-0"
+                        />
+                      )}
+                      <h2 className="font-semibold text-sm md:text-base text-gray-900 truncate">{group.name}</h2>
+                    </div>
                   </div>
                   <div className="divide-y divide-gray-100">
                     {group.offers.map((offer) => (
@@ -245,6 +262,14 @@ export default function VendorOffersPage() {
                                 <Send className="w-3 h-3" />
                                 Counter Offer
                               </button>
+                            </div>
+                          )}
+                          {offer.status === "payment_pending" && (
+                            <div className="flex items-center gap-2">
+                              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-md">
+                                <Clock className="w-3 h-3" />
+                                Sale Pending — Awaiting buyer payment
+                              </span>
                             </div>
                           )}
                         </div>

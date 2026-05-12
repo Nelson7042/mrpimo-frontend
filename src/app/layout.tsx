@@ -95,7 +95,7 @@ export default function RootLayout({
         <TanstackProvider>
           <ErrorBoundary>
             <TokenRefresher />
-            <NotificationProvider>
+            <NotificationProvider scope="user">
               <SocketInitializer />
               {children}
             </NotificationProvider>

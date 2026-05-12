@@ -16,12 +16,14 @@ import {
   Trash,
   Upload,
   Edit,
+  Loader2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import ProductImport from "./create-product/(components)/ProductImport";
 import ProductsPageSkeleton from "./ProductsPageSkeleton";
 import { useVendorStore } from "@/stores/useVendorStore";
+import { useUpdateProduct } from "@/hooks/useVendor";
 
 type Props = {};
 
@@ -65,9 +67,11 @@ const ProductsPage = () => {
   >([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [showProductImport, setShowProductImport] = useState(false);
+  const [togglingProductId, setTogglingProductId] = useState<string | null>(null);
 
   const { data: vendorProducts, isLoading } = useVendorProducts(vendor?._id!);
   const router = useRouter();
+  const updateProductMutation = useUpdateProduct();
 
   useEffect(() => {
     if (vendorProducts) {
@@ -138,31 +142,62 @@ const ProductsPage = () => {
     return pageNumbers;
   };
 
-  const toggleOffer = (id: string) => {
-    const updatedProducts = listedProducts.map((product) => {
-      if (product._id !== id) return product;
+  const toggleOffer = async (id: string) => {
+    // Find the product to get current acceptOffer value
+    const product = listedProducts.find((p) => p._id === id);
+    if (!product || product.inventory?.listing?.type !== "instant") return;
 
-      if (product.inventory?.listing?.type === "instant") {
-        return {
-          ...product,
+    const currentAcceptOffer = product.inventory.listing.instant?.acceptOffer || false;
+    const newAcceptOffer = !currentAcceptOffer;
+
+    // Set loading state
+    setTogglingProductId(id);
+
+    try {
+      // Call the backend to update the product
+      await updateProductMutation.mutateAsync({
+        productId: id,
+        productData: {
           inventory: {
             ...product.inventory,
             listing: {
               ...product.inventory.listing,
               instant: {
-                ...product.inventory.listing.instant!,
-                acceptOffer: !product.inventory.listing.instant?.acceptOffer,
+                ...product.inventory.listing.instant,
+                acceptOffer: newAcceptOffer,
+              },
+            },
+          },
+        },
+      });
+
+      // Update local state after successful backend update
+      const updatedProducts = listedProducts.map((p) => {
+        if (p._id !== id) return p;
+
+        return {
+          ...p,
+          inventory: {
+            ...p.inventory,
+            listing: {
+              ...p.inventory!.listing,
+              instant: {
+                ...p.inventory!.listing.instant!,
+                acceptOffer: newAcceptOffer,
               },
             },
           },
         };
-      }
+      });
 
-      return product;
-    });
-
-    setProductList(updatedProducts);
-    setListedProducts(updatedProducts);
+      setProductList(updatedProducts);
+      setListedProducts(updatedProducts);
+    } catch (error) {
+      // Error is handled by the mutation's onError callback
+      console.error("Failed to toggle accept offer:", error);
+    } finally {
+      setTogglingProductId(null);
+    }
   };
 
   const getStatusColor = (status: string) => {
@@ -456,6 +491,12 @@ const ProductsPage = () => {
                         Stock
                       </th>
                       <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs whitespace-nowrap">
+                        Add to Cart
+                      </th>
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
+                        Purchases
+                      </th>
+                      <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs whitespace-nowrap">
                         Accept Offer
                       </th>
                       <th className="font-roboto px-4 py-3 text-left font-medium text-gray-500 uppercase text-xs">
@@ -536,17 +577,37 @@ const ProductsPage = () => {
                           })()}
                         </td>
 
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-900">
+                          {product.analytics?.addToCart || 0}
+                        </td>
+
+                        <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-900">
+                          {product.analytics?.purchases || 0}
+                        </td>
+
                         <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                           {product.inventory?.listing?.type === "instant" ? (
                             <div
-                              className={`w-8 h-4 rounded-full flex items-center cursor-pointer ${
+                              className={`w-8 h-4 rounded-full flex items-center cursor-pointer transition-colors ${
+                                togglingProductId === product._id
+                                  ? "opacity-50 cursor-wait"
+                                  : ""
+                              } ${
                                 product.inventory.listing.instant?.acceptOffer
                                   ? "bg-blue-600 justify-end"
                                   : "bg-gray-300 justify-start"
                               }`}
-                              onClick={() => toggleOffer(product?._id!)}
+                              onClick={() => {
+                                if (togglingProductId !== product._id) {
+                                  toggleOffer(product?._id!);
+                                }
+                              }}
                             >
-                              <div className="size-3 bg-white rounded-full mx-0.5" />
+                              {togglingProductId === product._id ? (
+                                <Loader2 className="size-3 mx-0.5 animate-spin text-white" />
+                              ) : (
+                                <div className="size-3 bg-white rounded-full mx-0.5" />
+                              )}
                             </div>
                           ) : (
                             <p className="font-roboto">N/A</p>
@@ -691,7 +752,10 @@ const ProductsPage = () => {
                                 (v: any) => v.options
                               ) || [];
                               const prices = allOptions
-                                .map((o: any) => o.price)
+                                .map((o: any) => {
+                                  // Prefer salePrice over price
+                                  return (o.salePrice && o.salePrice > 0) ? o.salePrice : o.price;
+                                })
                                 .filter((p) => p > 0);
 
                               if (prices.length === 0) return "N/A";
@@ -705,8 +769,8 @@ const ProductsPage = () => {
 
                               return `${currency} ${
                                 minPrice === maxPrice
-                                  ? minPrice
-                                  : `${minPrice} - ${maxPrice}`
+                                  ? minPrice.toLocaleString()
+                                  : `${minPrice.toLocaleString()} - ${maxPrice.toLocaleString()}`
                               }`;
                             }
 
@@ -715,9 +779,12 @@ const ProductsPage = () => {
                                 typeof product.country !== "string" && product.country
                                   ? product.country.currency
                                   : "";
+                              // Prefer salePrice over price
+                              const salePrice = product.inventory.listing.instant?.salePrice;
+                              const price = product.inventory.listing.instant?.price;
+                              const displayPrice = (salePrice && salePrice > 0) ? salePrice : price;
                               return `${currency} ${
-                                product.inventory.listing.instant?.price ??
-                                "N/A"
+                                displayPrice?.toLocaleString() ?? "N/A"
                               }`;
                             }
 
@@ -748,6 +815,14 @@ const ProductsPage = () => {
                                   "N/A";
                           })(),
                         },
+                        {
+                          label: "Add to Cart",
+                          value: product.analytics?.addToCart || 0,
+                        },
+                        {
+                          label: "Purchases",
+                          value: product.analytics?.purchases || 0,
+                        },
                       ].map((item, index) => (
                         <div
                           key={item.label}
@@ -767,14 +842,26 @@ const ProductsPage = () => {
                         <div className="flex justify-between items-center px-2 py-2 text-xs bg-white text-gray-500">
                           <span className="font-roboto font-medium">Accept Offer:</span>
                           <div
-                            className={`w-8 h-4 rounded-full flex items-center cursor-pointer ${
+                            className={`w-8 h-4 rounded-full flex items-center cursor-pointer transition-colors ${
+                              togglingProductId === product._id
+                                ? "opacity-50 cursor-wait"
+                                : ""
+                            } ${
                               product.inventory.listing.instant?.acceptOffer
                                 ? "bg-blue-600 justify-end"
                                 : "bg-gray-300 justify-start"
                             }`}
-                            onClick={() => toggleOffer(product?._id!)}
+                            onClick={() => {
+                              if (togglingProductId !== product._id) {
+                                toggleOffer(product?._id!);
+                              }
+                            }}
                           >
-                            <div className="size-3 bg-white rounded-full mx-0.5"></div>
+                            {togglingProductId === product._id ? (
+                              <Loader2 className="size-3 mx-0.5 animate-spin text-white" />
+                            ) : (
+                              <div className="size-3 bg-white rounded-full mx-0.5"></div>
+                            )}
                           </div>
                         </div>
                       )}

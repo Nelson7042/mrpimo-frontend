@@ -5,6 +5,7 @@ import { X, Star, Heart, MessageSquare } from 'lucide-react';
 import { NumericFormat } from 'react-number-format';
 import { useUserStore } from '@/stores/useUserStore';
 import { useVendorStore } from '@/stores/useVendorStore';
+import { useCountries } from '@/hooks/useCountries';
 
 interface ProductPreviewModalProps {
   isOpen: boolean;
@@ -27,27 +28,23 @@ export default function ProductPreviewModal({
   // All hooks must be called before any conditional returns (React Rules of Hooks)
   const { user } = useUserStore();
   const { vendor } = useVendorStore();
+  const { data: countries = [] } = useCountries();
   
-  // Get vendor's currency symbol for display
-  const getVendorCurrencySymbol = () => {
-    const currency = vendor?.wallet?.currency || 'USD';
-    const currencySymbols: { [key: string]: string } = {
-      'USD': '$',
-      'EUR': '€',
-      'GBP': '£',
-      'NGN': '₦',
-      'ZAR': 'R',
-      'CAD': 'C$',
-      'AUD': 'A$',
-      'JPY': '¥',
-      'CNY': '¥',
-      'KES': 'KSh',
-      'GHS': '₵',
-    };
-    return currencySymbols[currency] || '$';
+  // Get currency symbol from vendor's country (user.country)
+  const getCurrencySymbol = () => {
+    const vendorCountry = user?.country;
+    if (vendorCountry && countries.length > 0) {
+      const selectedCountry = countries.find(
+        (c) => c.name === vendorCountry || c.isoCode === vendorCountry
+      );
+      if (selectedCountry?.currencySymbol) {
+        return selectedCountry.currencySymbol;
+      }
+    }
+    return '$'; // Default fallback
   };
 
-  const currencySymbol = getVendorCurrencySymbol();
+  const currencySymbol = getCurrencySymbol();
 
   // Initialize selected options when variants change
   useEffect(() => {
@@ -66,7 +63,10 @@ export default function ProductPreviewModal({
 
   const getPrice = () => {
     if (productDetails.pricingInformation?.listingType === 'auction') {
-      return productDetails.pricingInformation.auction?.startPrice || 0;
+      return { 
+        price: productDetails.pricingInformation.auction?.startPrice || 0,
+        salePrice: null 
+      };
     }
     
     // If variants exist, get price from selected option
@@ -74,11 +74,22 @@ export default function ProductPreviewModal({
       const firstVariant = variants[0];
       const selectedOptionIndex = selectedOptions[0] || 0;
       const selectedOption = firstVariant?.options?.[selectedOptionIndex];
-      return selectedOption?.salePrice || selectedOption?.price || 0;
+      const price = selectedOption?.price || 0;
+      const salePrice = selectedOption?.salePrice || null;
+      return { price, salePrice };
     }
     
-    return productDetails.pricingInformation?.instantSale?.price || 0;
+    const price = productDetails.pricingInformation?.instantSale?.price || 0;
+    const salePrice = productDetails.pricingInformation?.instantSale?.salePrice || null;
+    return { price, salePrice };
   };
+
+  const priceData = getPrice();
+  const displayPrice = priceData.salePrice || priceData.price;
+  const originalPrice = priceData.salePrice ? priceData.price : null;
+  const discountPercentage = originalPrice && priceData.salePrice 
+    ? Math.round(((originalPrice - priceData.salePrice) / originalPrice) * 100)
+    : null;
 
   const getTotalQuantity = () => {
     if (variants.length > 0) {
@@ -217,7 +228,7 @@ export default function ProductPreviewModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[100] p-4">
       <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto font-roboto">
         <div className="sticky top-0 bg-white border-b px-4 py-3 flex justify-between items-center z-10">
           <h2 className="text-base font-semibold">Product Preview</h2>
@@ -318,17 +329,40 @@ export default function ProductPreviewModal({
                 <div className="flex flex-col sm:flex-row gap-2 sm:gap-4">
                   {/* Price */}
                   <div>
-                    <div className="text-lg md:text-xl font-semibold text-gray-900">
-                      <NumericFormat
-                        value={getPrice()}
-                        displayType="text"
-                        thousandSeparator={true}
-                        prefix={currencySymbol}
-                        decimalScale={2}
-                        fixedDecimalScale={true}
-                      />
+                    <div className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <div className="font-roboto text-lg md:text-xl lg:text-2xl font-semibold text-gray-900">
+                          <NumericFormat
+                            value={displayPrice}
+                            displayType="text"
+                            thousandSeparator={true}
+                            prefix={currencySymbol}
+                            decimalScale={2}
+                            fixedDecimalScale={true}
+                          />
+                        </div>
+                        {originalPrice && (
+                          <>
+                            <div className="font-roboto text-xs md:text-sm text-gray-400 line-through">
+                              <NumericFormat
+                                value={originalPrice}
+                                displayType="text"
+                                thousandSeparator={true}
+                                prefix={currencySymbol}
+                                decimalScale={2}
+                                fixedDecimalScale={true}
+                              />
+                            </div>
+                            {discountPercentage && (
+                              <span className="bg-red-100 text-red-600 px-2 py-1 rounded text-xs font-medium">
+                                {discountPercentage}% OFF
+                              </span>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
-                    <div className="text-[10px] text-gray-500">
+                    <div className="text-xs md:text-sm text-gray-500">
                       {productDetails.pricingInformation?.listingType === 'auction' ? 'Starting bid' : 'Buy now'}
                     </div>
                   </div>

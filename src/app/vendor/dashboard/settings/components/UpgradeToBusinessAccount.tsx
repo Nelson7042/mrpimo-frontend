@@ -96,7 +96,7 @@ export default function UpgradeToBusinessAccount() {
         payload.address = formData.address;
       }
 
-      const response = await fetchWithAuth(`${API_BASE_URL}/vendor/upgrade-to-business`, {
+      const response = await fetchWithAuth(`${API_BASE_URL}/vendors/upgrade-to-business`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

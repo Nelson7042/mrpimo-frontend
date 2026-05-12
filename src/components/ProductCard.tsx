@@ -85,7 +85,18 @@ const ProductCard = ({
   };
 
   const formatPrice = (price: number) => {
-    return `₦ ${price.toLocaleString()}`;
+    const currencySymbol = (product as any)?.priceInfo?.currencySymbol || "$";
+    return `${currencySymbol} ${price.toLocaleString()}`;
+  };
+
+  const getProductDisplayPrice = () => {
+    if ((product as any)?.priceInfo?.displayPrice) {
+      return (product as any).priceInfo.displayPrice;
+    }
+    const exchangeRate = (product as any)?.priceInfo?.exchangeRate || 1;
+    const option = product?.variants?.find((item) => item?.name === "Default")?.options?.[0];
+    const basePrice = option?.salePrice || option?.price || 0;
+    return parseFloat((basePrice * exchangeRate).toFixed(2));
   };
 
   return (
@@ -196,9 +207,7 @@ const ProductCard = ({
               }`}
             >
               {product.inventory?.listing?.type === "instant"
-                ? formatPrice(
-                    product?.variants?.find((item) => item?.name === "Default")?.options?.[0]?.price ?? 0
-                  )
+                ? formatPrice(getProductDisplayPrice())
                 : ""}
             </span>
           </div>

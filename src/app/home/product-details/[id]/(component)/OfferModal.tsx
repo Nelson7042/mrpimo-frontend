@@ -34,9 +34,14 @@ export const OfferModal: React.FC<OfferModalProps> = ({
     }
   };
 
-  const currentPrice = productData?.variants?.[0]?.options?.[0]?.displayPrice || 
-                      productData?.variants?.[0]?.options?.[0]?.salePrice || 
-                      productData?.variants?.[0]?.options?.[0]?.price || 0;
+  const variant = productData?.variants?.[0];
+  const selectedOption = variant?.options?.find(
+    (opt: any) => (opt.id || opt._id) === selectedOptionId
+  ) || variant?.options?.[0];
+
+  const exchangeRate = (productData as any)?.priceInfo?.exchangeRate || 1;
+  const basePrice = selectedOption?.salePrice || selectedOption?.price || 0;
+  const currentPrice = parseFloat((basePrice * exchangeRate).toFixed(2));
 
   const currencySymbol = (productData as any)?.priceInfo?.currencySymbol || "$";
 
@@ -86,6 +91,7 @@ export const OfferModal: React.FC<OfferModalProps> = ({
                 className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 placeholder="0.00"
                 min="0"
+                max={currentPrice}
                 step="0.01"
                 required
                 disabled={isSubmitting}

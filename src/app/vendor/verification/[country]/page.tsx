@@ -268,7 +268,7 @@ export default function CountryVerification() {
 
       if (result.success) {
         // Fetch updated vendor data
-        const vendorResponse = await fetch(`${API_BASE_URL}/vendor/profile`, {
+        const vendorResponse = await fetch(`${API_BASE_URL}/vendors/profile`, {
           credentials: 'include',
         });
         const vendorData = await vendorResponse.json();

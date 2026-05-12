@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import { X, Building2, User, CheckCircle } from "lucide-react";
 import { useUserStore } from "@/stores/useUserStore";
 import { useVendorStore } from "@/stores/useVendorStore";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import { useRouter } from "next/navigation";
 import { Country, State } from "country-state-city";
 import { getIPLocation } from "@/utils/geolocation.util";
@@ -30,15 +31,16 @@ export default function VendorRegistrationModal({
   const [accountType, setAccountType] = useState<"personal" | "business" | null>(null);
   const { user } = useUserStore();
   const { vendor } = useVendorStore();
+  const { openModal: openAuthModal } = useAuthModalStore();
   const router = useRouter();
 
   // If user is already a vendor and modal is opened, redirect to dashboard
   React.useEffect(() => {
-    if (vendor && isOpen) {
+    if (user && vendor && isOpen) {
       router.push("/vendor/dashboard");
       onClose();
     }
-  }, [vendor, isOpen, router, onClose]);
+  }, [user, vendor, isOpen, router, onClose]);
 
   if (!isOpen) return null;
 
@@ -56,6 +58,14 @@ export default function VendorRegistrationModal({
     }
   };
 
+  const handleSignInClick = () => {
+    // Close vendor registration modal and open auth modal
+    onClose();
+    // Set redirect to vendor dashboard after login
+    sessionStorage.setItem("redirectAfterLogin", "/vendor/dashboard");
+    openAuthModal();
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
       <div className="relative w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-white rounded-2xl shadow-2xl m-4">
@@ -70,7 +80,10 @@ export default function VendorRegistrationModal({
         {/* Content */}
         <div className="p-6 sm:p-8 md:p-10">
           {step === "account-type" ? (
-            <AccountTypeSelection onSelect={handleAccountTypeSelect} />
+            <AccountTypeSelection 
+              onSelect={handleAccountTypeSelect} 
+              onSignInClick={handleSignInClick}
+            />
           ) : (
             <VendorRegistrationForm
               accountType={accountType!}
@@ -88,8 +101,10 @@ export default function VendorRegistrationModal({
 // Account Type Selection Component
 function AccountTypeSelection({
   onSelect,
+  onSignInClick,
 }: {
   onSelect: (type: "personal" | "business") => void;
+  onSignInClick: () => void;
 }) {
   return (
     <div className="text-center">
@@ -203,6 +218,19 @@ function AccountTypeSelection({
           Business accounts require additional verification (business registration, tax ID).
         </p>
       </div>
+
+      {/* Sign In Link for existing vendors */}
+      <div className="mt-6 text-center">
+        <p className="text-sm text-gray-600">
+          Already a vendor?{" "}
+          <button
+            onClick={onSignInClick}
+            className="text-blue-600 hover:text-blue-700 font-medium hover:underline"
+          >
+            Sign In
+          </button>
+        </p>
+      </div>
     </div>
   );
 }
@@ -228,6 +256,7 @@ function VendorRegistrationForm({
   
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
+  const [detectedCountry, setDetectedCountry] = useState<string>("US");
   const [requiredBankFields, setRequiredBankFields] = useState<any>(null);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [locationData, setLocationData] = useState<{
@@ -248,6 +277,17 @@ function VendorRegistrationForm({
     
     return () => clearTimeout(timer);
   }, [bankSearchQuery]);
+
+  // Detect user's country from IP for phone input
+  useEffect(() => {
+    getIPLocation()
+      .then((loc) => {
+        if (loc.country_code) {
+          setDetectedCountry(loc.country_code);
+        }
+      })
+      .catch(() => {});
+  }, []);
   
   // Filter banks based on debounced search query
   const filteredBanks = React.useMemo(() => {
@@ -264,6 +304,8 @@ function VendorRegistrationForm({
   const [formData, setFormData] = useState<Record<string, string>>({
     firstName: user?.profile?.firstName || "",
     lastName: user?.profile?.lastName || "",
+    middleName: user?.profile?.middleName || "",
+    sex: user?.profile?.sex || "",
     email: user?.email || "",
     phoneNumber: user?.profile?.phoneNumber || "",
     password: "",
@@ -368,7 +410,7 @@ function VendorRegistrationForm({
     if (!user) {
       registrationData.email = formData.email;
       registrationData.password = formData.password;
-      registrationData.phoneNumber = formData.phoneNumber;
+      registrationData.phoneNumber = `+${Country.getCountryByCode(detectedCountry)?.phonecode || "1"}${formData.phoneNumber}`;
       registrationData.role = "vendor";
     }
 
@@ -376,6 +418,10 @@ function VendorRegistrationForm({
     if (accountType === "personal") {
       registrationData.firstName = formData.firstName;
       registrationData.lastName = formData.lastName;
+      if (formData.middleName) {
+        registrationData.middleName = formData.middleName;
+      }
+      registrationData.sex = formData.sex;
     } else {
       registrationData.businessName = formData.businessName;
       if (formData.businessRegistrationNumber) {
@@ -414,7 +460,7 @@ function VendorRegistrationForm({
       if (data.vendor) {
         setVendor(data.vendor);
       }
-      toast.success(data.message || "Vendor registration successful!");
+      toast.success(data.message || "Vendor registration successful! Please check your email for verification.");
       onClose();
       router.push("/vendor/dashboard");
     };
@@ -441,12 +487,29 @@ function VendorRegistrationForm({
       
       if (response.ok) {
         const data = await response.json();
-        setRequiredBankFields(data.data?.requiredAccountDetails || data.requiredAccountDetails);
+        const fields = data.data?.requiredAccountDetails || data.requiredAccountDetails;
+        setRequiredBankFields(fields || {
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+        });
       } else {
         console.error('❌ Failed to fetch bank requirements:', response.statusText);
+        // Set default bank fields so the form doesn't stay stuck on loading
+        setRequiredBankFields({
+          bankName: true,
+          accountNumber: true,
+          accountName: true,
+        });
       }
     } catch (error) {
       console.error("❌ Error fetching bank requirements:", error);
+      // Set default bank fields so the form doesn't stay stuck on loading
+      setRequiredBankFields({
+        bankName: true,
+        accountNumber: true,
+        accountName: true,
+      });
     }
   };
 
@@ -608,6 +671,38 @@ function VendorRegistrationForm({
               </div>
             </div>
 
+            {accountType === "personal" && (
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Middle Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.middleName}
+                    onChange={(e) => handleInputChange("middleName", e.target.value)}
+                    placeholder="Optional"
+                    className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                    Sex *
+                  </label>
+                  <select
+                    required
+                    value={formData.sex}
+                    onChange={(e) => handleInputChange("sex", e.target.value)}
+                    className="w-full px-3 py-2 h-[34px] text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                  >
+                    <option value="">Select Sex</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                  </select>
+                </div>
+              </div>
+            )}
+
             <div>
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 Email *
@@ -625,13 +720,19 @@ function VendorRegistrationForm({
               <label className="block text-xs font-medium text-gray-700 mb-1.5">
                 Phone Number *
               </label>
-              <input
-                type="tel"
-                required
-                value={formData.phoneNumber}
-                onChange={(e) => handleInputChange("phoneNumber", e.target.value)}
-                className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-              />
+              <div className="flex gap-2">
+                <div className="flex items-center px-2 py-2 text-xs bg-gray-50 text-black border border-gray-300 rounded-lg min-w-[60px] justify-center">
+                  +{Country.getCountryByCode(detectedCountry)?.phonecode || "1"}
+                </div>
+                <input
+                  type="tel"
+                  required
+                  value={formData.phoneNumber}
+                  onChange={(e) => handleInputChange("phoneNumber", e.target.value.replace(/[^\d]/g, ""))}
+                  placeholder="8012345678"
+                  className="flex-1 px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+                />
+              </div>
             </div>
 
             <div>
@@ -647,6 +748,39 @@ function VendorRegistrationForm({
               />
             </div>
           </>
+        )}
+
+        {/* Personal account fields for logged-in users upgrading */}
+        {user && accountType === "personal" && (
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Middle Name
+              </label>
+              <input
+                type="text"
+                value={formData.middleName}
+                onChange={(e) => handleInputChange("middleName", e.target.value)}
+                placeholder="Optional"
+                className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1.5">
+                Sex *
+              </label>
+              <select
+                required
+                value={formData.sex}
+                onChange={(e) => handleInputChange("sex", e.target.value)}
+                className="w-full px-3 py-2 h-[34px] text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
+              >
+                <option value="">Select Sex</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+              </select>
+            </div>
+          </div>
         )}
 
         {/* Business-specific fields */}
@@ -831,265 +965,6 @@ function VendorRegistrationForm({
               </div>
             </div>
           </div>
-        </div>
-
-        {/* Bank Details */}
-        <div className="border-t pt-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4">
-            Bank Account Details
-          </h3>
-          {!selectedCountry ? (
-            <p className="text-xs text-gray-600">Please select a country first to see required bank details.</p>
-          ) : !requiredBankFields ? (
-            <p className="text-xs text-gray-600">Loading bank requirements...</p>
-          ) : (
-            <div className="space-y-4">
-              {(() => {
-                // Count total visible fields (including accountHolder)
-                const totalFieldsCount = Object.entries(requiredBankFields)
-                  .filter(([, value]) => value === true)
-                  .length;
-                const isOddTotal = totalFieldsCount % 2 !== 0;
-
-                return (
-                  <div className="grid md:grid-cols-2 gap-4">
-                    {requiredBankFields.accountHolder && (
-                      <div className={isOddTotal ? "md:col-span-2" : ""}>
-                        <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                          Account Holder Name *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={formData.accountHolderName}
-                          onChange={(e) => handleInputChange("accountHolderName", e.target.value)}
-                          className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                        />
-                      </div>
-                    )}
-                    
-                {requiredBankFields.bankName && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      Bank Name *
-                    </label>
-                    {banksList.length > 0 ? (
-                      <div className="relative">
-                        <div className="relative">
-                          <input
-                            type="text"
-                            placeholder={isLoadingBanks ? "Loading banks..." : "Search and select your bank"}
-                            value={bankSearchQuery}
-                            onChange={(e) => {
-                              setBankSearchQuery(e.target.value);
-                              setShowBankDropdown(true);
-                            }}
-                            onFocus={() => setShowBankDropdown(true)}
-                            disabled={isLoadingBanks}
-                            className="w-full px-3 py-2.5 text-xs font-poppins bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent pr-8"
-                          />
-                          {/* Dropdown arrow indicator */}
-                          <svg
-                            className={`absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 pointer-events-none transition-transform ${showBankDropdown ? 'rotate-180' : ''}`}
-                            fill="none"
-                            stroke="currentColor"
-                            viewBox="0 0 24 24"
-                          >
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                          </svg>
-                        </div>
-                        {showBankDropdown && (
-                          <>
-                            {/* Backdrop to close dropdown when clicking outside */}
-                            <div 
-                              className="fixed inset-0 z-40" 
-                              onClick={() => setShowBankDropdown(false)}
-                            />
-                            <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                              {filteredBanks.length > 0 ? (
-                                filteredBanks.map((bank) => (
-                                  <button
-                                    key={bank.code}
-                                    type="button"
-                                    onClick={() => {
-                                      handleBankSelect(bank.code);
-                                      setBankSearchQuery(bank.name);
-                                      setShowBankDropdown(false);
-                                    }}
-                                    className={`w-full px-3 py-2.5 text-left text-xs font-poppins hover:bg-blue-50 transition-colors border-b border-gray-100 last:border-b-0 ${
-                                      formData.bankCode === bank.code ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'
-                                    }`}
-                                  >
-                                    {bank.name}
-                                  </button>
-                                ))
-                              ) : (
-                                <div className="px-3 py-3 text-xs font-poppins text-gray-500 text-center">
-                                  No banks found matching "{bankSearchQuery}"
-                                </div>
-                              )}
-                            </div>
-                          </>
-                        )}
-                      </div>
-                    ) : (
-                      <input
-                        type="text"
-                        required
-                        value={formData.bankName}
-                        onChange={(e) => handleInputChange("bankName", e.target.value)}
-                        className="w-full px-3 py-2.5 text-xs font-poppins bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                    )}
-                  </div>
-                )}
-                
-                {requiredBankFields.accountNumber && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      Account Number *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      value={formData.accountNumber}
-                      onChange={(e) => handleInputChange("accountNumber", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.routingNumber && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      Routing Number *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      onChange={(e) => handleInputChange("routingNumber", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.sortCode && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      Sort Code *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      onChange={(e) => handleInputChange("sortCode", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.bsb && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      BSB Code *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      onChange={(e) => handleInputChange("bsb", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.institutionNumber && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      Institution Number *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      onChange={(e) => handleInputChange("institutionNumber", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.transitNumber && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      Transit Number *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      onChange={(e) => handleInputChange("transitNumber", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.iban && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      IBAN *
-                    </label>
-                    <input
-                      type="text"
-                      required
-                      onChange={(e) => handleInputChange("iban", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.swiftBic && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      SWIFT/BIC {requiredBankFields.swiftBic === false ? '(Optional)' : '*'}
-                    </label>
-                    <input
-                      type="text"
-                      required={requiredBankFields.swiftBic === true}
-                      onChange={(e) => handleInputChange("swiftBic", e.target.value)}
-                      className="w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600"
-                    />
-                  </div>
-                )}
-                
-                {requiredBankFields.bankCode && (
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1.5">
-                      Bank Code {banksList.length === 0 && '*'}
-                    </label>
-                    <input
-                      type="text"
-                      required={banksList.length === 0}
-                      value={formData.bankCode}
-                      onChange={(e) => {
-                        // Only allow manual input if no banks list (fallback)
-                        if (banksList.length === 0) {
-                          handleInputChange("bankCode", e.target.value);
-                        }
-                      }}
-                      readOnly={banksList.length > 0}
-                      placeholder={banksList.length > 0 ? "Auto-filled from bank selection" : "Enter bank code"}
-                      className={`w-full px-3 py-2 text-xs bg-white text-black border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 ${
-                        banksList.length > 0 ? 'bg-gray-50 cursor-not-allowed' : ''
-                      }`}
-                    />
-                    {banksList.length > 0 && (
-                      <p className="text-[10px] text-gray-500 mt-1">
-                        Automatically set when you select a bank
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-          );
-        })()}
-            </div>
-          )}
         </div>
 
         {/* Terms */}

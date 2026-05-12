@@ -149,6 +149,8 @@ export default function ColorPicker({ selectedColors, onChange, maxSelection }: 
 
   const handleColorSelection = (color: string) => {
     setSelectedColor(color);
+    setSelectedShade(""); // Reset shade when selecting a new color
+    
     if (color === "bg-white") {
       const newColor = "#ffffff";
       if (maxSelection === 1) {
@@ -164,7 +166,8 @@ export default function ColorPicker({ selectedColors, onChange, maxSelection }: 
         onChange([...selectedColors, newColor]);
       }
     }
-    setSelectedShade("");
+    // For other colors, don't auto-add - wait for shade selection
+    // This prevents the double-selection bug
   };
 
   const handleShadeSelection = (shade: string) => {

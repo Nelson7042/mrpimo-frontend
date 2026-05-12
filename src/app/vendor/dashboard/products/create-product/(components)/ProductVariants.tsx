@@ -7,7 +7,8 @@ import Input from "@/components/Input";
 import VariantCombinationBuilder from "./VariantCombinationBuilder";
 import ColorPicker from "./ColorPicker";
 import { scrollToFirstError } from "@/utils/scrollToError";
-import { useVendorStore } from "@/stores/useVendorStore";
+import { useCountries } from "@/hooks/useCountries";
+import { useUserStore } from "@/stores/useUserStore";
 
 type VariantOption = {
   value: string;
@@ -31,33 +32,29 @@ type Props = {
 
 export default function ProductVariants({ onSaveDraft }: Props) {
   const { productDetails, updateProductDetails } = useProductListing();
+  const { data: countries = [] } = useCountries();
+  const { user } = useUserStore();
   const [variants, setVariants] = useState<Variant[]>([]);
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [useCombinations, setUseCombinations] = useState(false);
   const { isMobileOrTablet } = useResponsive();
   const initialRenderRef = useRef(true);
-  const { vendor } = useVendorStore();
 
-  // Get vendor's currency symbol
-  const getVendorCurrencySymbol = () => {
-    const currency = vendor?.wallet?.currency || 'USD';
-    const currencySymbols: { [key: string]: string } = {
-      'USD': '$',
-      'EUR': '€',
-      'GBP': '£',
-      'NGN': '₦',
-      'ZAR': 'R',
-      'CAD': 'C$',
-      'AUD': 'A$',
-      'JPY': '¥',
-      'CNY': '¥',
-      'KES': 'KSh',
-      'GHS': '₵',
-    };
-    return currencySymbols[currency] || currency;
+  // Get currency symbol from vendor's country (user.country)
+  const getCurrencySymbol = () => {
+    const vendorCountry = user?.country;
+    if (vendorCountry && countries.length > 0) {
+      const selectedCountry = countries.find(
+        (c) => c.name === vendorCountry || c.isoCode === vendorCountry
+      );
+      if (selectedCountry?.currencySymbol) {
+        return selectedCountry.currencySymbol;
+      }
+    }
+    return '$'; // Default fallback
   };
 
-  const vendorCurrencySymbol = getVendorCurrencySymbol();
+  const vendorCurrencySymbol = getCurrencySymbol();
 
   // Initialize variants from context if they exist - only on mount
   useEffect(() => {

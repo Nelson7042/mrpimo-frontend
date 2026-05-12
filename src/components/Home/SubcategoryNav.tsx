@@ -17,7 +17,7 @@ const SubcategoryNav: React.FC<SubcategoryNavProps> = ({ categories }) => {
   }
 
   const getCategoryImage = (category: ICategory): string => {
-    return category.icon || category.image || "/images/tv.png";
+    return category.image || category.icon || "/images/tv.png";
   };
 
   return (

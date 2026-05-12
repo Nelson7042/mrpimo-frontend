@@ -10,6 +10,7 @@ interface KybFormData {
   countryCode: string;
   nationalIDNumber: string;
   accountType: string;
+  documentType: string; // For Nigeria: 'nin' | 'bvn' | 'passport' | 'drivers_license'
   voterCardType: string;
   civIdType: string;
   idCardFront: File | null;
@@ -48,6 +49,7 @@ const initialFormData: KybFormData = {
   countryCode: '',
   nationalIDNumber: '',
   accountType: 'business',
+  documentType: 'nin',
   voterCardType: '',
   civIdType: '',
   idCardFront: null,
@@ -89,6 +91,7 @@ export const useKybStore = create<KybStore>()(
               ...state.formData,
               firstName: user.profile.firstName || '',
               lastName: user.profile.lastName || '',
+              middleName: user.profile.middleName || '',
               phoneNumber: user.profile.phoneNumber || '',
               countryCode: user.country || '',
             },

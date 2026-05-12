@@ -7,6 +7,7 @@ export interface INotification {
         | 'dispute' | 'subscription' | 'payout' | 'refund' | 'withdrawal'
         | 'verification' | 'advertisement' | 'product' | 'account-warning'
         | 'issue' | 'subscription_upgrade';
+    scope?: 'user' | 'vendor' | 'general';
     message: string;
     data: {
         redirectUrl: string;

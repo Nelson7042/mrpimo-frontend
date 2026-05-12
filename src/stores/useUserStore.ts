@@ -10,6 +10,7 @@ import { ssrSafeStorage } from "@/utils/ssrSafeStorage";
 
 interface UserState {
   user: User | null;
+  _hasHydrated: boolean;
   setUser: (user: User | null) => void;
   updateUser: (updates: Partial<User>) => void;
   refreshUser: () => Promise<void>;
@@ -34,12 +35,18 @@ const persistConfig: PersistOptions<UserState, PersistedState> = {
     wallet: state.wallet,
   }),
   version: 1,
+  onRehydrateStorage: () => (state) => {
+    if (state) {
+      state._hasHydrated = true;
+    }
+  },
 };
 
 export const useUserStore = create<UserState>()(
   persist(
     (set, get) => ({
       user: null,
+      _hasHydrated: false,
       deviceId: null,
       wallet: null,
       

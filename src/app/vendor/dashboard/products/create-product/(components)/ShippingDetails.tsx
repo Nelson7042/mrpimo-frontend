@@ -429,23 +429,32 @@ const ShippingDetails = (props: Props) => {
           label="Warranty Status"
           value={shippingDetails.warranty.status}
           onChange={(value) => {
+            const newStatus = value.toLowerCase().replace(" ", "");
+            // When "No Warranty" is selected, default return policy to "No return policy"
+            const newReturnPolicy = newStatus === "nowarranty" 
+              ? "No return policy" 
+              : shippingDetails.warranty.returnPolicy;
+            
             setShippingDetails({
               ...shippingDetails,
               warranty: {
                 ...shippingDetails.warranty,
-                status: value.toLowerCase().replace(" ", ""),
+                status: newStatus,
+                returnPolicy: newReturnPolicy,
               },
             })
             updateProductDetails("shippingDetails", {
               ...shippingDetails,
               warranty: {
                 ...shippingDetails.warranty,
-                status: value.toLowerCase().replace(" ", ""),
+                status: newStatus,
+                returnPolicy: newReturnPolicy,
               },
             });
             setErrors((prev) => ({
               ...prev,
               warrantyStatus: "",
+              returnPolicy: "", // Clear return policy error since we set a default
             }));
           }}
           options={["No Warranty", "Warranty"]}

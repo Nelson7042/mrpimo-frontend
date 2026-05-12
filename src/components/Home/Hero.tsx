@@ -1,23 +1,17 @@
 import React, { useEffect, useState } from 'react';
 import { Package, Shield, ShoppingCart, MapPin, Users } from 'lucide-react';
 import Link from 'next/link';
-import { useBanners } from '@/hooks/useBanner';
+import { useBanners, useBannerTracking, Banner, BannerSlide, ProductInfo } from '@/hooks/useBanner';
 
-interface Product {
-  _id: string;
-  name: string;
-  images: string[];
-  slug: string;
-  variants?: any[];
-  inventory?: any;
-  priceInfo?: {
-    originalPrice: number;
-    originalCurrency: string;
-    displayPrice: number;
-    displayCurrency: string;
-    currencySymbol: string;
-    exchangeRate: number;
-  };
+interface CarouselItem {
+  title: string;
+  subtitle: string;
+  description: string;
+  buttonText: string;
+  buttonLink: string;
+  image: string;
+  badge: string;
+  backgroundColor: string;
 }
 
 const MarketplaceSection = () => {
@@ -25,6 +19,7 @@ const MarketplaceSection = () => {
   const [isAutoPlaying, setIsAutoPlaying] = useState(true);
   
   const { data: bannersData, isLoading, error } = useBanners();
+  const { trackImpression, trackClick } = useBannerTracking();
   
   const banners = {
     bigBanner: bannersData?.find(b => b.location === 'big-banner'),
@@ -32,31 +27,110 @@ const MarketplaceSection = () => {
     smallBanner2: bannersData?.find(b => b.location === 'small-banner-2'),
   };
 
-  const carouselItems = banners.bigBanner?.products?.slice(0, 3).map((product) => ({
-    title: banners.bigBanner?.title || 'Featured Product',
-    subtitle: product.name,
-    description: banners.bigBanner?.content || 'Check out this amazing product',
-    buttonText: 'Buy Now',
-    image: product.images?.[0] || '/images/ps5.png',
-    productId: product._id,
-    badge: getProductPrice(product),
-  })) || [];
+  // Track impressions when banners are loaded and visible
+  useEffect(() => {
+    if (banners.bigBanner?._id) {
+      trackImpression(banners.bigBanner._id);
+    }
+    if (banners.smallBanner1?._id) {
+      trackImpression(banners.smallBanner1._id);
+    }
+    if (banners.smallBanner2?._id) {
+      trackImpression(banners.smallBanner2._id);
+    }
+  }, [banners.bigBanner?._id, banners.smallBanner1?._id, banners.smallBanner2?._id, trackImpression]);
 
-  function getProductPrice(product: Product) {
+  // Handle banner click tracking
+  const handleBannerClick = (bannerId: string | undefined) => {
+    if (bannerId) {
+      trackClick(bannerId);
+    }
+  };
+
+  // Get rotation interval from banner config (default 10 seconds)
+  const rotationInterval = banners.bigBanner?.rotationInterval || 10000;
+
+  // Build carousel items from slides or legacy format
+  const carouselItems: CarouselItem[] = (() => {
+    const bigBanner = banners.bigBanner;
+    if (!bigBanner) return [];
+
+    // New format: slides array
+    if (bigBanner.slides && bigBanner.slides.length > 0) {
+      return bigBanner.slides.map((slide: BannerSlide) => {
+        if (slide.slideType === "product" && slide.productId) {
+          // Product slide - use product data
+          const product = slide.productId;
+          return {
+            title: slide.title,
+            subtitle: product.name || slide.subtitle || '',
+            description: slide.description || '',
+            buttonText: slide.buttonText || 'Buy Now',
+            buttonLink: `/home/product-details/${product._id}`,
+            image: product.images?.[0] || slide.imageUrl || '/images/ps5.png',
+            badge: slide.badge || getProductPrice(product),
+            backgroundColor: slide.backgroundColor || bigBanner.backgroundColor || '#E2E8F0',
+          };
+        } else {
+          // Campaign slide - use custom content
+          return {
+            title: slide.title,
+            subtitle: slide.subtitle || '',
+            description: slide.description || '',
+            buttonText: slide.buttonText || 'Shop Now',
+            buttonLink: slide.buttonLink || '/',
+            image: slide.imageUrl || '/images/ps5.png',
+            badge: slide.badge || '',
+            backgroundColor: slide.backgroundColor || bigBanner.backgroundColor || '#E2E8F0',
+          };
+        }
+      });
+    }
+
+    // Legacy format: marketing type (single slide)
+    if (bigBanner.type === "marketing") {
+      return [{
+        title: bigBanner.title || 'Featured',
+        subtitle: bigBanner.subtitle || bigBanner.title || '',
+        description: bigBanner.content || '',
+        buttonText: bigBanner.buttonText || 'Shop Now',
+        buttonLink: bigBanner.products?.[0]?._id 
+          ? `/home/product-details/${bigBanner.products[0]._id}` 
+          : bigBanner.buttonLink || '/',
+        image: bigBanner.imageUrl || '/images/ps5.png',
+        badge: '',
+        backgroundColor: bigBanner.backgroundColor || '#E2E8F0',
+      }];
+    }
+
+    // Legacy format: product type (one slide per product)
+    return bigBanner.products?.slice(0, 3).map((product) => ({
+      title: bigBanner.title || 'Featured Product',
+      subtitle: product.name,
+      description: bigBanner.content || 'Check out this amazing product',
+      buttonText: bigBanner.buttonText || 'Buy Now',
+      buttonLink: `/home/product-details/${product._id}`,
+      image: product.images?.[0] || '/images/ps5.png',
+      badge: getProductPrice(product),
+      backgroundColor: bigBanner.backgroundColor || '#E2E8F0',
+    })) || [];
+  })();
+
+  function getProductPrice(product: ProductInfo): string {
     if (product.priceInfo) {
-      return `${product.priceInfo.currencySymbol}${product.priceInfo.displayPrice.toFixed(2)}`;
+      return `${product.priceInfo.currencySymbol}${product.priceInfo.displayPrice.toLocaleString()}`;
     }
     
-    const currencySymbol = '$';
+    // Fallback: no priceInfo available
+    const currencySymbol = '₦';
     
     if (product.inventory?.listing?.type === 'auction') {
       return `Starting ${currencySymbol}${product.inventory.listing.auction?.reservePrice || 0}`;
     }
     const firstVariant = product.variants?.[0];
     const firstOption = firstVariant?.options?.[0];
-    return firstOption?.salePrice 
-      ? `${currencySymbol}${firstOption.salePrice}` 
-      : `${currencySymbol}${firstOption?.price || 0}`;
+    const basePrice = firstOption?.salePrice || firstOption?.price || 0;
+    return `${currencySymbol}${basePrice.toLocaleString()}`;
   }
 
   useEffect(() => {
@@ -64,10 +138,10 @@ const MarketplaceSection = () => {
     
     const interval = setInterval(() => {
       setCurrentSlide((prev) => (prev + 1) % carouselItems.length);
-    }, 4000);
+    }, rotationInterval);
 
     return () => clearInterval(interval);
-  }, [isAutoPlaying, carouselItems.length]);
+  }, [isAutoPlaying, carouselItems.length, rotationInterval]);
 
   const nextSlide = () => {
     setIsAutoPlaying(false);
@@ -122,7 +196,7 @@ const MarketplaceSection = () => {
 
   if (isLoading) {
     return (
-      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-8 pb-3 md:py-10 lg:py-10">
+      <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
           {/* Main banner skeleton */}
           <div className="lg:col-span-2">
@@ -172,9 +246,10 @@ const MarketplaceSection = () => {
     return null;
   }
 
+  const currentItem = carouselItems[currentSlide];
 
   return (
-    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 pt-8 pb-3 md:py-10 lg:py-10">
+    <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         
         <h1 className="sr-only">Mprimo - Shop the Best Deals on the Global Marketplace</h1>
@@ -182,22 +257,22 @@ const MarketplaceSection = () => {
         {/* Carousel Section */}
         <div className="lg:col-span-2">
           <div 
-            className="flex flex-row rounded-md p-4 sm:p-6 lg:p-8 relative overflow-hidden sm:min-h-[320px]"
-            style={{ backgroundColor: banners.bigBanner?.backgroundColor || '#E2E8F0' }}
+            className="flex flex-row rounded-md p-4 sm:p-6 lg:p-8 relative overflow-hidden sm:min-h-[320px] transition-colors duration-500"
+            style={{ backgroundColor: currentItem?.backgroundColor || '#E2E8F0' }}
           >
             <div className="relative z-10 w-[55%] flex flex-col justify-center">
               <div className="text-blue-600 font-medium text-xs sm:text-sm mb-1 md:mb-2 flex items-center">
-                → {carouselItems[currentSlide]?.title}
+                → {currentItem?.title}
               </div>
-              <p className="text-sm md:text-base font-semibold text-gray-800 mb-1 md:mb-3">
-                {carouselItems[currentSlide]?.subtitle}
+              <p className="text-lg md:text-xl lg:text-2xl font-bold text-gray-800 mb-1 md:mb-3">
+                {currentItem?.subtitle}
               </p>
               <p className="text-gray-600 text-sm sm:text-base mb-1.5 sm:mb-6 leading-relaxed">
-                {carouselItems[currentSlide]?.description}
+                {currentItem?.description}
               </p>
-              <Link href={`/home/product-details/${carouselItems[currentSlide]?.productId}`}>
+              <Link href={currentItem?.buttonLink || '/'} onClick={() => handleBannerClick(banners.bigBanner?._id)}>
                 <button className="text-sm md:text-base p-2 md:px-6 md:py-3 bg-primary hover:bg-blue-700 font-normal text-white rounded-md transition-colors duration-200 shadow-lg hover:shadow-xl w-fit">
-                  {carouselItems[currentSlide]?.buttonText}
+                  {currentItem?.buttonText}
                 </button>
               </Link>
               
@@ -217,13 +292,15 @@ const MarketplaceSection = () => {
 
             <div className="flex items-center justify-center relative w-[45%]">
               <img 
-                src={carouselItems[currentSlide]?.image}
-                alt={carouselItems[currentSlide]?.subtitle || 'Featured product'}
-                className="w-[120px] sm:w-[100px] md:w-[140px] lg:w-[160px] h-[90px] sm:h-[180px] md:h-[220px] lg:h-[300px] object-contain rounded-lg"
+                src={currentItem?.image}
+                alt={currentItem?.subtitle || 'Featured product'}
+                className="w-[120px] sm:w-[100px] md:w-[140px] lg:w-[200px] h-[90px] sm:h-[180px] md:h-[220px] lg:h-[320px] object-contain rounded-lg"
               />
-              <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-blue-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
-                {carouselItems[currentSlide]?.badge}
-              </div>
+              {currentItem?.badge && (
+                <div className="absolute top-2 sm:top-4 right-2 sm:right-4 bg-blue-500 text-white px-2 sm:px-3 py-1 rounded-full text-xs sm:text-sm font-semibold">
+                  {currentItem.badge}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -243,7 +320,7 @@ const MarketplaceSection = () => {
                   <div className="text-sm sm:text-base font-medium text-white mb-3 sm:mb-4 leading-tight">
                     {banners.smallBanner1.content || banners.smallBanner1.products[0]?.name}
                   </div>
-                  <Link href={`/home/product-details/${banners.smallBanner1.products[0]?._id}`}>
+                  <Link href={`/home/product-details/${banners.smallBanner1.products[0]?._id}`} onClick={() => handleBannerClick(banners.smallBanner1?._id)}>
                     <button className="btn-mobile bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors duration-200">
                       View Details
                     </button>
@@ -268,7 +345,7 @@ const MarketplaceSection = () => {
 
           {banners.smallBanner2 && (
             <div 
-              className="card-responsive border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200"
+              className="card-responsive border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-200 overflow-hidden"
               style={{ backgroundColor: banners.smallBanner2.backgroundColor || '#E2E8F0' }}
             >
               <div className="flex items-center space-x-3 sm:space-x-4">
@@ -276,13 +353,13 @@ const MarketplaceSection = () => {
                   <img 
                     src={banners.smallBanner2.imageUrl}
                     alt={banners.smallBanner2.title}
-                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
+                    className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg flex-shrink-0"
                   />
                 ) : (
                   <img 
                     src={banners.smallBanner2.products[0]?.images[0] || '/images/image.png'}
                     alt={banners.smallBanner2.products[0]?.name}
-                    className="w-12 h-12 sm:w-16 sm:h-16 object-contain rounded-lg flex-shrink-0"
+                    className="w-24 h-24 sm:w-28 sm:h-28 object-contain rounded-lg flex-shrink-0"
                   />
                 )}
                 <div className="flex-1">
@@ -292,7 +369,7 @@ const MarketplaceSection = () => {
                   <div className="text-sm sm:text-base font-medium text-gray-900 mb-3 sm:mb-4">
                     {banners.smallBanner2.content || getProductPrice(banners.smallBanner2.products[0])}
                   </div>
-                  <Link href={`/home/product-details/${banners.smallBanner2.products[0]?._id}`}>
+                  <Link href={`/home/product-details/${banners.smallBanner2.products[0]?._id}`} onClick={() => handleBannerClick(banners.smallBanner2?._id)}>
                     <button className="btn-mobile bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm transition-colors duration-200">
                       View Details
                     </button>

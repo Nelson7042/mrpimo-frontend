@@ -39,7 +39,6 @@ import { useLogoutUser } from "@/hooks/mutations";
 import { useQueryClient } from "@tanstack/react-query";
 import { resetAllStores } from "@/stores/resetStore";
 import { toast } from "react-toastify";
-import { convertFromUSD, getCurrencySymbol } from "@/utils/currencyService";
 import { useWalletDisplay } from "@/hooks/useWalletBalance";
 import { useNotifications } from "@/contexts/NotificationContext";
 import { useLocalityFilter } from "@/hooks/useLocalityFilter";
@@ -59,14 +58,13 @@ const Header = () => {
   const [isMounted, setIsMounted] = useState(false);
   const [showVendorModal, setShowVendorModal] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
-  const [convertedBalance, setConvertedBalance] = useState<number | null>(null);
   const profileModalRef = useRef<HTMLDivElement>(null);
   const cartLength = useCartLength();
   const router = useRouter();
 
   const { wishlistCount } = useWishlist();
   const { openModal } = useAuthModalStore();
-  const { user } = useUserStore();
+  const { user, _hasHydrated } = useUserStore();
   const { vendor } = useVendorStore();
   const { data: profileData } = useUserProfile(!!user);
   const { usdDisplay: balanceUSD, approxDisplay: balanceApprox } = useWalletDisplay(
@@ -98,25 +96,6 @@ const Header = () => {
 
   const logoutMutation = useLogoutUser();
 
-  // Convert wallet balance to user's currency
-  useEffect(() => {
-    const convertBalance = async () => {
-      const balanceUSD = profileData?.fiatWallet?.balances?.available || 0;
-      const userCurrency = user?.preferences?.currency || 'USD';
-      
-      if (balanceUSD > 0 && userCurrency !== 'USD') {
-        const converted = await convertFromUSD(balanceUSD, userCurrency);
-        setConvertedBalance(converted);
-      } else {
-        setConvertedBalance(balanceUSD);
-      }
-    };
-    
-    if (profileData?.fiatWallet?.balances?.available !== undefined) {
-      convertBalance();
-    }
-  }, [profileData?.fiatWallet?.balances?.available, user?.preferences?.currency]);
-
   useEffect(() => {
     setIsMounted(true);
   }, []);
@@ -136,19 +115,12 @@ const Header = () => {
 
   const handleSellClick = () => {
     // If user is already a vendor, go to dashboard
-    if (vendor) {
+    if (user && vendor) {
       router.push("/vendor/dashboard");
       return;
     }
     
-    // If user is not logged in, show auth modal and store intent
-    if (!user) {
-      sessionStorage.setItem("pendingVendorRegistration", "true");
-      openModal();
-      return;
-    }
-    
-    // User is logged in but not a vendor - show vendor registration modal
+    // Show vendor registration modal (handles auth internally if not logged in)
     setShowVendorModal(true);
   };
 
@@ -167,6 +139,15 @@ const Header = () => {
   }, [user, vendor, isMounted]);
 
   const handleProfileClick = () => {
+    // If store hasn't hydrated yet but tokens exist, redirect to dashboard instead of showing auth modal
+    if (!user && !_hasHydrated) {
+      const hasTokens = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+      if (hasTokens) {
+        router.push("/home/user");
+        return;
+      }
+    }
+    
     if (!user) {
       sessionStorage.setItem("redirectAfterLogin", "/home/user");
       openModal();
@@ -283,7 +264,7 @@ const Header = () => {
                 onClick={handleSellClick}
                 className="ml-2 px-4 py-1.5 bg-white text-blue-600 rounded-md font-medium text-sm hover:bg-gray-100 transition-colors"
               >
-                {vendor ? "Dashboard" : "Sell"}
+                {user && vendor ? "Dashboard" : "Sell"}
               </button>
             )}
           </div>

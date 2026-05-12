@@ -63,17 +63,19 @@ export const useSubmitProduct = () => {
           },
           restrictions: productDetails.shippingDetails?.restrictions || ['none'],
         },
-        variants: productDetails.variants?.map((variant: any, index: number) => ({
-          name: variant.name,
-          isDefault: variant.isDefault || index === 0,
-          options: variant.options.map((option: any, optionIndex: number) => ({
-            value: option.value,
-            price: Number(option.price),
-            quantity: Number(option.quantity || option.inventory || 0),
-            sku: option.sku || `${variant.name?.substring(0, 3).toUpperCase() || 'VAR'}-${option.value?.substring(0, 3).toUpperCase() || 'OPT'}-${Date.now()}`,
-            isDefault: option.isDefault || optionIndex === 0,
+        variants: productDetails.pricingInformation?.listingType === 'auction'
+          ? [] // Auction products have no variants
+          : productDetails.variants?.map((variant: any, index: number) => ({
+            name: variant.name,
+            isDefault: variant.isDefault || index === 0,
+            options: variant.options.map((option: any, optionIndex: number) => ({
+              value: option.value,
+              price: Number(option.price),
+              quantity: Number(option.quantity || option.inventory || 0),
+              sku: option.sku || `${variant.name?.substring(0, 3).toUpperCase() || 'VAR'}-${option.value?.substring(0, 3).toUpperCase() || 'OPT'}-${Date.now()}`,
+              isDefault: option.isDefault || optionIndex === 0,
+            })),
           })),
-        })),
       };
       
       return await createProductMutation.mutateAsync(mappedData);

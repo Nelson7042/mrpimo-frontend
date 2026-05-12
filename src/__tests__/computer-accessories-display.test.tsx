@@ -108,17 +108,16 @@ describe("ComputerAccessories", () => {
   /**
    * Validates: Requirement 2.3
    * IF the Category_API returns no category for the slug, THEN THE Component
-   * SHALL display an empty state message instead of throwing an error.
+   * SHALL return null (render nothing) instead of showing an empty state.
    */
-  it("renders empty state when slug lookup returns null", () => {
+  it("renders nothing when slug lookup returns null", () => {
     mockUseCategoryBySlug.mockReturnValue({ data: { category: null }, isLoading: false });
     mockUseCategoryTree.mockReturnValue({ data: { categories: [] }, isLoading: false });
     mockUseProductsByCategory.mockReturnValue({ data: { products: [] }, isLoading: false });
 
-    render(<ComputerAccessories />);
+    const { container } = render(<ComputerAccessories />);
 
-    expect(screen.getByText("No computer accessories available")).toBeTruthy();
-    expect(screen.getByText("Check back later for new products")).toBeTruthy();
+    expect(container.innerHTML).toBe("");
   });
 
   /**
@@ -130,7 +129,7 @@ describe("ComputerAccessories", () => {
     const parent = makeCategory();
     mockUseCategoryBySlug.mockReturnValue({ data: { category: parent }, isLoading: false });
     mockUseCategoryTree.mockReturnValue({ data: { categories: [] }, isLoading: false });
-    mockUseProductsByCategory.mockReturnValue({ data: { products: [] }, isLoading: false });
+    mockUseProductsByCategory.mockReturnValue({ data: { products: [{ _id: "p1", name: "Test Product" }] }, isLoading: false });
 
     render(<ComputerAccessories />);
 
@@ -150,7 +149,7 @@ describe("ComputerAccessories", () => {
     const sub = makeCategory({ _id: "sub-1", name: "Keyboards", sortOrder: 1 });
     mockUseCategoryBySlug.mockReturnValue({ data: { category: parent }, isLoading: false });
     mockUseCategoryTree.mockReturnValue({ data: { categories: [sub] }, isLoading: false });
-    mockUseProductsByCategory.mockReturnValue({ data: { products: [] }, isLoading: false });
+    mockUseProductsByCategory.mockReturnValue({ data: { products: [{ _id: "p1", name: "Test Product" }] }, isLoading: false });
 
     render(<ComputerAccessories />);
 
@@ -189,7 +188,7 @@ describe("ComputerAccessories", () => {
     const parent = makeCategory({ breadcrumbs });
     mockUseCategoryBySlug.mockReturnValue({ data: { category: parent }, isLoading: false });
     mockUseCategoryTree.mockReturnValue({ data: { categories: [] }, isLoading: false });
-    mockUseProductsByCategory.mockReturnValue({ data: { products: [] }, isLoading: false });
+    mockUseProductsByCategory.mockReturnValue({ data: { products: [{ _id: "p1", name: "Test Product" }] }, isLoading: false });
 
     render(<ComputerAccessories />);
 

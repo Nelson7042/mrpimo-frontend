@@ -25,8 +25,11 @@ export const fetchWithAuth = async (url: string, options: RequestInit = {}): Pro
   // Allow /users/profile endpoint to bypass guest mode check (needed to fetch user on page load)
   const isProfileEndpoint = url.includes('/users/profile');
 
-  // Block requests if no user in state (guest mode) - except for profile endpoint
-  if (!user && !isProfileEndpoint) {
+  // Check if user has tokens in localStorage (handles store hydration delay)
+  const hasTokens = typeof window !== 'undefined' && !!localStorage.getItem('accessToken');
+
+  // Block requests if no user in state AND no tokens (true guest mode) - except for profile endpoint
+  if (!user && !hasTokens && !isProfileEndpoint) {
     return Promise.reject("Guest mode");
   }
 

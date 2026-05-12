@@ -14,6 +14,8 @@ type Props = {};
 const PersonalRegistrationForm = (props: Props) => {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
+  const [middleName, setMiddleName] = useState("");
+  const [sex, setSex] = useState("");
   const [password, setPassword] = useState("");
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
@@ -21,6 +23,8 @@ const PersonalRegistrationForm = (props: Props) => {
   const [errors, setErrors] = useState({
     firstName: "",
     lastName: "",
+    middleName: "",
+    sex: "",
     password: "",
     phoneNumber: "",
     email: "",
@@ -34,6 +38,8 @@ const PersonalRegistrationForm = (props: Props) => {
     const newErrors = {
       firstName: "",
       lastName: "",
+      middleName: "",
+      sex: "",
       password: "",
       phoneNumber: "",
       email: "",
@@ -44,6 +50,9 @@ const PersonalRegistrationForm = (props: Props) => {
     }
     if (!lastName.trim()) {
       newErrors.lastName = "Last name is required.";
+    }
+    if (!sex) {
+      newErrors.sex = "Sex is required.";
     }
     if (!password.trim()) {
       newErrors.password = "Password is required.";
@@ -79,6 +88,14 @@ const PersonalRegistrationForm = (props: Props) => {
       newErrors.lastName = "Last name must be at least 2 characters long.";
     }
 
+    if (middleName && middleName.trim().split(" ").length > 1) {
+      newErrors.middleName = "Middle name should not contain spaces.";
+    }
+
+    if (middleName && !/^[a-zA-Z]*$/.test(middleName)) {
+      newErrors.middleName = "Middle name can only contain letters.";
+    }
+
     if (phone && !/^\+(?:[0-9] ?){6,14}[0-9]$/.test(phone)) {
         newErrors.phoneNumber = 'Phone number is invalid. Format: +234 8051234567';
       }
@@ -103,6 +120,8 @@ const PersonalRegistrationForm = (props: Props) => {
       const userData = {
         firstName,
         lastName,
+        middleName: middleName || undefined,
+        sex,
         email,
         password,
         phoneNumber: phone,
@@ -113,12 +132,16 @@ const PersonalRegistrationForm = (props: Props) => {
           setUser(data.user);
           setFirstName("");
           setLastName("");
+          setMiddleName("");
+          setSex("");
           setEmail("");
           setPassword("");
           setPhone("");
           setErrors({
             firstName: "",
             lastName: "",
+            middleName: "",
+            sex: "",
             password: "",
             phoneNumber: "", 
             email: "",
@@ -156,6 +179,36 @@ const PersonalRegistrationForm = (props: Props) => {
         onChange={(e) => setLastName(e.target.value)}
         error={errors.lastName}
       />
+      <Input
+        label="Middle Name (Optional)"
+        id="middle-name"
+        placeholder="Type your Middle Name"
+        value={middleName}
+        onChange={(e) => setMiddleName(e.target.value)}
+        error={errors.middleName}
+      />
+      <div className="relative w-full mb-5">
+        <label htmlFor="sex" className="absolute -top-2 left-3 text-xs bg-white text-black z-10">
+          Sex
+        </label>
+        <select
+          id="sex"
+          value={sex}
+          onChange={(e) => setSex(e.target.value)}
+          className={`w-full px-3 py-3 text-xs md:text-xs border rounded-md shadow-sm focus:outline-none focus:ring-2 ${
+            errors.sex
+              ? "border-red-500 text-red-700 focus:ring-red-300"
+              : "border-gray-300 text-gray-500 focus:ring-gray-400"
+          }`}
+        >
+          <option value="">Select Sex</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+        {errors.sex && (
+          <p className="mt-1 text-xs md:text-xs text-red-500 font-medium">{errors.sex}</p>
+        )}
+      </div>
       <Input
         label="Email Address"
         id="email"
