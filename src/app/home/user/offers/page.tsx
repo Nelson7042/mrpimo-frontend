@@ -67,6 +67,7 @@ const limitOptions = [5, 10, 20, 50];
 // Countdown timer component for payment deadline
 function CountdownTimer({ deadline }: { deadline: string }) {
   const [timeLeft, setTimeLeft] = useState("");
+  const [isUrgent, setIsUrgent] = useState(false);
 
   useEffect(() => {
     const updateTimer = () => {
@@ -76,19 +77,22 @@ function CountdownTimer({ deadline }: { deadline: string }) {
 
       if (diff <= 0) {
         setTimeLeft("Expired");
+        setIsUrgent(true);
         return;
       }
+
+      setIsUrgent(diff < 6 * 60 * 60 * 1000);
 
       const hours = Math.floor(diff / (1000 * 60 * 60));
       const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((diff % (1000 * 60)) / 1000);
 
       if (hours > 0) {
-        setTimeLeft(`${hours}h ${minutes}m remaining`);
+        setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
       } else if (minutes > 0) {
-        setTimeLeft(`${minutes}m ${seconds}s remaining`);
+        setTimeLeft(`${minutes}m ${seconds}s`);
       } else {
-        setTimeLeft(`${seconds}s remaining`);
+        setTimeLeft(`${seconds}s`);
       }
     };
 
@@ -97,12 +101,10 @@ function CountdownTimer({ deadline }: { deadline: string }) {
     return () => clearInterval(interval);
   }, [deadline]);
 
-  const isUrgent = new Date(deadline).getTime() - Date.now() < 6 * 60 * 60 * 1000; // < 6 hours
-
   return (
     <span className={`text-xs font-medium ${isUrgent ? "text-red-600" : "text-orange-600"}`}>
       <Timer className="w-3 h-3 inline mr-1" />
-      {timeLeft}
+      {timeLeft || "Loading..."}
     </span>
   );
 }

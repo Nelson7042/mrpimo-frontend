@@ -15,6 +15,7 @@ import {
   Shield,
   Megaphone,
   AlertOctagon,
+  Truck,
 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
@@ -37,7 +38,8 @@ type NotificationType =
   | "verification"
   | "advertisement"
   | "product"
-  | "account-warning";
+  | "account-warning"
+  | "shipping";
 
 interface Notification {
   id: string;
@@ -101,6 +103,8 @@ const NotificationIcon = ({ type }: { type: NotificationType }) => {
       return <Box className="text-green-500" size={18} />;
     case "account-warning":
       return <AlertOctagon className="text-red-600" size={18} />;
+    case "shipping":
+      return <Truck className="text-blue-600" size={18} />;
     default:
       return null;
   }
@@ -111,7 +115,7 @@ const NotificationModal = ({
   onClose,
   anchorEl,
 }: NotificationModalProps) => {
-  const { notifications, unreadCount, markAsRead, markAllAsRead } =
+  const { notifications, unreadCount, markAsRead, markAllAsRead, clearNotifications } =
     useNotifications();
   const router = useRouter();
 
@@ -167,6 +171,14 @@ const NotificationModal = ({
               )}
             </div>
             <div className="flex gap-4 items-center">
+              {notifications.length > 0 && (
+                <button
+                  onClick={clearNotifications}
+                  className="text-sm text-red-500 hover:text-red-700 cursor-pointer"
+                >
+                  Clear all
+                </button>
+              )}
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}

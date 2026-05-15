@@ -7,28 +7,25 @@ import {
   AlertCircle,
   RefreshCw,
   Info,
-  Calendar,
-  Clock,
   Loader2,
   CheckCircle,
   Copy,
-  Package,
+  Lock,
 } from "lucide-react";
-import { useOrderById } from "@/hooks/queries";
 import {
   useFulfillmentOptions,
   useExperienceCentres,
   useFulfillShipment,
 } from "@/hooks/useVendor";
-import { useVendorStore } from "@/stores/useVendorStore";
-import { IClientShipment } from "@/types/order.type";
 import Skeleton from "@/components/ui/Skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "react-hot-toast";
 
-interface FulfillmentPanelProps {
+interface FulfillmentMethodSelectorProps {
   orderId: string;
+  shipmentId: string;
   shipmentStatus: string;
+  onFulfillmentComplete?: () => void;
 }
 
 interface ExperienceCentre {
@@ -72,32 +69,25 @@ function LoadingSkeleton() {
         <Skeleton className="h-40 w-full rounded-lg" />
         <Skeleton className="h-40 w-full rounded-lg" />
       </div>
-      <Skeleton className="h-20 w-full rounded-lg" />
+      <Skeleton className="h-10 w-full rounded-lg" />
     </div>
   );
 }
 
-export default function FulfillmentPanel({
+export default function FulfillmentMethodSelector({
   orderId,
+  shipmentId,
   shipmentStatus,
-}: FulfillmentPanelProps) {
+  onFulfillmentComplete,
+}: FulfillmentMethodSelectorProps) {
   const [selectedMethod, setSelectedMethod] = useState<FulfillmentMethod>(null);
-  const [selectedCentre, setSelectedCentre] = useState<ExperienceCentre | null>(null);
-  const [fulfillmentResult, setFulfillmentResult] = useState<FulfillmentResult | null>(null);
-  const { vendor } = useVendorStore();
-
-  // Fetch the order to find the vendor's shipment
-  const { data: order, isLoading: orderLoading, refetch: refetchOrder } = useOrderById(orderId);
-
-  // Find the vendor's shipment from the order
-  const vendorShipment: IClientShipment | undefined = order?.shipments?.find(
-    (s: IClientShipment) => {
-      const sVendorId = s.vendorId?._id || (s.vendorId as any)?.toString() || s.vendorId;
-      return sVendorId === vendor?._id;
-    }
+  const [selectedCentre, setSelectedCentre] = useState<ExperienceCentre | null>(
+    null
   );
+  const [fulfillmentResult, setFulfillmentResult] =
+    useState<FulfillmentResult | null>(null);
 
-  const shipmentId = vendorShipment?._id || "";
+  const isPending = shipmentStatus?.toLowerCase() === "pending";
 
   // Fetch fulfillment options for this shipment
   const {
@@ -110,14 +100,14 @@ export default function FulfillmentPanel({
 
   const options = optionsResponse?.data;
 
-  // Fetch experience centres when drop-off is selected and senderStationId is available
+  // Fetch experience centres when dropoff is selected
   const senderStationId = options?.senderStationId ?? 0;
   const {
     data: centresResponse,
     isLoading: centresLoading,
     isError: centresError,
   } = useExperienceCentres(
-    selectedMethod === "dropoff" ? senderStationId : 0
+    selectedMethod === "dropoff" && isPending ? senderStationId : 0
   );
 
   const experienceCentres: ExperienceCentre[] =
@@ -128,8 +118,9 @@ export default function FulfillmentPanel({
   const fulfillMutation = useFulfillShipment();
 
   const canConfirm =
-    selectedMethod === "pickup" ||
-    (selectedMethod === "dropoff" && selectedCentre !== null);
+    isPending &&
+    (selectedMethod === "pickup" ||
+      (selectedMethod === "dropoff" && selectedCentre !== null));
 
   const handleConfirm = () => {
     if (!canConfirm || !selectedMethod || !shipmentId) return;
@@ -149,7 +140,7 @@ export default function FulfillmentPanel({
         onSuccess: (response: any) => {
           setFulfillmentResult(response.data);
           toast.success("Shipment fulfilled successfully");
-          refetchOrder();
+          onFulfillmentComplete?.();
         },
       }
     );
@@ -160,143 +151,12 @@ export default function FulfillmentPanel({
     toast.success(`${label} copied to clipboard`);
   };
 
-  const isLoading = orderLoading || optionsLoading;
-
-  // If the shipment is already fulfilled, don't show the panel (task 8.2 will handle status display)
-  const shippingStatus = vendorShipment?.shipping?.status?.toLowerCase();
-  const isFulfillable =
-    shippingStatus === "pending" || shippingStatus === "processing";
-
-  if (isLoading) {
+  // Loading state
+  if (optionsLoading) {
     return <LoadingSkeleton />;
   }
 
-  if (!vendorShipment) {
-    return null;
-  }
-
-  if (!isFulfillable) {
-    // Shipment already fulfilled — display status and tracking info
-    const shipping = vendorShipment.shipping;
-    const statusLabel = shipping?.status
-      ? shipping.status.replace(/_/g, " ").replace(/\b\w/g, (c) => c.toUpperCase())
-      : "Unknown";
-
-    return (
-      <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-4">
-        <div className="flex items-center gap-2">
-          <Package className="h-5 w-5 text-gray-600" />
-          <h3 className="font-semibold text-sm text-gray-900">
-            Shipment Status
-          </h3>
-        </div>
-
-        {/* Status Badge */}
-        <div className="flex items-center gap-2">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-              shipping?.status === "delivered"
-                ? "bg-green-100 text-green-700"
-                : shipping?.status === "failed"
-                  ? "bg-red-100 text-red-700"
-                  : "bg-blue-100 text-blue-700"
-            )}
-          >
-            <CheckCircle className="h-3 w-3" />
-            {statusLabel}
-          </span>
-          {shipping?.fulfillmentMethod && (
-            <span className="text-xs text-gray-500">
-              via {shipping.fulfillmentMethod === "pickup" ? "Pickup" : "Dropoff"}
-            </span>
-          )}
-        </div>
-
-        {/* Tracking / Waybill Info */}
-        {shipping?.trackingNumber && (
-          <div className="bg-gray-50 border border-gray-200 rounded-lg p-3">
-            <p className="text-xs text-gray-500 mb-1">Tracking Number</p>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-900">
-                {shipping.trackingNumber}
-              </p>
-              <button
-                onClick={() =>
-                  copyToClipboard(shipping.trackingNumber!, "Tracking number")
-                }
-                className="p-1.5 hover:bg-gray-200 rounded-md transition-colors"
-                aria-label="Copy tracking number"
-              >
-                <Copy className="h-3.5 w-3.5 text-gray-500" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {shipping?.waybill && (
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-            <p className="text-xs text-blue-600 mb-1">Waybill Number</p>
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-gray-900">
-                {shipping.waybill}
-              </p>
-              <button
-                onClick={() =>
-                  copyToClipboard(shipping.waybill!, "Waybill")
-                }
-                className="p-1.5 hover:bg-blue-100 rounded-md transition-colors"
-                aria-label="Copy waybill number"
-              >
-                <Copy className="h-3.5 w-3.5 text-blue-600" />
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Carrier and Delivery Info */}
-        <div className="space-y-2 text-xs">
-          {shipping?.carrier && (
-            <div className="flex justify-between">
-              <span className="text-gray-500">Carrier</span>
-              <span className="font-medium text-gray-900">{shipping.carrier}</span>
-            </div>
-          )}
-          {shipping?.estimatedDelivery && (
-            <div className="flex justify-between">
-              <span className="text-gray-500">Estimated Delivery</span>
-              <span className="font-medium text-gray-900">
-                {new Date(shipping.estimatedDelivery).toLocaleDateString()}
-              </span>
-            </div>
-          )}
-          {shipping?.actualDelivery && (
-            <div className="flex justify-between">
-              <span className="text-gray-500">Delivered On</span>
-              <span className="font-medium text-green-700">
-                {new Date(shipping.actualDelivery).toLocaleDateString()}
-              </span>
-            </div>
-          )}
-          {shipping?.experienceCentre && (
-            <div className="flex items-start gap-2 mt-2 pt-2 border-t border-gray-100">
-              <MapPin className="h-3.5 w-3.5 text-gray-400 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-xs text-gray-500">Experience Centre</p>
-                <p className="text-sm font-medium text-gray-900">
-                  {shipping.experienceCentre.name}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {shipping.experienceCentre.address}
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-    );
-  }
-
+  // Error state
   if (optionsError) {
     return (
       <div className="bg-white border border-red-200 rounded-xl p-5 space-y-3">
@@ -409,14 +269,44 @@ export default function FulfillmentPanel({
   }
 
   const isInternational = options.isInternational;
+  const pickupSurcharge = options.vendorPickupFee ?? 0;
 
   return (
-    <div className="bg-white border border-gray-200 rounded-xl p-5 space-y-5">
-      <h3 className="font-semibold text-sm text-gray-900">
-        Choose Fulfillment Method
-      </h3>
+    <div
+      className={cn(
+        "bg-white border rounded-xl p-5 space-y-5",
+        isPending ? "border-gray-200" : "border-gray-200 opacity-75"
+      )}
+    >
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h3 className="font-semibold text-sm text-gray-900">
+          Choose Fulfillment Method
+        </h3>
+        {!isPending && (
+          <div className="flex items-center gap-1.5 text-xs text-gray-500">
+            <Lock className="h-3.5 w-3.5" />
+            <span>Selection locked</span>
+          </div>
+        )}
+      </div>
 
-      {isInternational && (
+      {/* Disabled state banner */}
+      {!isPending && (
+        <div className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3">
+          <Info className="h-4 w-4 text-gray-500 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-gray-600">
+            Fulfillment method can only be selected when the shipment is in
+            &quot;pending&quot; status. Current status:{" "}
+            <span className="font-medium">
+              {shipmentStatus?.replace(/_/g, " ")}
+            </span>
+          </p>
+        </div>
+      )}
+
+      {/* International notice */}
+      {isInternational && isPending && (
         <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
           <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
           <p className="text-xs text-amber-700">
@@ -426,26 +316,63 @@ export default function FulfillmentPanel({
         </div>
       )}
 
+      {/* Pricing Comparison */}
+      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 space-y-2">
+        <p className="text-xs font-medium text-gray-700 mb-3">
+          Pricing Comparison
+        </p>
+        <div className="flex justify-between text-xs">
+          <span className="text-gray-500">Pickup price (buyer pays)</span>
+          <span className="font-medium text-gray-900">
+            {formatCurrency(options.pickupPrice ?? 0, options.currency)}
+          </span>
+        </div>
+        {!isInternational && (
+          <div className="flex justify-between text-xs">
+            <span className="text-gray-500">Dropoff price (buyer pays)</span>
+            <span className="font-medium text-gray-900">
+              {formatCurrency(options.dropoffPrice ?? 0, options.currency)}
+            </span>
+          </div>
+        )}
+        <div className="pt-2 mt-2 border-t border-gray-200">
+          <div className="flex justify-between text-xs">
+            <span className="text-amber-700 font-medium">
+              Pickup surcharge (deducted from your earnings)
+            </span>
+            <span className="font-bold text-amber-700">
+              {formatCurrency(pickupSurcharge, options.currency)}
+            </span>
+          </div>
+        </div>
+      </div>
+
       {/* Method Cards */}
       <div
         className={cn(
           "grid gap-4",
-          !isInternational ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1 max-w-md"
+          !isInternational
+            ? "grid-cols-1 md:grid-cols-2"
+            : "grid-cols-1 max-w-md"
         )}
       >
         {/* Pickup Card */}
         <button
           type="button"
           onClick={() => {
+            if (!isPending) return;
             setSelectedMethod("pickup");
             setSelectedCentre(null);
           }}
+          disabled={!isPending}
           className={cn(
             "text-left border-2 rounded-xl p-4 transition-all",
+            !isPending && "cursor-not-allowed opacity-60",
             selectedMethod === "pickup"
               ? "border-blue-500 bg-blue-50/50 ring-1 ring-blue-200"
               : "border-gray-200 hover:border-gray-300"
           )}
+          aria-label="Select pickup fulfillment method"
         >
           <div className="flex items-center gap-2 mb-2">
             <div
@@ -466,17 +393,23 @@ export default function FulfillmentPanel({
             <div>
               <p className="text-sm font-medium text-gray-900">Pickup</p>
               <p className="text-xs text-gray-500">
-                GIGL sends a rider to your location
+                Rider collects from your location
               </p>
             </div>
           </div>
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs text-gray-500">Vendor fee</p>
-            <p className="text-lg font-bold text-gray-900">
-              {options.vendorPickupFee > 0
-                ? formatCurrency(options.vendorPickupFee, options.currency)
-                : formatCurrency(0, options.currency)}
-            </p>
+          <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+            <div className="flex justify-between text-xs">
+              <span className="text-gray-500">Shipping cost</span>
+              <span className="font-medium text-gray-900">
+                {formatCurrency(options.pickupPrice ?? 0, options.currency)}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs">
+              <span className="text-amber-600">Your surcharge</span>
+              <span className="font-medium text-amber-700">
+                -{formatCurrency(pickupSurcharge, options.currency)}
+              </span>
+            </div>
           </div>
         </button>
 
@@ -484,21 +417,25 @@ export default function FulfillmentPanel({
         {!isInternational && (
           <button
             type="button"
-            onClick={() => setSelectedMethod("dropoff")}
+            onClick={() => {
+              if (!isPending) return;
+              setSelectedMethod("dropoff");
+            }}
+            disabled={!isPending}
             className={cn(
               "text-left border-2 rounded-xl p-4 transition-all",
+              !isPending && "cursor-not-allowed opacity-60",
               selectedMethod === "dropoff"
                 ? "border-green-500 bg-green-50/50 ring-1 ring-green-200"
                 : "border-gray-200 hover:border-gray-300"
             )}
+            aria-label="Select dropoff fulfillment method"
           >
             <div className="flex items-center gap-2 mb-2">
               <div
                 className={cn(
                   "p-2 rounded-lg",
-                  selectedMethod === "dropoff"
-                    ? "bg-green-100"
-                    : "bg-gray-100"
+                  selectedMethod === "dropoff" ? "bg-green-100" : "bg-gray-100"
                 )}
               >
                 <MapPin
@@ -513,94 +450,58 @@ export default function FulfillmentPanel({
               <div>
                 <p className="text-sm font-medium text-gray-900">Dropoff</p>
                 <p className="text-xs text-gray-500">
-                  Take your package to a GIGL Experience Centre
+                  Take to a GIGL Experience Centre
                 </p>
               </div>
             </div>
-            <div className="mt-3 pt-3 border-t border-gray-100">
-              <p className="text-xs text-gray-500">Vendor fee</p>
-              <p className="text-lg font-bold text-green-700">
-                No extra charge
-              </p>
+            <div className="mt-3 pt-3 border-t border-gray-100 space-y-1">
+              <div className="flex justify-between text-xs">
+                <span className="text-gray-500">Shipping cost</span>
+                <span className="font-medium text-gray-900">
+                  {formatCurrency(options.dropoffPrice ?? 0, options.currency)}
+                </span>
+              </div>
+              <div className="flex justify-between text-xs">
+                <span className="text-green-600">Your surcharge</span>
+                <span className="font-medium text-green-700">Free</span>
+              </div>
             </div>
           </button>
         )}
       </div>
 
-      {/* Pickup Scheduling Details — shown when pickup is selected */}
-      {selectedMethod === "pickup" && (
-        <div className="space-y-3">
-          <p className="text-xs font-medium text-gray-700">
-            Pickup Scheduling Details
+      {/* Surcharge Info Banner */}
+      {isPending && pickupSurcharge > 0 && (
+        <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
+          <Info className="h-4 w-4 text-amber-600 mt-0.5 flex-shrink-0" />
+          <p className="text-xs text-amber-700">
+            Pickup surcharge:{" "}
+            <span className="font-bold">
+              {formatCurrency(pickupSurcharge, options.currency)}
+            </span>{" "}
+            (deducted from your earnings). Choose dropoff to avoid this fee.
           </p>
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 space-y-3">
-            <div className="flex items-start gap-2">
-              <Calendar className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Scheduled Pickup
-                </p>
-                <p className="text-xs text-gray-600">
-                  A GIGL rider will be dispatched to your registered address
-                  within 24–48 hours after confirmation.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <Clock className="h-4 w-4 text-blue-600 mt-0.5 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-medium text-gray-900">
-                  Pickup Window
-                </p>
-                <p className="text-xs text-gray-600">
-                  Pickups are typically between 9:00 AM – 5:00 PM on business
-                  days.
-                </p>
-              </div>
-            </div>
-            <div className="pt-2 border-t border-blue-100">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Pickup price</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(options.pickupPrice, options.currency)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs mt-1">
-                <span className="text-gray-500">Vendor pickup surcharge</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(options.vendorPickupFee, options.currency)}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs mt-1">
-                <span className="text-gray-500">Buyer pays</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(options.buyerPays, options.currency)}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
       {/* Experience Centre Selection — shown when dropoff is selected */}
-      {selectedMethod === "dropoff" && (
+      {selectedMethod === "dropoff" && isPending && (
         <div className="space-y-3">
           <p className="text-xs font-medium text-gray-700">
-            Nearest Experience Centres
+            Select Experience Centre
           </p>
 
           {centresLoading ? (
             <div className="space-y-2 border border-gray-200 rounded-lg p-2">
-              <Skeleton className="h-16 w-full rounded-lg" />
-              <Skeleton className="h-16 w-full rounded-lg" />
-              <Skeleton className="h-16 w-full rounded-lg" />
+              <Skeleton className="h-14 w-full rounded-lg" />
+              <Skeleton className="h-14 w-full rounded-lg" />
+              <Skeleton className="h-14 w-full rounded-lg" />
             </div>
           ) : centresError ? (
             <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
               <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />
               <p className="text-xs text-red-700">
-                Failed to load experience centres. The centres shown below are
-                from the initial options.
+                Failed to load experience centres. Please try again.
               </p>
             </div>
           ) : null}
@@ -646,62 +547,10 @@ export default function FulfillmentPanel({
               </p>
             )
           )}
-
-          {/* Dropoff pricing details */}
-          <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <div className="pt-1">
-              <div className="flex justify-between text-xs">
-                <span className="text-gray-500">Dropoff price</span>
-                <span className="font-medium text-gray-900">
-                  {options.dropoffPrice != null
-                    ? formatCurrency(options.dropoffPrice, options.currency)
-                    : "N/A"}
-                </span>
-              </div>
-              <div className="flex justify-between text-xs mt-1">
-                <span className="text-gray-500">Vendor fee</span>
-                <span className="font-medium text-green-700">
-                  No extra charge
-                </span>
-              </div>
-              <div className="flex justify-between text-xs mt-1">
-                <span className="text-gray-500">Buyer pays</span>
-                <span className="font-medium text-gray-900">
-                  {formatCurrency(options.buyerPays, options.currency)}
-                </span>
-              </div>
-            </div>
-          </div>
         </div>
       )}
 
-      {/* Fee Breakdown Summary */}
-      {selectedMethod && (
-        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
-          <p className="text-xs font-medium text-gray-700 mb-2">
-            Fee Breakdown
-          </p>
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-500">Buyer pays (shipping)</span>
-            <span className="font-medium text-gray-900">
-              {formatCurrency(options.buyerPays, options.currency)}
-            </span>
-          </div>
-          <div className="flex justify-between text-xs">
-            <span className="text-gray-500">
-              Vendor pays (
-              {selectedMethod === "pickup" ? "pickup surcharge" : "dropoff"})
-            </span>
-            <span className="font-medium text-gray-900">
-              {selectedMethod === "pickup"
-                ? formatCurrency(options.vendorPickupFee, options.currency)
-                : formatCurrency(0, options.currency)}
-            </span>
-          </div>
-        </div>
-      )}
-
-      {/* Confirm Button */}
+      {/* Confirm Fulfillment Button */}
       <button
         type="button"
         onClick={handleConfirm}
@@ -723,7 +572,7 @@ export default function FulfillmentPanel({
         )}
       </button>
 
-      {/* Mutation Error with Retry */}
+      {/* Mutation Error */}
       {fulfillMutation.isError && (
         <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
           <AlertCircle className="h-4 w-4 text-red-500 mt-0.5 flex-shrink-0" />

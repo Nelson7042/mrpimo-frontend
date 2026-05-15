@@ -184,5 +184,34 @@ export const vendorService = {
       `${API_BASE_URL}/shipping/experience-centres/${stationId}`
     );
     return handleApiResponse(response, 'Failed to fetch experience centres');
-  }
+  },
+
+  async confirmVendorHandoff(
+    orderId: string,
+    shipmentId: string,
+    body: { type: 'dropped_off' | 'picked_up' }
+  ) {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/vendors/orders/${orderId}/shipments/${shipmentId}/confirm-handoff`,
+      {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }
+    );
+    return handleApiResponse(response, 'Failed to confirm handoff');
+  },
+
+  async cancelOrder(
+    orderId: string,
+    body: { reason: string; explanation?: string }
+  ) {
+    const response = await fetchWithAuth(
+      `${API_BASE_URL}/vendors/orders/${orderId}/cancel`,
+      {
+        method: 'POST',
+        body: JSON.stringify(body),
+      }
+    );
+    return handleApiResponse(response, 'Failed to cancel order');
+  },
 };

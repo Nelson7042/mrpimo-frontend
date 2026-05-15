@@ -1,14 +1,14 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { BreadcrumbItem, Breadcrumbs } from "@/components/BreadCrumbs";
-import { useUserBids, BidFilter } from "@/hooks/useBids";
+import { useUserBids, BidFilter, UserBid, PaymentStatusFilter } from "@/hooks/useBids";
 import Pagination from "@/components/Pagination";
 import { getCurrencySymbol } from "@/utils/currency";
-import { Loader2, Gavel, Trophy, Clock, ExternalLink } from "lucide-react";
+import { Loader2, Gavel, Trophy, Clock, ExternalLink, AlertTriangle, Package } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 
@@ -17,6 +17,13 @@ const tabs: { label: string; value: BidFilter }[] = [
   { label: "Open", value: "open" },
   { label: "Closed", value: "closed" },
   { label: "Won", value: "won" },
+];
+
+const paymentStatusTabs: { label: string; value: PaymentStatusFilter }[] = [
+  { label: "All", value: "all" },
+  { label: "Payment Pending", value: "payment_pending" },
+  { label: "Paid", value: "paid" },
+  { label: "Expired", value: "expired" },
 ];
 
 const emptyMessages: Record<BidFilter, { title: string; description: string }> = {
@@ -28,12 +35,158 @@ const emptyMessages: Record<BidFilter, { title: string; description: string }> =
 
 const limitOptions = [5, 10, 20, 50];
 
+// --- Countdown Hook ---
+function useCountdown(deadline: string | null | undefined) {
+  const [timeLeft, setTimeLeft] = useState<{
+    hours: number;
+    minutes: number;
+    seconds: number;
+    expired: boolean;
+  }>({ hours: 0, minutes: 0, seconds: 0, expired: true });
+
+  useEffect(() => {
+    if (!deadline) {
+      setTimeLeft({ hours: 0, minutes: 0, seconds: 0, expired: true });
+      return;
+    }
+
+    const calculate = () => {
+      const now = Date.now();
+      const end = new Date(deadline).getTime();
+      const diff = end - now;
+
+      if (diff <= 0) {
+        setTimeLeft({ hours: 0, minutes: 0, seconds: 0, expired: true });
+        return;
+      }
+
+      const hours = Math.floor(diff / (1000 * 60 * 60));
+      const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((diff % (1000 * 60)) / 1000);
+      setTimeLeft({ hours, minutes, seconds, expired: false });
+    };
+
+    calculate();
+    const interval = setInterval(calculate, 1000);
+    return () => clearInterval(interval);
+  }, [deadline]);
+
+  return timeLeft;
+}
+
+// --- Payment Status Badge ---
+function PaymentStatusBadge({ status }: { status: string | undefined }) {
+  if (!status || status === "none") return null;
+
+  switch (status) {
+    case "payment_pending":
+      return (
+        <Badge className="bg-amber-100 text-amber-800 hover:bg-amber-100 px-2 py-0.5">
+          <span className="flex items-center gap-1 text-xs font-medium">
+            <Clock className="w-3 h-3" />
+            Payment Pending
+          </span>
+        </Badge>
+      );
+    case "paid":
+      return (
+        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 px-2 py-0.5">
+          <span className="flex items-center gap-1 text-xs font-medium">
+            <Package className="w-3 h-3" />
+            Paid
+          </span>
+        </Badge>
+      );
+    case "expired":
+      return (
+        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 px-2 py-0.5">
+          <span className="flex items-center gap-1 text-xs font-medium">
+            <AlertTriangle className="w-3 h-3" />
+            Expired
+          </span>
+        </Badge>
+      );
+    default:
+      return null;
+  }
+}
+
+// --- Countdown Display ---
+function BidCountdownTimer({ deadline }: { deadline: string | null | undefined }) {
+  const countdown = useCountdown(deadline);
+
+  if (countdown.expired || !deadline) return null;
+
+  return (
+    <div className="flex items-center gap-1.5 mt-1">
+      <Clock className="w-3 h-3 text-amber-600" />
+      <span className="text-xs font-medium text-amber-700">
+        {String(countdown.hours).padStart(2, "0")}h{" "}
+        {String(countdown.minutes).padStart(2, "0")}m{" "}
+        {String(countdown.seconds).padStart(2, "0")}s remaining
+      </span>
+    </div>
+  );
+}
+
+// --- Payment Actions for Won Bids ---
+function BidPaymentActions({ bid }: { bid: UserBid }) {
+  const router = useRouter();
+
+  if (!bid.isWinning || !bid.auctionEnded) return null;
+
+  const status = bid.paymentStatus;
+
+  if (status === "payment_pending") {
+    return (
+      <div className="mt-2 space-y-1">
+        <BidCountdownTimer deadline={bid.paymentDeadline} />
+        <Button
+          size="sm"
+          onClick={() => router.push(`/home/user/bids/checkout/${bid.bidId || bid.productId}`)}
+          className="bg-blue-600 hover:bg-blue-700 text-white text-xs"
+        >
+          Pay Now
+        </Button>
+      </div>
+    );
+  }
+
+  if (status === "paid" && bid.orderId) {
+    return (
+      <div className="mt-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => router.push(`/home/user/orders/${bid.orderId}`)}
+          className="border-green-300 text-green-700 hover:bg-green-50 text-xs"
+        >
+          <Package className="w-3 h-3 mr-1" />
+          Track Order
+        </Button>
+      </div>
+    );
+  }
+
+  if (status === "expired") {
+    return (
+      <div className="mt-2 flex items-center gap-1.5">
+        <AlertTriangle className="w-3 h-3 text-red-500" />
+        <span className="text-xs text-red-600">Payment window closed</span>
+      </div>
+    );
+  }
+
+  return null;
+}
+
 export default function UserBidsPage() {
   const router = useRouter();
   const [activeFilter, setActiveFilter] = useState<BidFilter>("all");
+  const [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatusFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
-  const { data, isLoading } = useUserBids(activeFilter, currentPage, itemsPerPage);
+  const { data, isLoading } = useUserBids(activeFilter, currentPage, itemsPerPage, paymentStatusFilter);
 
   const bids = data?.bids || [];
   const pagination = data?.pagination;
@@ -53,6 +206,12 @@ export default function UserBidsPage() {
 
   const handleFilterChange = (filter: BidFilter) => {
     setActiveFilter(filter);
+    setPaymentStatusFilter("all");
+    setCurrentPage(1);
+  };
+
+  const handlePaymentStatusFilterChange = (status: PaymentStatusFilter) => {
+    setPaymentStatusFilter(status);
     setCurrentPage(1);
   };
 
@@ -101,6 +260,25 @@ export default function UserBidsPage() {
           </button>
         ))}
       </div>
+
+      {/* Payment Status Filter - shown when Won tab is active */}
+      {activeFilter === "won" && (
+        <div className="flex gap-2 mb-4 overflow-x-auto">
+          {paymentStatusTabs.map((tab) => (
+            <button
+              key={tab.value}
+              onClick={() => handlePaymentStatusFilterChange(tab.value)}
+              className={`px-3 py-1.5 text-xs font-medium rounded-md whitespace-nowrap transition-colors cursor-pointer ${
+                paymentStatusFilter === tab.value
+                  ? "bg-gray-800 text-white"
+                  : "bg-gray-100 text-gray-600 border border-gray-200 hover:bg-gray-200"
+              }`}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {isLoading ? (
         <div className="flex items-center justify-center py-20">
@@ -190,6 +368,9 @@ export default function UserBidsPage() {
                               <span className="text-xs font-medium">Ended</span>
                             </Badge>
                           )}
+                          {bid.isWinning && bid.auctionEnded && bid.paymentStatus && bid.paymentStatus !== "none" && (
+                            <PaymentStatusBadge status={bid.paymentStatus} />
+                          )}
                         </div>
                         <p className="text-xs text-gray-500">
                           Max bid: {getCurrencySymbol(bid.currency)}
@@ -199,6 +380,7 @@ export default function UserBidsPage() {
                           <Clock className="w-3 h-3" />
                           {format(new Date(bid.createdAt), "MMM dd, yyyy 'at' h:mm a")}
                         </p>
+                        <BidPaymentActions bid={bid} />
                       </div>
                       {!bid.auctionEnded && (
                         <Button

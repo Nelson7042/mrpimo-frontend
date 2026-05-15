@@ -100,7 +100,6 @@ export const useUserOffers = (options: UserOffersOptions = {}) => {
     queryFn: () => fetchUserOffers(page, limit),
     enabled,
     staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -113,7 +112,6 @@ export const useVendorOffers = (options: VendorOffersOptions = {}) => {
     queryFn: () => fetchVendorOffers({ status, page, limit }),
     enabled,
     staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };

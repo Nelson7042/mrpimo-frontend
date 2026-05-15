@@ -12,6 +12,7 @@ import PaymentMethodManager from '@/components/wallet/PaymentMethodManager'
 import WalletSettings from '@/components/wallet/WalletSettings'
 import { useWalletBalance, useWalletTransactions, usePaymentMethods, IWalletTransaction, TransactionFilters } from '@/hooks/useWallet'
 import { useWalletDisplay } from '@/hooks/useWalletBalance'
+import { useExchangeRate } from '@/hooks/useExchangeRate'
 import { useUserStore } from '@/stores/useUserStore'
 
 const getTransactionIcon = (type: string) => {
@@ -85,6 +86,19 @@ export default function WalletPage() {
     walletData?.wallet?.balances?.available,
     user?.preferences?.currency
   )
+
+  const userCurrency = user?.preferences?.currency || 'USD';
+  const { rate: exchangeRate, convertFromUSD, formatConverted } = useExchangeRate(userCurrency);
+
+  // Format amount in user's currency (converts from USD if needed)
+  const formatAmount = (usdAmount: number): string => {
+    if (userCurrency === 'USD') return `$${usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const converted = convertFromUSD(usdAmount);
+    if (converted === null) return `$${usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    const symbols: Record<string, string> = { NGN: '₦', GHS: '₵', EUR: '€', GBP: '£', KES: 'KSh', ZAR: 'R' };
+    const symbol = symbols[userCurrency] || userCurrency + ' ';
+    return `${symbol}${converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };
 
   const handleRefresh = () => {
     refetchWallet()
@@ -176,12 +190,12 @@ export default function WalletPage() {
               )}
               {(walletData?.wallet?.balances?.pending || 0) > 0 && (
                 <p className="text-blue-200 text-sm mt-1">
-                  ${(walletData?.wallet?.balances?.pending || 0).toFixed(2)} pending
+                  {formatAmount(walletData?.wallet?.balances?.pending || 0)} pending
                 </p>
               )}
               {(walletData?.wallet?.balances?.escrow || 0) > 0 && (
                 <p className="text-blue-200 text-sm">
-                  ${(walletData?.wallet?.balances?.escrow || 0).toFixed(2)} in escrow
+                  {formatAmount(walletData?.wallet?.balances?.escrow || 0)} in escrow
                 </p>
               )}
             </div>
@@ -205,7 +219,7 @@ export default function WalletPage() {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <p className="text-sm font-medium text-blue-900">
-                    ${escrowBalance.toFixed(2)} held in escrow
+                    {formatAmount(escrowBalance)} held in escrow
                   </p>
                   <button
                     onClick={() => setShowEscrowDetails(!showEscrowDetails)}
@@ -228,10 +242,10 @@ export default function WalletPage() {
                             <div className="flex items-center gap-2">
                               <Lock className="w-3.5 h-3.5 text-blue-500" />
                               <span className="text-gray-700">
-                                {transaction.orderId ? `Order #${transaction.orderId.slice(-8)}` : transaction.description}
+                                {transaction.orderId ? `Order #${(transaction.orderId._id || transaction.orderId).toString().slice(-8)}` : transaction.description}
                               </span>
                             </div>
-                            <span className="font-medium text-gray-900">${transaction.amount.toLocaleString()}</span>
+                            <span className="font-medium text-gray-900">{formatAmount(transaction.amount)}</span>
                           </div>
                         ))}
                       </div>
@@ -460,7 +474,7 @@ export default function WalletPage() {
                           <div className="sm:hidden text-xs text-gray-500 mt-1">
                             <span className={transaction.type.includes('topup') || transaction.type === 'transfer_in' || transaction.type === 'refund' ? 'text-green-600' : 'text-red-600'}>
                               {transaction.type.includes('topup') || transaction.type === 'transfer_in' || transaction.type === 'refund' ? '+' : '-'}
-                              ${transaction.amount.toLocaleString()}
+                              {formatAmount(transaction.amount)}
                             </span>
                             <span className="mx-1">•</span>
                             {formatDate(transaction.createdAt.toString())}
@@ -471,7 +485,7 @@ export default function WalletPage() {
                     <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-700 hidden sm:table-cell">
                       <span className={transaction.type.includes('topup') || transaction.type === 'transfer_in' || transaction.type === 'refund' ? 'text-green-600' : 'text-red-600'}>
                         {transaction.type.includes('topup') || transaction.type === 'transfer_in' || transaction.type === 'refund' ? '+' : '-'}
-                        ${transaction.amount.toLocaleString()}
+                        {formatAmount(transaction.amount)}
                       </span>
                     </td>
                     <td className="px-2 sm:px-4 py-3 sm:py-4 whitespace-nowrap text-xs sm:text-sm text-gray-700 hidden md:table-cell">

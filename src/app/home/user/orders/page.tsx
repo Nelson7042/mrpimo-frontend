@@ -9,6 +9,7 @@ import { useRouter, useSearchParams } from "next/navigation"
 import { useUserOrders, useCancelOrder } from "@/hooks/useOrders"
 import { Loader2, Package, Truck, CheckCircle, XCircle, ChevronDown, ChevronUp, Clock } from "lucide-react"
 import { format } from "date-fns"
+import { getCurrencySymbol } from "@/utils/currency"
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -178,7 +179,7 @@ export default function OrdersPage() {
                       <div className="flex justify-between items-center py-3 border-t border-b border-gray-100">
                         <div>
                           <p className="text-xs text-gray-500 mb-1">Total Amount</p>
-                          <p className="text-lg font-bold text-gray-900">${order.paymentId?.amount?.toFixed(2) || '0.00'}</p>
+                          <p className="text-lg font-bold text-gray-900">{getCurrencySymbol(order.items?.[0]?.metadata?.userCurrency || order.paymentId?.currency || 'USD')}{order.paymentId?.amount?.toFixed(2) || order.items?.reduce((sum: number, item: any) => sum + (item.metadata?.amountPaidByUser || item.price) * item.quantity, 0)?.toFixed(2) || '0.00'}</p>
                         </div>
                         <div className="text-right">
                           <p className="text-xs text-gray-500 mb-1">Items</p>
@@ -232,7 +233,7 @@ export default function OrdersPage() {
                         </Badge>
                       </div>
                       <div className="col-span-2">
-                        <span className="font-roboto font-semibold text-xs text-gray-900">${order.paymentId?.amount?.toFixed(2) || '0.00'}</span>
+                        <span className="font-roboto font-semibold text-xs text-gray-900">{getCurrencySymbol(order.items?.[0]?.metadata?.userCurrency || order.paymentId?.currency || 'USD')}{order.paymentId?.amount?.toFixed(2) || order.items?.reduce((sum: number, item: any) => sum + (item.metadata?.amountPaidByUser || item.price) * item.quantity, 0)?.toFixed(2) || '0.00'}</span>
                       </div>
                       <div className="col-span-2">
                         <span className="font-roboto text-xs text-gray-600">{itemCount} item{itemCount > 1 ? 's' : ''}</span>
@@ -365,7 +366,7 @@ export default function OrdersPage() {
                                             </div>
                                           </td>
                                           <td className="px-4 py-3 text-sm text-gray-900">{item.quantity}</td>
-                                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate).toFixed(2)}</td>
+                                          <td className="px-4 py-3 text-sm font-semibold text-gray-900">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2)}</td>
                                           <td className="px-4 py-3">
                                             {itemIdx === 0 ? (
                                               <p className="text-xs font-semibold text-blue-600 break-all">
@@ -429,7 +430,7 @@ export default function OrdersPage() {
                                         <div className="flex-1 min-w-0">
                                           <p className="font-semibold text-sm text-gray-900">{item.productId?.name}</p>
                                           <p className="text-xs text-gray-500 mt-1">Qty: {item.quantity}</p>
-                                          <p className="text-sm font-bold text-gray-900 mt-1">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate).toFixed(2)}</p>
+                                          <p className="text-sm font-bold text-gray-900 mt-1">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2)}</p>
                                           {items.length > 1 && itemIdx > 0 && (
                                             <p className="text-xs text-blue-600 flex items-center gap-1 mt-1">
                                               <Truck className="w-3 h-3" />

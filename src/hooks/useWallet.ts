@@ -68,7 +68,6 @@ export const useWalletBalance = () => {
   return useQuery({
     queryKey: WALLET_BALANCE_QUERY_KEY,
     queryFn: fetchWalletBalance,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -104,7 +103,6 @@ export const useWalletTransactions = (filters: TransactionFilters = {}) => {
   return useQuery({
     queryKey: ['walletTransactions', JSON.stringify(filters)],
     queryFn: () => fetchWalletTransactions(filters),
-    refetchOnWindowFocus: false,
     retry: 1,
     enabled: true,
   });
@@ -123,7 +121,6 @@ export const usePaymentMethods = () => {
   return useQuery({
     queryKey: ['paymentMethods'],
     queryFn: fetchPaymentMethods,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };

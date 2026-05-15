@@ -244,6 +244,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
       const socket = SocketService.getSocket();
       if (!socket) {
         toast.error("Connection error. Please try again.");
+        setIsJoiningChat(false);
         return;
       }
 
@@ -253,22 +254,35 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
         product: productData,
       };
 
-      socket.emit("join-chat", payload);
+      // Clean up any stale listeners before attaching new ones
+      socket.off("chat-joined");
+      socket.off("error");
+
+      let settled = false;
 
       socket.once("chat-joined", ({ chatId }) => {
+        if (settled) return;
+        settled = true;
         localStorage.setItem("focusedChatId", chatId);
         router.push("/home/user/messages");
         setIsJoiningChat(false);
       });
 
       socket.once("error", (error) => {
+        if (settled) return;
+        settled = true;
         toast.error("Failed to join chat. Please try again.");
         setIsJoiningChat(false);
       });
 
+      socket.emit("join-chat", payload);
+
       // Timeout after 10 seconds
       setTimeout(() => {
-        if (isJoiningChat) {
+        if (!settled) {
+          settled = true;
+          socket.off("chat-joined");
+          socket.off("error");
           toast.error("Connection timeout. Please try again.");
           setIsJoiningChat(false);
         }

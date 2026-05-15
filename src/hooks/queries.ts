@@ -232,7 +232,6 @@ export const useVendorAnalytics= (vendorId: string, range?: string) => {
     queryKey: ['vendorAnalytics', vendorId, range],
     queryFn: () => fetchVendorAnalytics(vendorId, range),
     enabled: !!vendorId, // ensures it won't run if vendorId is undefined/null
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -252,7 +251,6 @@ export const useUserNotifications = (enabled: boolean = true, scope?: string) =>
     queryKey: ['userNotifications', scope],
     queryFn: () => fetchUserNotifications(scope),
     enabled: enabled,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -271,7 +269,6 @@ export const useVendorOrders = (vendorId: string) => {
     queryKey: ['vendorOrders', vendorId],
     queryFn: () => fetchVendorOrders(vendorId),
     enabled: !!vendorId, // Only run query if vendorId exists
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -290,7 +287,6 @@ export const useOrderById = (orderId: string) => {
     queryKey: ['order', orderId],
     queryFn: () => fetchOrderById(orderId),
     enabled: !!orderId,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -345,7 +341,6 @@ export const useVendorReviewAnalytics = (vendorId: string) => {
     queryKey: ['vendorReviewAnalytics', vendorId],
     queryFn: () => fetchVendorReviewAnalytics(vendorId),
     enabled: !!vendorId,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -363,7 +358,6 @@ export const useVendorReviews = (vendorId: string) => {
     queryKey: ['vendorReviews', vendorId],
     queryFn: () => fetchVendorReviews(vendorId),
     enabled: !!vendorId,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -381,7 +375,6 @@ export const useFetchVendorOrderMetrics = (vendorId: string) => {
     queryKey: ['vendorOrderMetrics', vendorId],
     queryFn: () => fetchVendorOrderMetrics(vendorId),
     enabled: !!vendorId,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -451,7 +444,6 @@ export const useVendorSubscription = (vendorId: string) => {
     queryKey: ['vendorSubscription', vendorId],
     queryFn: () => fetchVendorSubscription(vendorId),
     enabled: !!vendorId,
-    refetchOnWindowFocus: false,
     retry: 1
   });
 };

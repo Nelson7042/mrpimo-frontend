@@ -95,13 +95,15 @@ const Page = () => {
           const currentMessages = prev[message.chatId] || [];
           // Remove optimistic message with same content and add real message
           const filteredMessages = currentMessages.filter(msg => 
-            !(msg.isOptimistic && msg.message === message.message && msg.senderId?._id === message.senderId)
+            !(msg.isOptimistic && msg.text === message.text && msg.senderId?._id === message.senderId)
           );
           return {
             ...prev,
             [message.chatId]: [...filteredMessages, message]
           };
         });
+        // Refresh chat list to update unread counts and last message preview
+        queryClient.invalidateQueries({ queryKey: ['chats'] });
       });
 
       socket.on('error', (message: any) => {
@@ -195,7 +197,7 @@ const Page = () => {
         _id: `temp-${Date.now()}`,
         senderId: { _id: user._id, name: user.profile?.firstName || 'You' },
         receiverId: { _id: currentGroup._id },
-        message: messageText,
+        text: messageText,
         chatId: selectedChat.chatId,
         createdAt: new Date().toISOString(),
         isOptimistic: true

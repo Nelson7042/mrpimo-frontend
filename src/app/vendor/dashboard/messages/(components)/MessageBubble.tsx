@@ -8,7 +8,7 @@ import { useQueryClient } from "@tanstack/react-query";
 interface MessageProps {
   message: {
     _id: string;
-    message: string;
+    text: string;
     createdAt: string;
     read: boolean;
     isEdited?: boolean;
@@ -21,9 +21,9 @@ interface MessageProps {
 
 const MessageBubble: React.FC<MessageProps> = ({ message, isSent, onMessageVisible }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [editText, setEditText] = useState(message.message);
+  const [editText, setEditText] = useState(message.text);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [displayText, setDisplayText] = useState(message.message);
+  const [displayText, setDisplayText] = useState(message.text);
   const [displayEdited, setDisplayEdited] = useState(message.isEdited || false);
   const queryClient = useQueryClient();
 

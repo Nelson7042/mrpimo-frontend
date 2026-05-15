@@ -73,10 +73,18 @@ const ProductDetailsTabs: React.FC<ProductInfoProps> = ({ productData }) =>  {
       <div className="lg:col-span-1 md:px-3">
         <h3 className="font-roboto text-sm font-bold text-gray-900 mb-2 md:mb-4">Features</h3>
         <div className="space-y-1 md:space-y-3">
-          <div className="flex items-center gap-1 md:gap-3">
-            <Shield className="h-4 w-4 text-orange-500" />
-            <span className="font-roboto text-xs text-gray-700">Free 1 Year Warranty</span>
-          </div>
+          {(() => {
+            const warrantySpec = productData?.specifications?.find(
+              (spec) => spec.key?.toLowerCase().includes("warranty")
+            );
+            const warrantyText = warrantySpec?.value;
+            return warrantyText ? (
+              <div className="flex items-center gap-1 md:gap-3">
+                <Shield className="h-4 w-4 text-orange-500" />
+                <span className="font-roboto text-xs text-gray-700">{warrantyText}</span>
+              </div>
+            ) : null;
+          })()}
           <div className="flex items-center gap-1 md:gap-3">
             <Truck className="h-4 w-4 text-orange-500" />
             <span className="font-roboto text-xs text-gray-700">Safe Shipping & Fasted Delivery</span>

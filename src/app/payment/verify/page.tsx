@@ -39,6 +39,9 @@ export default function PaymentVerifyPage() {
   const orderId = searchParams.get('orderId');
   const type = searchParams.get('type') || 'wallet';
 
+  // Wait for store hydration before making authenticated requests
+  const { user, _hasHydrated } = useUserStore();
+
   const handleCheckoutVerification = useCallback(async () => {
     if (!orderId) {
       setState({
@@ -170,12 +173,15 @@ export default function PaymentVerifyPage() {
   }, [reference, verifyPayment, queryClient, router, retryCount]);
 
   useEffect(() => {
+    // Wait for store hydration before making authenticated requests
+    if (!_hasHydrated) return;
+
     if (type === 'checkout') {
       handleCheckoutVerification();
     } else {
       handleWalletVerification();
     }
-  }, [type, retryCount]); // Re-run when retryCount changes
+  }, [type, retryCount, _hasHydrated]); // Re-run when retryCount changes or store hydrates
 
   const handleRetry = () => {
     if (retryCount < maxRetries) {

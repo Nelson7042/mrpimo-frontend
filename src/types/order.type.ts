@@ -204,6 +204,17 @@ export interface IClientOrder {
   receivedItems?: IReceivedItem[];
   rejectedItems?: IRejectedItem[];
   deliveryMethod?: string;
+  metadata?: {
+    isBidCheckout?: boolean;
+    bidId?: string;
+    auctionEndTime?: string;
+    conversionSnapshot?: {
+      rates: Record<string, number>;
+      capturedAt: string;
+      baseCurrency: string;
+      userCurrency: string;
+    };
+  };
   createdAt: string;
   updatedAt: string;
 }

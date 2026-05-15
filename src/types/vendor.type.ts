@@ -162,6 +162,17 @@ export interface IVendor {
     resumesAt: Date;
     enforcedBy: string;
   };
+  fulfillmentStrikes?: {
+    orderId: string;
+    reason: string;
+    issuedAt: Date;
+    expiresAt: Date;
+  }[];
+  fulfillmentSuspension?: {
+    suspendedAt: Date;
+    resumesAt: Date;
+    reason: string;
+  };
   notificationPreferences?: {
     newOrder: boolean;
     orderStatusChange: boolean;

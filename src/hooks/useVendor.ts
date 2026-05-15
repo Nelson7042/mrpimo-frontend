@@ -189,3 +189,51 @@ export const useExperienceCentres = (stationId: number) => {
   });
 };
 
+export const useConfirmVendorHandoff = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      shipmentId,
+      body,
+    }: {
+      orderId: string;
+      shipmentId: string;
+      body: { type: 'dropped_off' | 'picked_up' };
+    }) => vendorService.confirmVendorHandoff(orderId, shipmentId, body),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
+      queryClient.invalidateQueries({
+        queryKey: ['fulfillment-options', variables.orderId, variables.shipmentId],
+      });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to confirm handoff');
+    },
+  });
+};
+
+export const useVoluntaryCancellation = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      orderId,
+      body,
+    }: {
+      orderId: string;
+      body: { reason: string; explanation?: string };
+    }) => vendorService.cancelOrder(orderId, body),
+    onSuccess: (_, variables) => {
+      toast.success('Order cancelled successfully. Buyer will be refunded.');
+      queryClient.invalidateQueries({ queryKey: ['vendor-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['order', variables.orderId] });
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Failed to cancel order');
+    },
+  });
+};
+

@@ -6,7 +6,7 @@ export interface INotification {
     type: 'order' | 'payment' | 'promotion' | 'system' | 'chat' | 'offer' | 'bid' | 'wallet'
         | 'dispute' | 'subscription' | 'payout' | 'refund' | 'withdrawal'
         | 'verification' | 'advertisement' | 'product' | 'account-warning'
-        | 'issue' | 'subscription_upgrade';
+        | 'issue' | 'subscription_upgrade' | 'shipping';
     scope?: 'user' | 'vendor' | 'general';
     message: string;
     data: {

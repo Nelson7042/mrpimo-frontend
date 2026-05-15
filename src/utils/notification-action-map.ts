@@ -54,6 +54,30 @@ export const NOTIFICATION_ACTION_MAP: Record<string, NotificationAction> = {
     label: "View Order",
     getUrl: (n) => n.data?.redirectUrl || "/",
   },
+  "order:shipment_preparing_shipment": {
+    label: "Track Order",
+    getUrl: (n) => n.data?.redirectUrl || "/",
+  },
+  "order:shipment_shipped": {
+    label: "Track Order",
+    getUrl: (n) => n.data?.redirectUrl || "/",
+  },
+  "order:shipment_in_transit": {
+    label: "Track Order",
+    getUrl: (n) => n.data?.redirectUrl || "/",
+  },
+  "order:shipment_out_for_delivery": {
+    label: "Track Order",
+    getUrl: (n) => n.data?.redirectUrl || "/",
+  },
+  "order:shipment_delivered": {
+    label: "View Order",
+    getUrl: (n) => n.data?.redirectUrl || "/",
+  },
+  "order:shipment_failed": {
+    label: "View Order",
+    getUrl: (n) => n.data?.redirectUrl || "/",
+  },
   "bid:win": {
     label: "View Won Auction",
     getUrl: (n) => n.data?.redirectUrl || "/",
@@ -61,6 +85,10 @@ export const NOTIFICATION_ACTION_MAP: Record<string, NotificationAction> = {
   "withdrawal:rejected": {
     label: "Retry Withdrawal",
     getUrl: () => "/vendor/dashboard/wallets",
+  },
+  "shipping:handoff_reminder": {
+    label: "Review Handoff",
+    getUrl: (n) => n.data?.redirectUrl || "/",
   },
 };
 

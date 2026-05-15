@@ -16,6 +16,8 @@ import { useCartStore } from "@/stores/cartStore";
 import { useCreateOrder, useCreatePaymentIntent, useValidateCart, useCalculateShipping } from "@/hooks/useCheckout";
 import { useBuyNowShippingEstimate } from "@/hooks/useBuyNowShippingEstimate";
 import { useBuyNowCheckout } from "@/hooks/useBuyNowCheckout";
+import { useDeliveryOptions } from "@/hooks/useDeliveryOptions";
+import DeliveryOptions, { DeliveryOptionItem } from "@/components/checkout/DeliveryOptions";
 import { useAddAddress, useAddresses, useUpdateAddress } from "@/hooks/useAddress";
 import { useCountries } from "@/hooks/useCountries";
 import { useUserCurrency } from "@/hooks/useUserCurrency";
@@ -43,6 +45,16 @@ export default function CheckoutPage() {
   const [selectedCountry, setSelectedCountry] = useState("");
   const [selectedState, setSelectedState] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
+  const [showAddShippingModal, setShowAddShippingModal] = useState(false);
+  const [newShippingAddress, setNewShippingAddress] = useState({
+    street: "",
+    city: "",
+    state: "",
+    country: "",
+    postalCode: "",
+  });
+  const [newAddressCountry, setNewAddressCountry] = useState("");
+  const [newAddressState, setNewAddressState] = useState("");
   const { user } = useUserStore();
   const billingAddress = user?.addresses?.find(addr => addr.type === "billing");
   const { data: userCurrencyData } = useUserCurrency();
@@ -276,6 +288,12 @@ export default function CheckoutPage() {
   // Delivery method state - must be declared before useEffects that reference it
   const [deliveryMethod, setDeliveryMethod] = useState<string>("");
   
+  // Carrier-aware delivery options state (cart mode)
+  const [selectedDeliveryOption, setSelectedDeliveryOption] = useState<DeliveryOptionItem | null>(null);
+  const [carrierDeliveryOptions, setCarrierDeliveryOptions] = useState<DeliveryOptionItem[]>([]);
+  const [deliveryOptionsError, setDeliveryOptionsError] = useState<string | null>(null);
+  const deliveryOptionsMutation = useDeliveryOptions();
+  
   // Use calculated shipping if available, otherwise use base shipping
   const [calculatedShipping, setCalculatedShipping] = useState<number | null>(null);
   const [shippingEstimatedDays, setShippingEstimatedDays] = useState<string>('5-7 business days');
@@ -304,6 +322,63 @@ export default function CheckoutPage() {
       }
     }
   }, [deliveryOptions, deliveryMethod, isBuyNowMode, userShippingAddress]);
+
+  // Fetch carrier-aware delivery options when in cart mode and shipping address is available
+  useEffect(() => {
+    if (isBuyNowMode || !userShippingAddress || !checkout?.items?.length) return;
+
+    // Build origin from first item's vendor location (use platform default if not available)
+    // The backend delivery-options endpoint handles origin resolution internally
+    const destination = {
+      country: userShippingAddress.country || "",
+      state: userShippingAddress.state || "",
+      city: userShippingAddress.city || "",
+      latitude: userShippingAddress.coordinates?.latitude || null,
+      longitude: userShippingAddress.coordinates?.longitude || null,
+    };
+
+    const items = checkout.items.map((item: any) => ({
+      weight: item.weight || 1,
+      quantity: item.quantity,
+      description: item.productName || "",
+    }));
+
+    setDeliveryOptionsError(null);
+    deliveryOptionsMutation.mutate(
+      {
+        origin: {
+          country: userShippingAddress.country || "",
+          state: userShippingAddress.state || "",
+          city: userShippingAddress.city || "",
+        },
+        destination,
+        items,
+      },
+      {
+        onSuccess: (data) => {
+          if (data.success && data.deliveryOptions?.length) {
+            setCarrierDeliveryOptions(data.deliveryOptions);
+            // Auto-select first option with valid pricing, or station_pickup as fallback
+            const defaultOption = data.deliveryOptions.find(
+              (opt) => opt.price && (data.hasCoordinates ? opt.id === "home_standard" : opt.id === "station_pickup")
+            ) || data.deliveryOptions.find((opt) => opt.price) || data.deliveryOptions[0];
+            if (defaultOption) {
+              setSelectedDeliveryOption(defaultOption);
+              setDeliveryMethod(defaultOption.id === "station_pickup" ? "pickup" : defaultOption.id === "home_express" ? "express" : "standard");
+              if (defaultOption.price) {
+                setCalculatedShipping(defaultOption.price.amount);
+              }
+            }
+          } else {
+            setDeliveryOptionsError(data.message || "No delivery options available");
+          }
+        },
+        onError: (error: Error) => {
+          setDeliveryOptionsError(error.message || "Failed to load delivery options");
+        },
+      }
+    );
+  }, [isBuyNowMode, userShippingAddress?._id, checkout?.items?.length]);
 
   // Calculate shipping when delivery method or default address changes
   useEffect(() => {
@@ -460,6 +535,22 @@ export default function CheckoutPage() {
       return;
     }
 
+    // Cart mode: validate carrier-aware delivery option selection and pricing
+    if (!isBuyNowMode) {
+      if (!selectedDeliveryOption) {
+        toast.error("Please select a delivery option");
+        return;
+      }
+      if (!selectedDeliveryOption.price) {
+        toast.error("Shipping cost could not be calculated. Please select a different delivery option.");
+        return;
+      }
+      if (deliveryOptionsError) {
+        toast.error("Shipping cost cannot be calculated. Please try again.");
+        return;
+      }
+    }
+
     // Cart mode: check cart items; Buy Now mode: check buyNowData
     if (isBuyNowMode) {
       if (!buyNowData) {
@@ -587,6 +678,11 @@ export default function CheckoutPage() {
                 })),
                 pricing: { subtotal, shipping, tax, total, currency },
                 deliveryMethod, // Pass user's selected delivery method
+                deliveryOption: selectedDeliveryOption ? {
+                  optionId: selectedDeliveryOption.id,
+                  label: selectedDeliveryOption.label,
+                  carrierParams: selectedDeliveryOption.carrierParams,
+                } : undefined,
                 address: {
                   street: shippingAddr?.street,
                   city: shippingAddr?.city,
@@ -693,7 +789,7 @@ export default function CheckoutPage() {
       setOrderProcessingStage('creating');
       await new Promise(resolve => setTimeout(resolve, 800));
       
-      const orderData = {
+      const orderData: any = {
         validatedItems: cleanedItems,
         pricing: paymentData.pricing,
         paymentData: orderPaymentData,
@@ -706,6 +802,15 @@ export default function CheckoutPage() {
           type: formData.address.type,
         },
       };
+
+      // Include selected delivery option with carrierParams for order creation
+      if (selectedDeliveryOption) {
+        orderData.deliveryOption = {
+          optionId: selectedDeliveryOption.id,
+          label: selectedDeliveryOption.label,
+          carrierParams: selectedDeliveryOption.carrierParams,
+        };
+      }
 
       const result: any = await createOrderMutation.mutateAsync(orderData);
 
@@ -1060,10 +1165,7 @@ export default function CheckoutPage() {
                     )}
                     <button
                       type="button"
-                      onClick={() => {
-                        localStorage.setItem('checkoutReturn', 'true');
-                        router.push('/home/user/settings?section=shipping');
-                      }}
+                      onClick={() => setShowAddShippingModal(true)}
                       className="text-xs text-blue-600 hover:text-blue-800 mt-2 inline-block"
                     >
                       + Add new shipping address
@@ -1083,10 +1185,7 @@ export default function CheckoutPage() {
                     </p>
                     <button
                       type="button"
-                      onClick={() => {
-                        localStorage.setItem('checkoutReturn', 'true');
-                        router.push('/home/user/settings?section=shipping');
-                      }}
+                      onClick={() => setShowAddShippingModal(true)}
                       className="text-xs text-blue-600 hover:text-blue-800 font-medium"
                     >
                       Add a shipping address →
@@ -1096,87 +1195,125 @@ export default function CheckoutPage() {
 
                 {/* Delivery Method Selection - Before Payment */}
                 <div className="mt-6">
-                  <h3 className="text-sm font-semibold mb-1">Delivery Method</h3>
-                  <p className="text-xs text-gray-600 mb-3">
-                    Choose how you want to receive your order
-                  </p>
-
-                  <RadioGroup
-                    value={deliveryMethod}
-                    onValueChange={setDeliveryMethod}
-                    className="space-y-2"
-                  >
-                    {/* Pickup Option - Always available */}
-                    <div className={`flex items-start space-x-2 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'pickup' ? 'border-blue-500 bg-blue-50' : ''}`}>
-                      <RadioGroupItem value="pickup" id="pickup" className="mt-0.5" />
-                      <Label htmlFor="pickup" className="flex-1 cursor-pointer">
-                        <p className="text-sm font-medium">Station Pickup</p>
-                        <p className="text-xs text-gray-500">Pick up at nearest GIG station (5-7 business days)</p>
-                      </Label>
-                    </div>
-
-                    {/* Standard Delivery - Only if user has exact location */}
-                    <div className={`flex items-start space-x-2 p-3 border rounded-lg ${
-                      hasExactLocation 
-                        ? `hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'standard' ? 'border-blue-500 bg-blue-50' : ''}`
-                        : 'opacity-50 cursor-not-allowed bg-gray-50'
-                    }`}>
-                      <RadioGroupItem 
-                        value="standard" 
-                        id="standard" 
-                        className="mt-0.5"
-                        disabled={!hasExactLocation}
-                      />
-                      <Label htmlFor="standard" className="flex-1 cursor-pointer">
-                        <p className="text-sm font-medium">Standard Delivery</p>
-                        <p className="text-xs text-gray-500">
-                          {hasExactLocation 
-                            ? 'Delivered to your address (5-7 business days)'
-                            : 'Add exact location to enable home delivery'}
-                        </p>
-                      </Label>
-                    </div>
-
-                    {/* Express Delivery - Only if user has exact location */}
-                    <div className={`flex items-start space-x-2 p-3 border rounded-lg ${
-                      hasExactLocation 
-                        ? `hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'express' ? 'border-blue-500 bg-blue-50' : ''}`
-                        : 'opacity-50 cursor-not-allowed bg-gray-50'
-                    }`}>
-                      <RadioGroupItem 
-                        value="express" 
-                        id="express" 
-                        className="mt-0.5"
-                        disabled={!hasExactLocation}
-                      />
-                      <Label htmlFor="express" className="flex-1 cursor-pointer">
-                        <p className="text-sm font-medium">Express Delivery</p>
-                        <p className="text-xs text-gray-500">
-                          {hasExactLocation 
-                            ? 'Fast delivery (2-3 business days)'
-                            : 'Add exact location to enable express delivery'}
-                        </p>
-                      </Label>
-                    </div>
-                  </RadioGroup>
-
-                  {!hasExactLocation && (
-                    <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
-                      <p className="text-xs text-yellow-800">
-                        💡 Add your exact location in{' '}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            localStorage.setItem('checkoutReturn', 'true');
-                            router.push('/home/user/settings?section=shipping');
-                          }}
-                          className="text-blue-600 underline"
-                        >
-                          shipping settings
-                        </button>
-                        {' '}to unlock home delivery options.
+                  {isBuyNowMode ? (
+                    // Buy Now mode: simple delivery method selection (no carrier-aware pricing)
+                    <>
+                      <h3 className="text-sm font-semibold mb-1">Delivery Method</h3>
+                      <p className="text-xs text-gray-600 mb-3">
+                        Choose how you want to receive your order
                       </p>
-                    </div>
+
+                      <RadioGroup
+                        value={deliveryMethod}
+                        onValueChange={setDeliveryMethod}
+                        className="space-y-2"
+                      >
+                        {/* Pickup Option - Always available */}
+                        <div className={`flex items-start space-x-2 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'pickup' ? 'border-blue-500 bg-blue-50' : ''}`}>
+                          <RadioGroupItem value="pickup" id="pickup" className="mt-0.5" />
+                          <Label htmlFor="pickup" className="flex-1 cursor-pointer">
+                            <p className="text-sm font-medium">Station Pickup</p>
+                            <p className="text-xs text-gray-500">Pick up at nearest GIG station (5-7 business days)</p>
+                          </Label>
+                        </div>
+
+                        {/* Standard Delivery - Only if user has exact location */}
+                        <div className={`flex items-start space-x-2 p-3 border rounded-lg ${
+                          hasExactLocation 
+                            ? `hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'standard' ? 'border-blue-500 bg-blue-50' : ''}`
+                            : 'opacity-50 cursor-not-allowed bg-gray-50'
+                        }`}>
+                          <RadioGroupItem 
+                            value="standard" 
+                            id="standard" 
+                            className="mt-0.5"
+                            disabled={!hasExactLocation}
+                          />
+                          <Label htmlFor="standard" className="flex-1 cursor-pointer">
+                            <p className="text-sm font-medium">Standard Delivery</p>
+                            <p className="text-xs text-gray-500">
+                              {hasExactLocation 
+                                ? 'Delivered to your address (5-7 business days)'
+                                : 'Add exact location to enable home delivery'}
+                            </p>
+                          </Label>
+                        </div>
+
+                        {/* Express Delivery - Only if user has exact location */}
+                        <div className={`flex items-start space-x-2 p-3 border rounded-lg ${
+                          hasExactLocation 
+                            ? `hover:bg-gray-50 cursor-pointer ${deliveryMethod === 'express' ? 'border-blue-500 bg-blue-50' : ''}`
+                            : 'opacity-50 cursor-not-allowed bg-gray-50'
+                        }`}>
+                          <RadioGroupItem 
+                            value="express" 
+                            id="express" 
+                            className="mt-0.5"
+                            disabled={!hasExactLocation}
+                          />
+                          <Label htmlFor="express" className="flex-1 cursor-pointer">
+                            <p className="text-sm font-medium">Express Delivery</p>
+                            <p className="text-xs text-gray-500">
+                              {hasExactLocation 
+                                ? 'Fast delivery (2-3 business days)'
+                                : 'Add exact location to enable express delivery'}
+                            </p>
+                          </Label>
+                        </div>
+                      </RadioGroup>
+
+                      {!hasExactLocation && (
+                        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded-lg">
+                          <p className="text-xs text-yellow-800">
+                            💡 Add your exact location in{' '}
+                            <button
+                              type="button"
+                              onClick={() => setShowAddShippingModal(true)}
+                              className="text-blue-600 underline"
+                            >
+                              shipping settings
+                            </button>
+                            {' '}to unlock home delivery options.
+                          </p>
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    // Cart mode: carrier-aware delivery options with real pricing
+                    <>
+                      {deliveryOptionsError && (
+                        <div className="p-3 bg-red-50 border border-red-200 rounded-lg mb-3">
+                          <p className="text-xs text-red-700">{deliveryOptionsError}</p>
+                        </div>
+                      )}
+                      <DeliveryOptions
+                        options={carrierDeliveryOptions}
+                        hasExactLocation={hasExactLocation}
+                        selectedOptionId={selectedDeliveryOption?.id || ""}
+                        onSelect={(option) => {
+                          setSelectedDeliveryOption(option);
+                          // Map option id to legacy deliveryMethod for backward compatibility
+                          const methodMap: Record<string, string> = {
+                            home_standard: "standard",
+                            home_express: "express",
+                            station_pickup: "pickup",
+                          };
+                          setDeliveryMethod(methodMap[option.id] || option.id);
+                          // Update shipping cost from the selected option's price
+                          if (option.price) {
+                            setCalculatedShipping(option.price.amount);
+                          }
+                        }}
+                        subtotal={subtotal}
+                        currency={currency}
+                        isLoading={deliveryOptionsMutation.isPending}
+                        noCoordinatesMessage={
+                          !hasExactLocation
+                            ? "Only station pickup is available. Add your exact location to unlock home delivery options."
+                            : undefined
+                        }
+                      />
+                    </>
                   )}
                 </div>
 
@@ -1388,7 +1525,7 @@ export default function CheckoutPage() {
                     <Button
                       className="w-full bg-blue-600 hover:bg-blue-700 text-xs h-9"
                       onClick={handleProceedToPayment}
-                      disabled={isProcessing || buyNowCheckout.isProcessing || (isBuyNowMode ? (!buyNowData || !hasShippingAddress) : cartItems.length === 0)}
+                      disabled={isProcessing || buyNowCheckout.isProcessing || deliveryOptionsMutation.isPending || (isBuyNowMode ? (!buyNowData || !hasShippingAddress) : (cartItems.length === 0 || !selectedDeliveryOption || !selectedDeliveryOption.price))}
                     >
                       {(isProcessing || buyNowCheckout.isProcessing) ? (
                         <>
@@ -1411,6 +1548,131 @@ export default function CheckoutPage() {
               </Card>
             </div>
           </div>
+
+          {/* Add Shipping Address Modal */}
+          <Dialog open={showAddShippingModal} onOpenChange={setShowAddShippingModal}>
+            <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
+              <div className="p-4 md:p-6">
+                <h2 className="text-lg font-semibold mb-4">Add Shipping Address</h2>
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="newStreet" className="text-sm">Street Address</Label>
+                    <Input
+                      id="newStreet"
+                      placeholder="Enter street address"
+                      value={newShippingAddress.street}
+                      onChange={(e) => setNewShippingAddress(prev => ({ ...prev, street: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="newCountry" className="text-sm">Country</Label>
+                    <SearchableSelect
+                      options={allCountries.map(c => ({ value: c.isoCode, label: c.name }))}
+                      value={newAddressCountry}
+                      onValueChange={(val) => {
+                        setNewAddressCountry(val);
+                        setNewAddressState("");
+                        const country = allCountries.find(c => c.isoCode === val);
+                        setNewShippingAddress(prev => ({ ...prev, country: country?.name || "", state: "" }));
+                      }}
+                      placeholder="Select country"
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="newState" className="text-sm">State / Region</Label>
+                    <SearchableSelect
+                      options={
+                        newAddressCountry
+                          ? State.getStatesOfCountry(newAddressCountry).map(s => ({ value: s.name, label: s.name }))
+                          : []
+                      }
+                      value={newAddressState}
+                      onValueChange={(val) => {
+                        setNewAddressState(val);
+                        setNewShippingAddress(prev => ({ ...prev, state: val }));
+                      }}
+                      placeholder="Select state"
+                      className="mt-1"
+                      disabled={!newAddressCountry}
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="newCity" className="text-sm">City</Label>
+                    <Input
+                      id="newCity"
+                      placeholder="Enter city"
+                      value={newShippingAddress.city}
+                      onChange={(e) => setNewShippingAddress(prev => ({ ...prev, city: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div>
+                    <Label htmlFor="newPostalCode" className="text-sm">Postal Code</Label>
+                    <Input
+                      id="newPostalCode"
+                      placeholder="Enter postal code"
+                      value={newShippingAddress.postalCode}
+                      onChange={(e) => setNewShippingAddress(prev => ({ ...prev, postalCode: e.target.value }))}
+                      className="mt-1"
+                    />
+                  </div>
+
+                  <div className="flex gap-3 pt-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      className="flex-1"
+                      onClick={() => setShowAddShippingModal(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="button"
+                      className="flex-1 bg-blue-600 hover:bg-blue-700"
+                      disabled={addAddressMutation.isPending || !newShippingAddress.street || !newShippingAddress.city || !newShippingAddress.state || !newShippingAddress.country || !newShippingAddress.postalCode}
+                      onClick={async () => {
+                        try {
+                          await addAddressMutation.mutateAsync({
+                            address: {
+                              type: "shipping",
+                              street: newShippingAddress.street,
+                              city: newShippingAddress.city,
+                              state: newShippingAddress.state,
+                              country: newShippingAddress.country,
+                              postalCode: newShippingAddress.postalCode,
+                              isDefault: !hasShippingAddress, // Make default if first address
+                            },
+                            duplicateForShipping: false,
+                          });
+                          setShowAddShippingModal(false);
+                          setNewShippingAddress({ street: "", city: "", state: "", country: "", postalCode: "" });
+                          setNewAddressCountry("");
+                          setNewAddressState("");
+                        } catch (error) {
+                          // Error toast is handled by the mutation hook
+                        }
+                      }}
+                    >
+                      {addAddressMutation.isPending ? (
+                        <span className="flex items-center gap-2">
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                          Saving...
+                        </span>
+                      ) : (
+                        "Save Address"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
 
           {/* Success Modal */}
           <Dialog open={showSuccess} onOpenChange={setShowSuccess}>

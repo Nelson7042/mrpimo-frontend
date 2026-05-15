@@ -45,6 +45,9 @@ export const orderService = {
   async getOrderById(orderId: string) {
     const response = await fetchWithAuth(`${API_BASE_URL}/orders/${orderId}`);
     const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Failed to fetch order');
+    }
     return data;
   },
 

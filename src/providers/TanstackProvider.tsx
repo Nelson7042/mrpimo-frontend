@@ -9,7 +9,13 @@ type Props = {
 }
 
 const TanstackProvider = (props: Props) => {
-    const [queryClient] = useState(() => new QueryClient())
+    const [queryClient] = useState(() => new QueryClient({
+      defaultOptions: {
+        queries: {
+          refetchOnWindowFocus: true,
+        },
+      },
+    }))
    
   return (
     <QueryClientProvider client={queryClient}>

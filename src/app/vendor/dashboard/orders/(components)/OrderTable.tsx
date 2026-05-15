@@ -177,11 +177,19 @@ const OrderTable = (props: Props) => {
               orders.length > 0 &&
               orders.map((order) => {
                 const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "", vendorCurrency);
+                const isAuctionOrder = order.metadata?.isBidCheckout === true;
                 
                 return (
                   <tr key={order?._id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
-                      {`${order._id.slice(0, 15)}...`}
+                      <div className="flex items-center gap-2">
+                        {`${order._id.slice(0, 15)}...`}
+                        {isAuctionOrder && (
+                          <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800">
+                            Auction
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                       {order?.user?.profile?.firstName}
@@ -245,6 +253,7 @@ const OrderTable = (props: Props) => {
       <div className="md:hidden space-y-4 p-4">
         {orders && orders.length > 0 && orders.map((order) => {
           const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "", vendorCurrency);
+          const isAuctionOrder = order.metadata?.isBidCheckout === true;
           
           return (
             <div
@@ -252,7 +261,14 @@ const OrderTable = (props: Props) => {
               className="bg-white border rounded-lg p-4 shadow-sm"
             >
               <div className="flex justify-between items-center mb-2">
-                <span className="font-medium">{order?._id}</span>
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">{order?._id}</span>
+                  {isAuctionOrder && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-purple-100 text-purple-800">
+                      Auction
+                    </span>
+                  )}
+                </div>
                 <span
                   className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
                     order?.status

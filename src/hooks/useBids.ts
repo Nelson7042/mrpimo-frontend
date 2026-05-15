@@ -3,6 +3,7 @@ import { fetchWithAuth } from '@/utils/fetchWithAuth';
 import { API_BASE_URL } from '@/utils/config';
 
 export type BidFilter = 'all' | 'open' | 'closed' | 'won';
+export type PaymentStatusFilter = 'all' | 'payment_pending' | 'paid' | 'expired';
 export type VendorBidFilter = 'all' | 'open' | 'closed';
 
 export interface BidUser {
@@ -12,6 +13,8 @@ export interface BidUser {
     lastName: string;
   };
 }
+
+export type PaymentStatus = 'none' | 'payment_pending' | 'paid' | 'expired';
 
 export interface UserBid {
   productId: string;
@@ -23,6 +26,10 @@ export interface UserBid {
   isWinning: boolean;
   createdAt: string;
   auctionEnded: boolean;
+  paymentStatus?: PaymentStatus;
+  paymentDeadline?: string | null;
+  orderId?: string | null;
+  bidId?: string;
 }
 
 export interface VendorBid extends UserBid {
@@ -41,9 +48,10 @@ interface BidsResponse<T> {
   pagination: PaginationInfo;
 }
 
-const fetchUserBids = async (filter: BidFilter, page: number, limit: number): Promise<BidsResponse<UserBid>> => {
+const fetchUserBids = async (filter: BidFilter, page: number, limit: number, paymentStatus?: PaymentStatusFilter): Promise<BidsResponse<UserBid>> => {
   const params = new URLSearchParams();
   if (filter !== 'all') params.append('filter', filter);
+  if (paymentStatus && paymentStatus !== 'all') params.append('paymentStatus', paymentStatus);
   params.append('page', page.toString());
   params.append('limit', limit.toString());
   const qs = params.toString();
@@ -65,12 +73,11 @@ const fetchVendorBids = async (filter: VendorBidFilter, page: number, limit: num
   return { bids: data.bids, pagination: data.pagination };
 };
 
-export const useUserBids = (filter: BidFilter = 'all', page: number = 1, limit: number = 10) => {
+export const useUserBids = (filter: BidFilter = 'all', page: number = 1, limit: number = 10, paymentStatus?: PaymentStatusFilter) => {
   return useQuery({
-    queryKey: ['userBids', filter, page, limit],
-    queryFn: () => fetchUserBids(filter, page, limit),
+    queryKey: ['userBids', filter, page, limit, paymentStatus],
+    queryFn: () => fetchUserBids(filter, page, limit, paymentStatus),
     staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };
@@ -80,7 +87,6 @@ export const useVendorBids = (filter: VendorBidFilter = 'all', page: number = 1,
     queryKey: ['vendorBids', filter, page, limit],
     queryFn: () => fetchVendorBids(filter, page, limit),
     staleTime: 30 * 1000,
-    refetchOnWindowFocus: false,
     retry: 1,
   });
 };

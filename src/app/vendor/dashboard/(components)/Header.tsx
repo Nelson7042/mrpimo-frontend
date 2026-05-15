@@ -8,6 +8,9 @@ import { useVendorStore } from "@/stores/useVendorStore";
 import { useRouter } from "next/navigation";
 import { useLogoutUser } from "@/hooks/mutations";
 import { resetAllStores } from "@/stores/resetStore";
+import { useWalletBalance } from "@/hooks/useWallet";
+import { useWalletDisplay } from "@/hooks/useWalletBalance";
+import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "react-toastify";
 
 type Props = {
@@ -49,8 +52,14 @@ const Header = (props: Props) => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const profileModalRef = useRef<HTMLDivElement>(null);
   const { vendor } = useVendorStore();
+  const { user } = useUserStore();
   const router = useRouter();
   const logoutMutation = useLogoutUser();
+  const { data: walletData } = useWalletBalance();
+  const { usdDisplay: balanceUSD, approxDisplay: balanceApprox } = useWalletDisplay(
+    walletData?.wallet?.balances?.available,
+    user?.preferences?.currency
+  );
 
   const businessName = vendor?.businessInfo?.name;
   const initials = getInitials(businessName);
@@ -170,6 +179,15 @@ const Header = (props: Props) => {
                     {businessName || "My Business"}
                   </p>
                   <p className="text-xs text-gray-500">Vendor Account</p>
+                </div>
+
+                {/* Wallet Balance */}
+                <div className="px-4 py-2 border-b border-gray-100">
+                  <p className="text-xs text-gray-500">Wallet Balance</p>
+                  <p className="text-sm font-semibold text-gray-900">
+                    ${balanceUSD}
+                  </p>
+                  {balanceApprox && <p className="text-xs text-gray-500">{balanceApprox}</p>}
                 </div>
 
                 <button

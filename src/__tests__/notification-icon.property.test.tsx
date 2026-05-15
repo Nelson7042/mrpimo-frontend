@@ -31,6 +31,7 @@ vi.mock('lucide-react', () => {
     Shield: createIcon('Shield'),
     Megaphone: createIcon('Megaphone'),
     AlertOctagon: createIcon('AlertOctagon'),
+    Truck: createIcon('Truck'),
   };
 });
 
@@ -75,6 +76,7 @@ const KNOWN_NOTIFICATION_TYPES = [
   'advertisement',
   'product',
   'account-warning',
+  'shipping',
 ] as const;
 
 describe('Property 3: NotificationIcon returns a non-null icon for every known notification type', () => {

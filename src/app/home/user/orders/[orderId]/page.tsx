@@ -33,6 +33,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "react-toastify";
 import axios from "axios";
+import { getCurrencySymbol } from "@/utils/currency";
 import { API_BASE_URL } from "@/utils/config";
 
 const getStatusColor = (status: string) => {
@@ -359,9 +360,9 @@ export default function OrderDetailsPage() {
                                 </div>
                               </div>
                             </td>
-                            <td className="py-4 text-center">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate)?.toFixed(2) || "0.00"}</td>
+                            <td className="py-4 text-center">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2) || "0.00"}</td>
                             <td className="py-4 text-center">{item.quantity}</td>
-                            <td className="py-4 font-medium text-center">${((item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity)?.toFixed(2) || "0.00"}</td>
+                            <td className="py-4 font-medium text-center">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{((item.metadata?.amountPaidByUser || item.price) * item.quantity)?.toFixed(2) || "0.00"}</td>
                             <td className="py-4 px-2">
                               {shipment?.shipping ? (
                                 <div className="text-sm space-y-1">
@@ -423,14 +424,14 @@ export default function OrderDetailsPage() {
                           <div className="flex-1">
                             <p className="font-medium">{item.productId?.name}</p>
                             <p className="text-sm text-gray-600 mt-1">Qty: {item.quantity}</p>
-                            <p className="text-blue-600 font-medium mt-1">${(item.metadata?.amountPaidByUser * item?.metadata.conversionRate)?.toFixed(2)}</p>
+                            <p className="text-blue-600 font-medium mt-1">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2)}</p>
                           </div>
                         </div>
                         <Separator />
                         <div className="space-y-2 text-sm">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Total:</span>
-                            <span className="font-medium">${((item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity)?.toFixed(2)}</span>
+                            <span className="font-medium">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{((item.metadata?.amountPaidByUser || item.price) * item.quantity)?.toFixed(2)}</span>
                           </div>
                           {shipment?.shipping && (
                             <>
@@ -568,12 +569,12 @@ export default function OrderDetailsPage() {
                   <div className="flex justify-between">
                     <span>Subtotal:</span>
                     <span>
-                      $
+                      {getCurrencySymbol(order.items?.[0]?.metadata?.userCurrency || 'USD')}
                       {order.items
                         ?.reduce(
                           (sum: number, item: any) =>
                             sum +
-                            (item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity,
+                            (item.metadata?.amountPaidByUser || item.price) * item.quantity,
                           0
                         )
                         ?.toFixed(2) || "0.00"}
@@ -582,13 +583,13 @@ export default function OrderDetailsPage() {
                   <div className="flex justify-between">
                     <span>Total:</span>
                     <span className="font-bold">
-                      $
+                      {getCurrencySymbol(order.items?.[0]?.metadata?.userCurrency || 'USD')}
                       {(
                         order.paymentId?.amount ||
                         order.items?.reduce(
                           (sum: number, item: any) =>
                             sum +
-                            (item.metadata?.amountPaidByUser * item?.metadata.conversionRate) * item.quantity,
+                            (item.metadata?.amountPaidByUser || item.price) * item.quantity,
                           0
                         )
                       )?.toFixed(2) || "0.00"}

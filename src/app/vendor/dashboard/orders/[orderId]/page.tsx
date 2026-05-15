@@ -22,7 +22,6 @@ import { useUpdateOrderStatus } from "@/hooks/useVendor";
 import { useEffect } from "react";
 import { useVendorStore } from "@/stores/useVendorStore";
 import FulfillmentActionPanel from "@/components/vendor/FulfillmentActionPanel";
-import FulfillmentPanel from "@/components/vendor/FulfillmentPanel";
 import { IClientShipment } from "@/types/order.type";
 import { toast } from "react-hot-toast";
 
@@ -216,6 +215,12 @@ export default function OrderDetailsPage() {
         >
           <CheckCircle className="h-3 w-3" /> {order?.status}
         </span>
+
+        {order?.metadata?.isBidCheckout && (
+          <span className="inline-flex h-6 items-center gap-1 self-start rounded-full px-2 text-xs font-medium bg-purple-100 text-purple-800">
+            Auction
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between w-full mb-4 gap-3">
@@ -234,7 +239,9 @@ export default function OrderDetailsPage() {
           </div>
           <div>
             Purchased:{" "}
-            <span className="font-medium text-gray-800">via website</span>
+            <span className="font-medium text-gray-800">
+              {order?.metadata?.isBidCheckout ? "via auction" : "via website"}
+            </span>
           </div>
         </div>
         <div className="self-start lg:self-auto">
@@ -279,6 +286,40 @@ export default function OrderDetailsPage() {
           </div>
         </div>
       </div>
+
+      {/* Auction Metadata Section */}
+      {order?.metadata?.isBidCheckout && (
+        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+          <h3 className="text-sm font-medium text-purple-900 mb-2">Auction Details</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+            <div>
+              <span className="text-purple-700">Winning Bid Amount:</span>{" "}
+              <span className="font-medium text-purple-900">
+                {getVendorCurrencySymbol(vendorTotals.currency)}
+                {vendorTotals.totalAmount.toFixed(2)}
+              </span>
+            </div>
+            {order.metadata.auctionEndTime && (
+              <div>
+                <span className="text-purple-700">Auction End Date:</span>{" "}
+                <span className="font-medium text-purple-900">
+                  {new Date(order.metadata.auctionEndTime).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+            )}
+            <div>
+              <span className="text-purple-700">Source:</span>{" "}
+              <span className="font-medium text-purple-900">Auction</span>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Card>
         <CardContent className="space-y-2">
@@ -432,7 +473,8 @@ export default function OrderDetailsPage() {
 
           {order.shipments.map((shipment: IClientShipment, index: number) => {
             // Only show shipments belonging to this vendor
-            if (shipment.vendorId?._id !== vendor?._id) return null;
+            const shipmentVendorId = shipment.vendorId?._id || shipment.vendorId?.toString() || shipment.vendorId;
+            if (shipmentVendorId !== vendor?._id) return null;
 
             const shippingStatus = shipment.shipping?.status?.toLowerCase();
             const fulfillmentMethod = shipment.shipping?.fulfillmentMethod;
@@ -537,18 +579,7 @@ export default function OrderDetailsPage() {
         </section>
       )}
 
-      {/* Fulfillment Panel — multi-carrier fulfillment UI */}
-      <section className="mb-4">
-        <FulfillmentPanel
-          orderId={orderId}
-          shipmentStatus={
-            order?.shipments?.find(
-              (s: IClientShipment) => s.vendorId?._id === vendor?._id
-            )?.shipping?.status || "pending"
-          }
-        />
-      </section>
-
+      {/* Payment Details section */}
       <section className="space-y-4 w-full">
         <h2 className="text-lg font-semibold">
           <CreditCard className="h-6 w-6 text-gray-600 mr-1 inline-block" />{" "}
