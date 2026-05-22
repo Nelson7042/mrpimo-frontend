@@ -30,7 +30,7 @@ const ShopCategoriesComponent = () => {
     <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
       {/* Header Section */}
       <div className="flex flex-row items-center justify-between mb-8">
-        <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
+        <h2 className="text-base md:text-xl lg:text-2xl font-semibold text-gray-900">
           Shop by Categories
         </h2>
 
@@ -45,10 +45,10 @@ const ShopCategoriesComponent = () => {
 
       {/* Categories Swiper */}
       <div className="relative w-full">
-        {/* Left navigation arrow - desktop only */}
+        {/* Left navigation arrow */}
         <button
           onClick={() => categoriesSwiperRef.current?.swiper?.slidePrev()}
-          className="hidden lg:flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white shadow rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
+          className="flex absolute left-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 md:w-8 md:h-8 bg-white shadow rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
           aria-label="Previous categories"
         >
           <ChevronLeft className="w-4 h-4" />
@@ -86,10 +86,10 @@ const ShopCategoriesComponent = () => {
           ))}
         </Swiper>
 
-        {/* Right navigation arrow - desktop only */}
+        {/* Right navigation arrow */}
         <button
           onClick={() => categoriesSwiperRef.current?.swiper?.slideNext()}
-          className="hidden lg:flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-8 h-8 bg-white shadow rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
+          className="flex absolute right-0 top-1/2 -translate-y-1/2 z-10 w-7 h-7 md:w-8 md:h-8 bg-white shadow rounded-full items-center justify-center hover:bg-gray-50 transition-colors"
           aria-label="Next categories"
         >
           <ChevronRight className="w-4 h-4" />

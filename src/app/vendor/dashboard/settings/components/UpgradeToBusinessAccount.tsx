@@ -6,7 +6,11 @@ import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { toast } from "sonner";
 import { API_BASE_URL } from "@/utils/config";
 
-export default function UpgradeToBusinessAccount() {
+interface UpgradeToBusinessAccountProps {
+  onSuccess?: () => void;
+}
+
+export default function UpgradeToBusinessAccount({ onSuccess }: UpgradeToBusinessAccountProps) {
   const { vendor, setVendor } = useVendorStore();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -108,6 +112,7 @@ export default function UpgradeToBusinessAccount() {
         toast.success("Account upgraded to business successfully!");
         setVendor(data.vendor);
         setIsModalOpen(false);
+        onSuccess?.();
       } else {
         toast.error(data.message || "Failed to upgrade account");
       }

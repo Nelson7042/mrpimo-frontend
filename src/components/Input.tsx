@@ -8,6 +8,7 @@ interface InputProps {
   onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
   error?: string;
   type?: string;
+  disabled?: boolean;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -18,6 +19,7 @@ const Input: React.FC<InputProps> = ({
   onChange,
   error,
   type = "text",
+  disabled,
 }) => {
   return (
     <div className="relative w-full mb-5">
@@ -36,7 +38,12 @@ const Input: React.FC<InputProps> = ({
         placeholder={placeholder}
         value={value}
         onChange={onChange}
+        disabled={disabled}
         className={`w-full px-3 py-3 text-xs md:text-xs border rounded-md shadow-sm placeholder:text-gray-400 focus:outline-none focus:ring-2 ${
+          disabled
+            ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+            : ""
+        } ${
           error
             ? "border-red-500 text-red-700 focus:ring-red-300"
             : "border-gray-300 text-gray-500 focus:ring-gray-400"

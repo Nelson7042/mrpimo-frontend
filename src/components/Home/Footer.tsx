@@ -18,10 +18,10 @@ const Footer: React.FC = () => {
         <div className="mb-16">
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-8">
             <div className="md:max-w-sm">
-              <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900 mb-4">
+              <h2 className="text-base md:text-xl lg:text-2xl font-semibold text-gray-900 mb-4">
                 Join our newsletter
               </h2>
-              <p className="text-gray-600 text-sm md:text-lg">
+              <p className="text-gray-600 text-sm md:text-base">
                 Get all the latest Mprimo news and updates delivered to your inbox.
               </p>
             </div>

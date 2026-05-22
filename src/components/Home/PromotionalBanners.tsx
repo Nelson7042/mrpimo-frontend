@@ -109,7 +109,7 @@ const PromoBanner = ({ banner, position, onBannerClick }: PromoBannerProps) => {
           
           {/* Title & Description */}
           <div className="my-3">
-            <h3 className={`text-lg md:text-xl lg:text-2xl font-bold leading-tight ${titleTextColor}`}>
+            <h3 className={`text-base md:text-lg lg:text-xl font-bold leading-tight ${titleTextColor}`}>
               {banner.title || product?.name || 'Featured Product'}
             </h3>
             {banner.content && (

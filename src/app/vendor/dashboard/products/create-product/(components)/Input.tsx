@@ -17,6 +17,7 @@ type Props = {
   required?: boolean;
   helperText?: string;
   min?: string;
+  disabled?: boolean;
 };
 
 const Input: React.FC<Props> = ({
@@ -32,6 +33,7 @@ const Input: React.FC<Props> = ({
   required,
   helperText,
   min,
+  disabled,
 }) => {
   const { isMobileOrTablet } = useResponsive();
   
@@ -79,7 +81,12 @@ const Input: React.FC<Props> = ({
           required={required}
           placeholder={placeholder}
           min={type === "datetime-local" ? min : undefined}
+          disabled={disabled}
           className={`border rounded-md text-xs px-3 py-2 focus:outline-none placeholder:text-gray-500 placeholder:italic transition-colors duration-200 ${
+            disabled
+              ? "bg-gray-100 text-gray-400 cursor-not-allowed"
+              : ""
+          } ${
             error 
               ? "border-red-500 border-2 bg-red-50/30 focus:ring-1 focus:ring-red-500" 
               : "border-gray-300 focus:ring-1 focus:ring-blue-500"

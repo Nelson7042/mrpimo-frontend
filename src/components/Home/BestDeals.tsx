@@ -160,7 +160,7 @@ const ProductCard = ({
             <div className="flex flex-col">
               <span
                 className={`font-bold text-gray-900 ${
-                  isLarge ? "text-sm md:text-2xl" : "text-sm sm:text-lg"
+                  isLarge ? "text-sm md:text-lg" : "text-sm sm:text-base"
                 }`}
               >
                 {`${product?.priceInfo?.currencySymbol || "₦"} ${
@@ -322,7 +322,7 @@ export default function BestDeals() {
         {/* Header */}
         <div className="flex flex-row items-center justify-between element-spacing gap-4">
           <div className="flex flex-row items-center gap-3 sm:gap-6">
-            <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
+            <h2 className="text-base md:text-xl lg:text-2xl font-semibold text-gray-900">
               Our Best Deals
             </h2>
           </div>

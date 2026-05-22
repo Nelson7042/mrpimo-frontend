@@ -388,6 +388,12 @@ function VendorRegistrationForm({
       return;
     }
 
+    // Phone number is required for all vendor registrations
+    if (!user && !formData.phoneNumber.trim()) {
+      toast.error("Phone number is required");
+      return;
+    }
+
     // Build registration data based on account type
     const registrationData: any = {
       accountType,

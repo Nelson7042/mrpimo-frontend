@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useMemo } from "react";
 import { useParams } from "next/navigation";
 import { useUserStore } from "@/stores/useUserStore";
+import { useAuthModalStore } from "@/stores/useAuthModalStore";
 import SocketService from "@/utils/socketService";
 import { NumericFormat } from "react-number-format";
 import { useFetchAuctionProduct, useFetchProductById } from "@/hooks/queries";
@@ -49,6 +50,7 @@ interface AuctionInfo {
 const AuctionPage = () => {
   const { id } = useParams<{ id: string }>();
   const { user } = useUserStore();
+  const { openModal } = useAuthModalStore();
   const queryClient = useQueryClient();
   const [bidAmount, setBidAmount] = useState("");
   const [currentBid, setCurrentBid] = useState(0);
@@ -56,6 +58,8 @@ const AuctionPage = () => {
   const [bidHistory, setBidHistory] = useState<Bid[]>([]);
   const [minBidValue, setMinBidValue] = useState(0);
   const [auctionInfo, setAuctionInfo] = useState<AuctionInfo | null>(null);
+  const [showConfirmModal, setShowConfirmModal] = useState(false);
+  const [pendingBidAmount, setPendingBidAmount] = useState(0);
 
   const { data, isLoading, refetch } = useFetchAuctionProduct(id as string);
   const { data: productData, isLoading: productDataLoading } =
@@ -94,47 +98,43 @@ const AuctionPage = () => {
     }
   }, [data]);
 
-  // Socket connection for real-time updates
+  // Socket connection for real-time updates (guests and authenticated users)
   useEffect(() => {
-    if (user?._id && id) {
-      const socket = SocketService.connect(user._id);
-      socket.emit("join_room", id);
+    if (!id) return;
 
-      socket.on("place_bid", (socketData: { productId: string; userId: string; amount: number }) => {
-        console.log("Bid placed via socket:", socketData);
-        setCurrentBid(socketData.amount);
-        refetch();
-      });
+    // Use user ID if logged in, otherwise generate a guest session identifier
+    const socketId = user?._id || `guest-${crypto.randomUUID()}`;
+    const socket = SocketService.connect(socketId);
+    socket.emit("join_room", id);
 
-      socket.on("auction:started", (socketData: any) => {
-        console.log("Auction started:", socketData);
-        refetch();
-      });
+    socket.on("place_bid", (socketData: { productId: string; userId: string; amount: number }) => {
+      console.log("Bid placed via socket:", socketData);
+      setCurrentBid(socketData.amount);
+      refetch();
+    });
 
-      socket.on("auction:ended", (socketData: any) => {
-        console.log("Auction ended:", socketData);
-        refetch();
-      });
+    socket.on("auction:started", (socketData: any) => {
+      console.log("Auction started:", socketData);
+      refetch();
+    });
 
-      return () => {
-        socket.off("place_bid");
-        socket.off("auction:started");
-        socket.off("auction:ended");
-      };
-    }
+    socket.on("auction:ended", (socketData: any) => {
+      console.log("Auction ended:", socketData);
+      refetch();
+    });
+
+    return () => {
+      socket.off("place_bid");
+      socket.off("auction:started");
+      socket.off("auction:ended");
+    };
   }, [user?._id, id, refetch]);
 
-  const handlePlaceBid = useCallback(() => {
-    if (!user || !bidAmount || isMakingBid) return;
+  const HIGH_VALUE_BID_THRESHOLD = 100; // USD
 
-    const amount = parseFloat(bidAmount);
-    
-    if (amount < minBidValue) {
-      return;
-    }
-
+  const submitBid = useCallback((amount: number) => {
     placeBid(
-      { productId: id, userId: user._id, amount },
+      { productId: id, userId: user!._id, amount },
       {
         onSuccess: (response) => {
           console.log("Bid placed successfully:", response);
@@ -149,7 +149,41 @@ const AuctionPage = () => {
         },
       }
     );
-  }, [user, bidAmount, isMakingBid, minBidValue, id, placeBid, refetch]);
+  }, [id, user, placeBid, refetch]);
+
+  const handlePlaceBid = useCallback(() => {
+    if (!user) {
+      // Store current URL so login redirects back here
+      sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
+      openModal();
+      return;
+    }
+
+    if (!bidAmount || isMakingBid) return;
+
+    const amount = parseFloat(bidAmount);
+    
+    if (amount < minBidValue) {
+      return;
+    }
+
+    if (amount > HIGH_VALUE_BID_THRESHOLD) {
+      setPendingBidAmount(amount);
+      setShowConfirmModal(true);
+      return;
+    }
+    submitBid(amount);
+  }, [user, bidAmount, isMakingBid, minBidValue, submitBid, openModal]);
+
+  const confirmBid = useCallback(() => {
+    setShowConfirmModal(false);
+    submitBid(pendingBidAmount);
+  }, [pendingBidAmount, submitBid]);
+
+  const cancelBid = useCallback(() => {
+    setShowConfirmModal(false);
+    setPendingBidAmount(0);
+  }, []);
 
   if (isLoading || productDataLoading) {
     return (
@@ -411,6 +445,47 @@ const AuctionPage = () => {
           </div>
         </div>
       </div>
+
+      {/* Bid Confirmation Modal */}
+      {showConfirmModal && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center" role="dialog" aria-modal="true" aria-labelledby="confirm-bid-title">
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm" onClick={cancelBid} />
+          <div className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm mx-4 animate-in fade-in zoom-in-95">
+            <h3 id="confirm-bid-title" className="font-roboto text-base font-semibold text-primary mb-2">
+              Confirm Your Bid
+            </h3>
+            <p className="font-roboto text-sm text-secondary mb-1">
+              You are about to place a bid of:
+            </p>
+            <p className="font-roboto text-xl font-bold text-primary mb-1">
+              ${pendingBidAmount.toFixed(2)} USD
+            </p>
+            {isNonUSD && (
+              <p className="font-roboto text-xs text-secondary mb-4">
+                ≈ {currencySymbol}{usdToLocal(pendingBidAmount).toFixed(2)} {userCurrency.toUpperCase()}
+              </p>
+            )}
+            {!isNonUSD && <div className="mb-4" />}
+            <p className="font-roboto text-xs text-secondary mb-6">
+              This action cannot be undone. Are you sure you want to proceed?
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={cancelBid}
+                className="flex-1 font-roboto px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={confirmBid}
+                className="flex-1 font-roboto px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                Confirm Bid
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

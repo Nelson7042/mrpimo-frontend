@@ -34,6 +34,7 @@ const Wishlist = ({ productData, price, optionId, variantId }: WishlistCompnent)
         e.stopPropagation();
         
         if (!user) {
+          sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
           openModal();
           return;
         }

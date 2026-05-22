@@ -1,5 +1,6 @@
 import { API_BASE_URL } from '@/utils/config';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import axios from 'axios';
 
 /**
  * Helper function to extract error from response and throw with proper message
@@ -16,6 +17,23 @@ async function handleApiResponse<T>(response: Response, defaultErrorMessage: str
 // ─── Buyer Methods ───
 
 export const disputeService = {
+  /**
+   * Create a new dispute (buyer).
+   */
+  async createDispute(body: {
+    orderId: string;
+    reason: string;
+    description?: string;
+    evidenceUrls?: string[];
+    returnOutcome: string;
+  }) {
+    const response = await fetchWithAuth(`${API_BASE_URL}/issues`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return handleApiResponse(response, 'Failed to create dispute');
+  },
+
   /**
    * Get the authenticated buyer's disputes with optional status filter and pagination.
    */
@@ -80,6 +98,25 @@ export const disputeService = {
       body: JSON.stringify(body),
     });
     return handleApiResponse(response, 'Failed to submit vendor response');
+  },
+
+  /**
+   * Update an existing vendor response (edit text and/or evidence URLs).
+   */
+  async updateVendorResponse(issueId: string, body: { responseText?: string; evidenceUrls?: string[] }) {
+    const response = await fetchWithAuth(`${API_BASE_URL}/issues/${issueId}/vendor-response`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    });
+    return handleApiResponse(response, 'Failed to update vendor response');
+  },
+
+  /**
+   * Get aggregate dispute metrics for the authenticated vendor.
+   */
+  async getVendorMetrics() {
+    const response = await fetchWithAuth(`${API_BASE_URL}/issues/vendor/metrics`);
+    return handleApiResponse(response, 'Failed to fetch vendor dispute metrics');
   },
 
   // ─── Admin Methods ───
@@ -162,5 +199,42 @@ export const disputeService = {
   async getDisputeMetrics() {
     const response = await fetchWithAuth(`${API_BASE_URL}/issues/admin/metrics`);
     return handleApiResponse(response, 'Failed to fetch dispute metrics');
+  },
+
+  /**
+   * Upload a single evidence file to Cloudinary via the backend.
+   * Returns the uploaded file URL.
+   */
+  async uploadEvidenceFile(
+    file: File,
+    onProgress?: (progress: number) => void
+  ): Promise<{ url: string }> {
+    const formData = new FormData();
+    formData.append('evidence', file);
+
+    const accessToken = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null;
+
+    const response = await axios.post(`${API_BASE_URL}/issues/upload`, formData, {
+      timeout: 120000,
+      headers: {
+        'Content-Type': 'multipart/form-data',
+        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+      },
+      withCredentials: true,
+      onUploadProgress: (progressEvent) => {
+        if (progressEvent.total && onProgress) {
+          const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+          onProgress(progress);
+        }
+      },
+    });
+
+    if (response.data?.success && response.data?.url) {
+      return { url: response.data.url };
+    }
+    if (response.data?.success && response.data?.imageUrl) {
+      return { url: response.data.imageUrl };
+    }
+    throw new Error(response.data?.message || 'Failed to upload evidence file');
   },
 };

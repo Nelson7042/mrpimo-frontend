@@ -131,7 +131,7 @@ export const ProductCard = ({
             <div className="flex items-center gap-2">
               <span
                 className={`font-bold text-gray-900 ${
-                  isLarge ? "text-xl sm:text-2xl" : "text-sm sm:text-lg"
+                  isLarge ? "text-sm md:text-lg" : "text-sm sm:text-base"
                 }`}
               >
                 {`${product?.priceInfo?.currencySymbol || "₦"} ${

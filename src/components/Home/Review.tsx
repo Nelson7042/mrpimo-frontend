@@ -75,7 +75,7 @@ export default function CustomerReviews() {
   return (
     <section className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
       <div className="text-center mb-8">
-        <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">Customer Reviews</h2>
+        <h2 className="text-base md:text-xl lg:text-2xl font-semibold text-gray-900">Customer Reviews</h2>
       </div>
 
       {/* Mobile: Swiper */}

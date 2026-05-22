@@ -17,6 +17,8 @@ import {
   Upload,
   Edit,
   Loader2,
+  RotateCcw,
+  Lock,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
@@ -24,6 +26,10 @@ import ProductImport from "./create-product/(components)/ProductImport";
 import ProductsPageSkeleton from "./ProductsPageSkeleton";
 import { useVendorStore } from "@/stores/useVendorStore";
 import { useUpdateProduct } from "@/hooks/useVendor";
+import RelistAuctionModal from "./(components)/RelistAuctionModal";
+import { useQueryClient } from "@tanstack/react-query";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
 
 type Props = {};
 
@@ -68,10 +74,13 @@ const ProductsPage = () => {
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [showProductImport, setShowProductImport] = useState(false);
   const [togglingProductId, setTogglingProductId] = useState<string | null>(null);
+  const [relistProduct, setRelistProduct] = useState<ProductType | null>(null);
+  const [lockedProductIds, setLockedProductIds] = useState<Map<string, string>>(new Map()); // productId -> expiry date
 
   const { data: vendorProducts, isLoading } = useVendorProducts(vendor?._id!);
   const router = useRouter();
   const updateProductMutation = useUpdateProduct();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (vendorProducts) {
@@ -79,6 +88,35 @@ const ProductsPage = () => {
       setProductList(vendorProducts);
     }
   }, [vendorProducts]);
+
+  // Fetch active promo ads to determine which products have locked prices
+  useEffect(() => {
+    const fetchLockedProducts = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/vendors/advertisements`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            const lockMap = new Map<string, string>();
+            result.data.advertisements.forEach((ad: any) => {
+              if (
+                ad.status === "active" &&
+                ad.promoConfig?.mode &&
+                ad.promoConfig.mode !== "none" &&
+                ad.productId?._id
+              ) {
+                lockMap.set(ad.productId._id, ad.endDate);
+              }
+            });
+            setLockedProductIds(lockMap);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch promo lock status:", error);
+      }
+    };
+    fetchLockedProducts();
+  }, []);
 
   // Calculate pagination on mount and when filters change
   useEffect(() => {
@@ -223,6 +261,22 @@ const ProductsPage = () => {
 
   const handleCloseDropdown = () => {
     setOpenDropdownId(null);
+  };
+
+  // Check if an auction product's auction has started or expired (not editable)
+  const isAuctionStartedOrExpired = (product: ProductType) => {
+    if (product.inventory?.listing?.type !== "auction") return false;
+    const auction = product.inventory.listing.auction;
+    if (!auction) return false;
+    return auction.isStarted === true || auction.isExpired === true;
+  };
+
+  // Check if an auction product's auction has expired (eligible for relist)
+  const isAuctionExpired = (product: ProductType) => {
+    if (product.inventory?.listing?.type !== "auction") return false;
+    const auction = product.inventory.listing.auction;
+    if (!auction) return false;
+    return auction.isExpired === true;
   };
 
   if (isLoading) return <ProductsPageSkeleton />;
@@ -524,7 +578,12 @@ const ProductsPage = () => {
                         </td>
 
                         <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
-                          {product?.name}
+                          <span className="flex items-center gap-1">
+                            {product?.name}
+                            {lockedProductIds.has(product._id!) && (
+                              <Lock size={14} className="text-amber-600" title="Prices locked — active promotion" />
+                            )}
+                          </span>
                         </td>
 
                         <td className="font-roboto px-4 py-4 whitespace-nowrap text-xs font-medium text-gray-900">
@@ -658,17 +717,31 @@ const ProductsPage = () => {
                                   <Eye size={14} />
                                   <p className="font-roboto text-xs">View</p>
                                 </li>
-                                 <li
-                                  className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs"
-                                  onClick={() =>
-                                    router.push(
-                                      `/vendor/dashboard/products/edit/${product.slug}`
-                                    )
-                                  }
-                                >
-                                  <Edit size={14} />
-                                  <p className="font-roboto text-xs">Edit Product</p>
-                                </li>
+                                {!isAuctionStartedOrExpired(product) && (
+                                  <li
+                                    className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs"
+                                    onClick={() =>
+                                      router.push(
+                                        `/vendor/dashboard/products/edit/${product.slug}`
+                                      )
+                                    }
+                                  >
+                                    <Edit size={14} />
+                                    <p className="font-roboto text-xs">Edit Product</p>
+                                  </li>
+                                )}
+                                {isAuctionExpired(product) && (
+                                  <li
+                                    className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs text-purple-700"
+                                    onClick={() => {
+                                      setRelistProduct(product);
+                                      handleCloseDropdown();
+                                    }}
+                                  >
+                                    <RotateCcw size={14} />
+                                    <p className="font-roboto text-xs">Relist Auction</p>
+                                  </li>
+                                )}
                                 <li
                                   className="font-roboto p-2 hover:bg-gray-100 cursor-pointer flex gap-x-1 items-center text-xs"
                                   onClick={() => {
@@ -695,7 +768,12 @@ const ProductsPage = () => {
                     className="bg-white border border-gray-300 rounded-lg p-4 shadow-md"
                   >
                     <div className="flex justify-between items-center mb-2">
-                      <span className="font-roboto font-medium text-xs">{product.name}</span>
+                      <span className="font-roboto font-medium text-xs flex items-center gap-1">
+                        {product.name}
+                        {lockedProductIds.has(product._id!) && (
+                          <Lock size={12} className="text-amber-600" title="Prices locked — active promotion" />
+                        )}
+                      </span>
                       <span
                         className={`px-2 py-1 text-xs rounded-full ${getStatusColor(
                           product.status || ""
@@ -866,7 +944,7 @@ const ProductsPage = () => {
                         </div>
                       )}
                     </div>
-                    <div className="mt-2">
+                    <div className="mt-2 flex gap-2">
                       <button
                         className="font-roboto bg-primary text-white px-3 py-2 rounded-md text-xs"
                         onClick={() =>
@@ -877,6 +955,15 @@ const ProductsPage = () => {
                       >
                         View Detail
                       </button>
+                      {isAuctionExpired(product) && (
+                        <button
+                          className="font-roboto bg-purple-600 text-white px-3 py-2 rounded-md text-xs flex items-center gap-1"
+                          onClick={() => setRelistProduct(product)}
+                        >
+                          <RotateCcw size={12} />
+                          Relist
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -1056,6 +1143,25 @@ const ProductsPage = () => {
 
         {showProductImport && (
           <ProductImport onClose={() => setShowProductImport(false)} />
+        )}
+
+        {relistProduct && (
+          <RelistAuctionModal
+            isOpen={!!relistProduct}
+            onClose={() => setRelistProduct(null)}
+            productId={relistProduct._id!}
+            productName={relistProduct.name || ""}
+            currency={
+              typeof relistProduct.country !== "string"
+                ? relistProduct.country?.currency
+                : undefined
+            }
+            previousAuction={relistProduct.inventory?.listing?.auction}
+            onSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: ["vendorProducts"] });
+              setRelistProduct(null);
+            }}
+          />
         )}
       </div>
     </div>

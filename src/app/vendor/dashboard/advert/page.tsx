@@ -22,6 +22,7 @@ import {
 } from "lucide-react";
 import PlanCard from "./(componets)/PlanCard";
 import ProductSelector from "./(componets)/ProductSelector";
+import PromoConfigSelector, { PromoConfig } from "./(componets)/PromoConfigSelector";
 import Timer from "./(componets)/Timer";
 import { ProductType } from "@/types/product.type";
 import { useVendorStore } from "@/stores/useVendorStore";
@@ -34,8 +35,20 @@ interface AdvertisementItem {
   title: string;
   productId: { _id: string; name: string } | null;
   adType: string;
-  status: "pending" | "approved" | "rejected" | "active" | "expired";
+  status: "pending" | "approved" | "rejected" | "active" | "expired" | "expired_unused";
   rejectionReason?: string;
+  liveAt?: string;
+  endDate?: string;
+  impressions?: number;
+  clicks?: number;
+  createdAt?: string;
+  promoConfig?: {
+    mode: "none" | "flat" | "percentage" | "per_variant";
+    flatPrice?: number;
+    percentageDiscount?: number;
+    variantPrices?: Array<{ optionId: string; price: number }>;
+  };
+  originalPrices?: Array<{ optionId: string; originalSalePrice: number | null }>;
 }
 
 
@@ -61,13 +74,14 @@ const paymentMethods = [
 type Props = {};
 
 const page = (props: Props) => {
-  const [useDefaultPrice, setUseDefaultPrice] = useState(true);
+  const [promoConfig, setPromoConfig] = useState<PromoConfig>({ mode: "none" });
+  const [existingPromoWarning, setExistingPromoWarning] = useState<string | null>(null);
   const [showSelector, setShowSelector] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<ProductType | null>(
     null
   );
   const [description, setDescription] = useState("");
-  const [promoPrice, setPromoPrice] = useState<number | "">("");
+
 
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
   const [selectedPaymentMethod, setSelectedPaymentMethod] =
@@ -119,6 +133,44 @@ const page = (props: Props) => {
     }
   }, [vendorSubscription, backendPlans]);
 
+  // Check for existing promo conflict when product changes
+  useEffect(() => {
+    if (!selectedProduct?._id) {
+      setExistingPromoWarning(null);
+      return;
+    }
+
+    const checkPromoConflict = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/vendors/advertisements`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            const conflicting = result.data.advertisements.find(
+              (ad: any) =>
+                ad.productId?._id === selectedProduct._id &&
+                ["pending", "approved", "active"].includes(ad.status) &&
+                ad.promoConfig?.mode &&
+                ad.promoConfig.mode !== "none"
+            );
+            if (conflicting) {
+              setExistingPromoWarning(
+                `This product already has an active promo campaign (${conflicting.promoConfig.mode} mode). Only one promo per product is allowed.`
+              );
+            } else {
+              setExistingPromoWarning(null);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check promo conflict:", error);
+        setExistingPromoWarning(null);
+      }
+    };
+
+    checkPromoConflict();
+  }, [selectedProduct?._id]);
+
 
   return (
     <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 min-h-screen font-roboto text-xs">
@@ -139,41 +191,165 @@ const page = (props: Props) => {
               <p className="text-xs text-gray-500">No advertisements submitted yet.</p>
             ) : (
               <div className="space-y-3">
-                {advertisements.map((ad) => (
-                  <div
-                    key={ad._id}
-                    className="flex items-center justify-between border border-gray-200 rounded-md p-3 bg-white"
-                  >
-                    <div className="flex-1">
-                      <p className="font-medium text-sm">{ad.title}</p>
-                      <p className="text-xs text-gray-500">
-                        Product: {ad.productId?.name ?? "N/A"} &middot; Type: {ad.adType}
-                      </p>
-                      {ad.status === "rejected" && ad.rejectionReason && (
-                        <p className="text-xs text-red-500 mt-1">
-                          Reason: {ad.rejectionReason}
-                        </p>
-                      )}
+                {advertisements.map((ad) => {
+                  const daysRemaining = ad.endDate
+                    ? Math.max(0, Math.ceil((new Date(ad.endDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24)))
+                    : 0;
+                  const hasPromo = ad.promoConfig?.mode && ad.promoConfig.mode !== "none";
+
+                  return (
+                    <div
+                      key={ad._id}
+                      className="border border-gray-200 rounded-md p-3 bg-white"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">{ad.title}</p>
+                          <p className="text-xs text-gray-500">
+                            Product: {ad.productId?.name ?? "N/A"} &middot; Type: {ad.adType}
+                          </p>
+                        </div>
+                        <div>
+                          {ad.status === "pending" && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                              Pending
+                            </span>
+                          )}
+                          {ad.status === "approved" && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-blue-100 text-blue-800">
+                              Approved
+                            </span>
+                          )}
+                          {ad.status === "active" && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
+                              Live
+                            </span>
+                          )}
+                          {ad.status === "expired" && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-800">
+                              Completed
+                            </span>
+                          )}
+                          {ad.status === "expired_unused" && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-orange-100 text-orange-800">
+                              Refunded
+                            </span>
+                          )}
+                          {ad.status === "rejected" && (
+                            <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                              Rejected
+                            </span>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Status-specific details */}
+                      <div className="mt-2">
+                        {ad.status === "pending" && (
+                          <div className="text-xs text-gray-500">
+                            {ad.createdAt && (
+                              <p>Submitted: {new Date(ad.createdAt).toLocaleDateString()}</p>
+                            )}
+                            {hasPromo && (
+                              <p className="mt-1">
+                                Promo:{" "}
+                                {ad.promoConfig!.mode === "flat" && `Flat price ₦${ad.promoConfig!.flatPrice?.toLocaleString()}`}
+                                {ad.promoConfig!.mode === "percentage" && `${ad.promoConfig!.percentageDiscount}% discount`}
+                                {ad.promoConfig!.mode === "per_variant" && "Per-variant pricing"}
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {ad.status === "approved" && (
+                          <p className="text-xs text-blue-600">
+                            Awaiting placement by our team
+                          </p>
+                        )}
+
+                        {ad.status === "active" && (
+                          <div className="text-xs text-gray-600 space-y-1">
+                            <div className="flex flex-wrap gap-x-4 gap-y-1">
+                              {ad.liveAt && (
+                                <p>Live since: {new Date(ad.liveAt).toLocaleDateString()}</p>
+                              )}
+                              {ad.endDate && (
+                                <p>Expires: {new Date(ad.endDate).toLocaleDateString()} ({daysRemaining} day{daysRemaining !== 1 ? "s" : ""} remaining)</p>
+                              )}
+                            </div>
+                            <div className="flex gap-x-4">
+                              <p>Impressions: {ad.impressions?.toLocaleString() ?? 0}</p>
+                              <p>Clicks: {ad.clicks?.toLocaleString() ?? 0}</p>
+                            </div>
+                            {hasPromo && (
+                              <div className="mt-1 p-2 bg-green-50 rounded border border-green-200">
+                                <p className="font-medium text-green-700 mb-1">
+                                  Promo Active:{" "}
+                                  {ad.promoConfig!.mode === "flat" && `Flat ₦${ad.promoConfig!.flatPrice?.toLocaleString()}`}
+                                  {ad.promoConfig!.mode === "percentage" && `${ad.promoConfig!.percentageDiscount}% off`}
+                                  {ad.promoConfig!.mode === "per_variant" && "Per-variant pricing"}
+                                </p>
+                                {ad.originalPrices && ad.originalPrices.length > 0 && (
+                                  <div className="space-y-0.5">
+                                    {ad.originalPrices.map((op) => {
+                                      let promoPrice: number | null = null;
+                                      if (ad.promoConfig!.mode === "flat") {
+                                        promoPrice = ad.promoConfig!.flatPrice ?? null;
+                                      } else if (ad.promoConfig!.mode === "percentage" && op.originalSalePrice != null) {
+                                        promoPrice = Math.round(op.originalSalePrice * (1 - (ad.promoConfig!.percentageDiscount ?? 0) / 100) * 100) / 100;
+                                      } else if (ad.promoConfig!.mode === "per_variant") {
+                                        const entry = ad.promoConfig!.variantPrices?.find((vp) => vp.optionId === op.optionId);
+                                        promoPrice = entry?.price ?? null;
+                                      }
+                                      return (
+                                        <p key={op.optionId} className="text-xs">
+                                          <span className="line-through text-gray-400">
+                                            ₦{op.originalSalePrice?.toLocaleString() ?? "N/A"}
+                                          </span>
+                                          {promoPrice != null && (
+                                            <span className="ml-1 text-green-700 font-medium">
+                                              → ₦{promoPrice.toLocaleString()}
+                                            </span>
+                                          )}
+                                        </p>
+                                      );
+                                    })}
+                                  </div>
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {ad.status === "expired" && (
+                          <div className="text-xs text-gray-500">
+                            {ad.liveAt && ad.endDate && (
+                              <p>
+                                Ran: {new Date(ad.liveAt).toLocaleDateString()} – {new Date(ad.endDate).toLocaleDateString()}
+                              </p>
+                            )}
+                            <div className="flex gap-x-4">
+                              <p>Impressions: {ad.impressions?.toLocaleString() ?? 0}</p>
+                              <p>Clicks: {ad.clicks?.toLocaleString() ?? 0}</p>
+                            </div>
+                          </div>
+                        )}
+
+                        {ad.status === "expired_unused" && (
+                          <p className="text-xs text-orange-600">
+                            Credits refunded — not placed within 14 days
+                          </p>
+                        )}
+
+                        {ad.status === "rejected" && ad.rejectionReason && (
+                          <p className="text-xs text-red-500 mt-1">
+                            Reason: {ad.rejectionReason}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <div>
-                      {ad.status === "pending" && (
-                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                          Pending
-                        </span>
-                      )}
-                      {ad.status === "approved" && (
-                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                          Approved
-                        </span>
-                      )}
-                      {ad.status === "rejected" && (
-                        <span className="inline-block px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
-                          Rejected
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             )}
           </div>
@@ -230,35 +406,15 @@ const page = (props: Props) => {
                 )}
               </div>
 
-              {/* Promo Price */}
+              {/* Promo Configuration */}
               <div className="col-span-6 flex flex-col gap-y-2">
-                <label htmlFor="price" className="font-medium">
-                  Promo Price
-                </label>
-                <input
-                  type="number"
-                  id="price"
-                  className="w-full border border-gray-300 rounded-md p-2"
-                  value={promoPrice}
-                  disabled={useDefaultPrice}
-                  onChange={(e) => setPromoPrice(Number(e.target.value) || "")}
-                  placeholder="Enter amount"
+                <label className="font-medium">Promo Pricing</label>
+                <PromoConfigSelector
+                  product={selectedProduct}
+                  promoConfig={promoConfig}
+                  onChange={setPromoConfig}
+                  existingPromoWarning={existingPromoWarning}
                 />
-                <div className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id="default"
-                    checked={useDefaultPrice}
-                    onChange={(e) => {
-                      setUseDefaultPrice(e.target.checked);
-                      if (e.target.checked && selectedProduct) {
-                        // gvgvgvgv
-                      }
-                    }}
-                    className="mr-2"
-                  />
-                  <label htmlFor="default">Use default price</label>
-                </div>
               </div>
             </div>
 
@@ -275,7 +431,7 @@ const page = (props: Props) => {
               >
                 <option value="banner">Banner</option>
                 <option value="featured">Featured</option>
-                <option value="promotion">Promotion</option>
+                <option value="sponsored">Sponsored</option>
               </select>
             </div>
 
@@ -312,14 +468,12 @@ const page = (props: Props) => {
                 );
               })
               .map((plan: any, index: number) => {
-                // Get localized price from country pricing
-                const localizedPlan =
-                  countryPricing?.country?.localizedSubscritpionPlan?.find(
-                    (localPlan: any) => localPlan.plan === plan._id
-                  );
-                const planPrice = localizedPlan?.price ?? 0;
-                const currencySymbol =
-                  countryPricing?.country?.currencySymbol ?? "₦";
+                // Get localized price from pricingDetails (returned by getSubscriptionPrice endpoint)
+                const pricingEntry = countryPricing?.pricingDetails?.find(
+                  (entry: any) => entry.plan === plan._id || entry.planName === plan.name
+                );
+                const planPrice = pricingEntry?.price ?? 0;
+                const currencySymbol = pricingEntry?.currencySymbol ?? countryPricing?.country?.currencySymbol ?? "₦";
                 const hasActivePlan = !!vendorSubscription?.subscription?.currentPlan;
                 const isSelected = selectedPlan?.name === plan.name;
                 const canSelect = !hasActivePlan;
@@ -407,7 +561,7 @@ const page = (props: Props) => {
             <h3 className="text-lg font-semibold mb-6">Pay for Subscription</h3>
             <div className="bg-[#e2e8f0] rounded-md p-4">
               <p className="text-sm mb-4">Selected Plan: <span className="font-medium">{selectedPlan?.name}</span></p>
-              <p className="text-lg font-semibold mb-4">Amount: {countryPricing?.country?.currencySymbol ?? '₦'}{selectedPlan ? (countryPricing?.country?.localizedSubscritpionPlan?.find((p: any) => p.plan === selectedPlan._id)?.price ?? 0).toLocaleString() : '0'}</p>
+              <p className="text-lg font-semibold mb-4">Amount: {countryPricing?.country?.currencySymbol ?? '₦'}{selectedPlan ? (countryPricing?.pricingDetails?.find((p: any) => p.plan === selectedPlan._id || p.planName === selectedPlan.name)?.price ?? 0).toLocaleString() : '0'}</p>
               <div id="stripe-payment-element"></div>
             </div>
           </div>
@@ -498,7 +652,6 @@ const page = (props: Props) => {
                   )}
                   <div>
                     <p className="font-medium">{selectedProduct?.name}</p>
-                    {/* <p className="text-sm text-gray-600">Promotion Price: {countryPricing?.country?.currencySymbol ?? '₦'}{useDefaultPrice ? selectedProduct?.price?.toLocaleString() : promoPrice?.toLocaleString()}</p> */}
                   </div>
                 </div>
                 
@@ -530,20 +683,21 @@ const page = (props: Props) => {
                         description: description || '',
                         imageUrl: selectedProduct?.images?.[0] || '',
                         adType: adType,
+                        promoConfig: promoConfig,
                       }, {
                         onSuccess: () => {
                           toast.success('Advertisement created successfully! Pending review.');
                           setShowModal(false);
                           setSelectedProduct(null);
                           setDescription('');
-                          setPromoPrice('');
+                          setPromoConfig({ mode: "none" });
                           setAdType('banner');
                         }
                       });
                     } else {
                       // Redirect to Stripe checkout for new subscribers
-                      const localizedPlan = countryPricing?.country?.localizedSubscritpionPlan?.find(
-                        (p: any) => p.plan === selectedPlan?._id
+                      const localizedPlan = countryPricing?.pricingDetails?.find(
+                        (p: any) => p.plan === selectedPlan?._id || p.planName === selectedPlan?.name
                       );
                       
                       paymentIntentMutation.mutate({

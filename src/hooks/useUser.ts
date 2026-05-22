@@ -22,6 +22,9 @@ interface UserProfile {
     marketing?: boolean;
     [key: string]: any;
   };
+  phoneVerified?: boolean;
+  deletionScheduledAt?: string | null;
+  deletionRequestedAt?: string | null;
   addresses: Array<{
     _id: string;
     type: 'shipping' | 'billing';

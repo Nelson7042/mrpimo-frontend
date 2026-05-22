@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { updateProduct } from "@/hooks/useProducts";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
@@ -16,15 +16,48 @@ import ProductVariants from "../../create-product/(components)/ProductVariants";
 import PricingInformation from "../../create-product/(components)/PricingInformation";
 import ShippingDetails from "../../create-product/(components)/ShippingDetails";
 import { useFetchProductBySlug } from "@/hooks/queries";
+import { fetchWithAuth } from "@/utils/fetchWithAuth";
+import { API_BASE_URL } from "@/utils/config";
+import { Lock } from "lucide-react";
 
 export default function EditProductPage() {
   const router = useRouter();
   const params = useParams();
   const slug = params.slug as string;
   const { productDetails, setProductDetails } = useProductListing();
+  const [promoLockExpiry, setPromoLockExpiry] = useState<string | null>(null);
 
   const { data: productData, isLoading } = useFetchProductBySlug(slug);
   const product = productData?.product;
+
+  // Check if this product has an active promo lock
+  useEffect(() => {
+    if (!product?._id) return;
+
+    const checkPromoLock = async () => {
+      try {
+        const response = await fetchWithAuth(`${API_BASE_URL}/vendors/advertisements`);
+        if (response.ok) {
+          const result = await response.json();
+          if (result.success) {
+            const activePromoAd = result.data.advertisements.find(
+              (ad: any) =>
+                ad.productId?._id === product._id &&
+                ad.status === "active" &&
+                ad.promoConfig?.mode &&
+                ad.promoConfig.mode !== "none"
+            );
+            if (activePromoAd) {
+              setPromoLockExpiry(activePromoAd.endDate);
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Failed to check promo lock:", error);
+      }
+    };
+    checkPromoLock();
+  }, [product?._id]);
 
   useEffect(() => {
     if (product) {
@@ -91,12 +124,26 @@ export default function EditProductPage() {
             </div>
           </div>
 
+          {promoLockExpiry && (
+            <div className="mb-6 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
+              <Lock size={18} className="text-amber-600 flex-shrink-0" />
+              <p className="text-sm text-amber-800">
+                Prices locked — active promotion expires{" "}
+                {new Date(promoLockExpiry).toLocaleDateString("en-GB", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+              </p>
+            </div>
+          )}
+
           <div className="space-y-8">
             <ProductImages />
             {/* <ProductDetailForm /> */}
             <ProductSpecifications />
-            <ProductVariants />
-            <PricingInformation />
+            <ProductVariants priceLocked={!!promoLockExpiry} />
+            <PricingInformation priceLocked={!!promoLockExpiry} />
             <ShippingDetails />
           </div>
         </div>

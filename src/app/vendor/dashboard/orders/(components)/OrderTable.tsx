@@ -2,12 +2,33 @@
 
 import { useVendorOrders } from "@/hooks/queries";
 import { useVendorStore } from "@/stores/useVendorStore";
-import { ChevronDown, Eye, Search } from "lucide-react";
+import { ChevronDown, Eye, Search, Clock } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import OrderTableSkeleton from "./OrderTableSkeleton";
 import { useRouter } from "next/navigation";
 
 type Props = {};
+
+// Countdown helper for the table
+function getCountdownText(deadline: string | Date | undefined): { text: string; isUrgent: boolean; isExpired: boolean } {
+  if (!deadline) return { text: "", isUrgent: false, isExpired: false };
+  
+  const now = new Date().getTime();
+  const end = new Date(deadline).getTime();
+  const remaining = end - now;
+  
+  if (remaining <= 0) return { text: "Expired", isUrgent: true, isExpired: true };
+  
+  const hours = Math.floor(remaining / (1000 * 60 * 60));
+  const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+  
+  if (hours > 24) {
+    const days = Math.floor(hours / 24);
+    return { text: `${days}d ${hours % 24}h`, isUrgent: false, isExpired: false };
+  }
+  
+  return { text: `${hours}h ${minutes}m`, isUrgent: hours < 12, isExpired: false };
+}
 
 const getStatusColor = (status: string) => {
   switch (status.toLowerCase()) {
@@ -57,6 +78,13 @@ const OrderTable = (props: Props) => {
   const vendorCurrency = data?.vendorCurrency || 'USD';
 
   const router = useRouter();
+
+  // Re-render every minute to update countdowns
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const interval = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (data) {
@@ -145,9 +173,9 @@ const OrderTable = (props: Props) => {
       </div>
 
       {/* Desktop Table */}
-      <div className="hidden md:block overflow-x-auto mt-5 shadow-md">
+      <div className="hidden md:block overflow-x-auto max-h-[65vh] overflow-y-auto mt-5 shadow-md">
         <table className="min-w-full bg-white text-xs">
-          <thead>
+          <thead className="sticky top-0 z-10">
             <tr className="bg-[#f2f7ff] text-black">
               <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
                 Order ID
@@ -163,6 +191,9 @@ const OrderTable = (props: Props) => {
               </th>
               <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
                 Status
+              </th>
+              <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
+                Deadline
               </th>
               <th className="px-4 py-3 text-left font-medium text-gray-500 uppercase tracking-wider">
                 Items
@@ -221,6 +252,29 @@ const OrderTable = (props: Props) => {
                           order?.status?.slice(1)}
                       </span>
                     </td>
+                    <td className="px-4 py-4 whitespace-nowrap text-xs">
+                      {(() => {
+                        // Find the vendor's shipment deadline
+                        const vendorShipment = order?.shipments?.find((s: any) => {
+                          const sVendorId = s.vendorId?._id || s.vendorId?.toString() || s.vendorId;
+                          return sVendorId === vendor?._id;
+                        });
+                        const countdown = getCountdownText(vendorShipment?.fulfillmentDeadline);
+                        if (!countdown.text) return <span className="text-gray-400">—</span>;
+                        return (
+                          <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                            countdown.isExpired
+                              ? 'bg-red-100 text-red-700'
+                              : countdown.isUrgent
+                              ? 'bg-orange-100 text-orange-700'
+                              : 'bg-blue-50 text-blue-700'
+                          }`}>
+                            <Clock size={12} />
+                            {countdown.text}
+                          </span>
+                        );
+                      })()}
+                    </td>
                     <td className="px-4 py-4 whitespace-nowrap text-xs text-gray-500">
                       {vendorTotals.totalItems} item(s)
                     </td>
@@ -229,12 +283,10 @@ const OrderTable = (props: Props) => {
                         className="text-blue-600 hover:text-blue-900 flex items-center gap-1 cursor-pointer"
                         onClick={() => {
                           router.push(`/vendor/dashboard/orders/${order._id}`);
-
                         }}
                       >
                         <Eye size={16} />
                         <span>View</span>
-                      
                       </button>
                     </td>
                   </tr>
@@ -250,7 +302,7 @@ const OrderTable = (props: Props) => {
       </div>
 
       {/* Mobile Cards */}
-      <div className="md:hidden space-y-4 p-4">
+      <div className="md:hidden space-y-4 p-4 max-h-[70vh] overflow-y-auto">
         {orders && orders.length > 0 && orders.map((order) => {
           const vendorTotals = calculateVendorTotals(order.items || [], vendor?._id || "", vendorCurrency);
           const isAuctionOrder = order.metadata?.isBidCheckout === true;
@@ -304,6 +356,28 @@ const OrderTable = (props: Props) => {
                 <span className="font-medium">Your Items:</span>{" "}
                 {vendorTotals.totalItems} item(s)
               </div>
+              {(() => {
+                const vendorShipment = order?.shipments?.find((s: any) => {
+                  const sVendorId = s.vendorId?._id || s.vendorId?.toString() || s.vendorId;
+                  return sVendorId === vendor?._id;
+                });
+                const countdown = getCountdownText(vendorShipment?.fulfillmentDeadline);
+                if (!countdown.text) return null;
+                return (
+                  <div className="text-xs mb-1">
+                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full font-medium ${
+                      countdown.isExpired
+                        ? 'bg-red-100 text-red-700'
+                        : countdown.isUrgent
+                        ? 'bg-orange-100 text-orange-700'
+                        : 'bg-blue-50 text-blue-700'
+                    }`}>
+                      <Clock size={12} />
+                      Fulfill by: {countdown.text}
+                    </span>
+                  </div>
+                );
+              })()}
               <div className="mt-3 flex justify-end">
                 <button
                   className="text-blue-600 hover:text-blue-900 flex items-center gap-1 text-underline"

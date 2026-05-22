@@ -64,6 +64,7 @@ const ProductCard = ({
 
   const handleWishlistToggle = () => {
     if (!user) {
+      sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
       openModal();
       return;
     }

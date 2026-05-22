@@ -41,6 +41,7 @@ vi.mock("@/services/disputeService", () => ({
   disputeService: {
     getDisputeDetail: (...args: any[]) => mockGetDisputeDetail(...args),
     submitVendorResponse: vi.fn(),
+    updateVendorResponse: vi.fn(),
   },
 }));
 
@@ -62,6 +63,11 @@ vi.mock("@/utils/fetchWithAuth", () => ({
 // ── Mock config ─────────────────────────────────────────────────────────────
 vi.mock("@/utils/config", () => ({
   API_BASE_URL: "http://localhost:3000",
+}));
+
+// ── Mock useUserStore ───────────────────────────────────────────────────────
+vi.mock("@/stores/useUserStore", () => ({
+  useUserStore: () => ({ user: { _id: "vendor-user-1" }, setUser: vi.fn() }),
 }));
 
 // ── Mock UI components ──────────────────────────────────────────────────────
@@ -90,6 +96,43 @@ vi.mock("lucide-react", () => ({
   AlertTriangle: ({ className }: any) => <span data-testid="alert-triangle" className={className} />,
   CheckCircle: ({ className }: any) => <span data-testid="check-circle" className={className} />,
   Clock: ({ className }: any) => <span data-testid="clock" className={className} />,
+  ChevronDownIcon: ({ className }: any) => <span data-testid="chevron-down" className={className} />,
+  Save: ({ className }: any) => <span data-testid="save" className={className} />,
+  Plus: ({ className }: any) => <span data-testid="plus" className={className} />,
+  X: ({ className }: any) => <span data-testid="x" className={className} />,
+  ExternalLink: ({ className }: any) => <span data-testid="external-link" className={className} />,
+  AlertCircle: ({ className }: any) => <span data-testid="alert-circle" className={className} />,
+}));
+
+// ── Mock select component (used by DisputeTemplateSelector) ─────────────────
+vi.mock("@/components/ui/select", () => ({
+  Select: ({ children }: any) => <div data-testid="select">{children}</div>,
+  SelectContent: ({ children }: any) => <div>{children}</div>,
+  SelectItem: ({ children }: any) => <div>{children}</div>,
+  SelectTrigger: ({ children }: any) => <div>{children}</div>,
+  SelectValue: () => <span>Select a response template...</span>,
+}));
+
+// ── Mock textarea component (used by VendorResponseEditor) ──────────────────
+vi.mock("@/components/ui/textarea", () => ({
+  Textarea: ({ placeholder, ...props }: any) => (
+    <textarea placeholder={placeholder} {...props} />
+  ),
+}));
+
+// ── Mock label component (used by VendorResponseEditor) ─────────────────────
+vi.mock("@/components/ui/label", () => ({
+  Label: ({ children, ...props }: any) => <label {...props}>{children}</label>,
+}));
+
+// ── Mock dialog component (used by DisputeTemplateSelector) ─────────────────
+vi.mock("@/components/ui/dialog", () => ({
+  Dialog: ({ children }: any) => <div>{children}</div>,
+  DialogContent: ({ children }: any) => <div>{children}</div>,
+  DialogDescription: ({ children }: any) => <div>{children}</div>,
+  DialogFooter: ({ children }: any) => <div>{children}</div>,
+  DialogHeader: ({ children }: any) => <div>{children}</div>,
+  DialogTitle: ({ children }: any) => <div>{children}</div>,
 }));
 
 // ── Import component under test (after mocks) ──────────────────────────────
@@ -107,7 +150,7 @@ describe("VendorDisputeDetailPage – response form visibility", () => {
   /**
    * Validates: Requirement 9.5
    * When dispute status is "open" and no vendorResponse exists,
-   * the response form (textarea + "Submit Response" button) should be visible.
+   * the response form (textarea + "Save Response" button) should be visible.
    */
   it('shows response form when status is "open" and no vendorResponse', async () => {
     mockGetDisputeDetail.mockResolvedValue(createMockDispute({ status: "open", vendorResponse: null }));
@@ -115,11 +158,11 @@ describe("VendorDisputeDetailPage – response form visibility", () => {
     render(<VendorDisputeDetailPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("Your Response")).toBeTruthy();
+      expect(screen.getAllByText("Your Response").length).toBeGreaterThan(0);
     });
 
-    expect(screen.getByPlaceholderText("Provide your explanation or response to this dispute...")).toBeTruthy();
-    expect(screen.getByText("Submit Response")).toBeTruthy();
+    expect(screen.getByPlaceholderText("Write your response to this dispute...")).toBeTruthy();
+    expect(screen.getByText("Save Response")).toBeTruthy();
   });
 
   /**
@@ -133,10 +176,10 @@ describe("VendorDisputeDetailPage – response form visibility", () => {
     render(<VendorDisputeDetailPage />);
 
     await waitFor(() => {
-      expect(screen.getByPlaceholderText("Provide your explanation or response to this dispute...")).toBeTruthy();
+      expect(screen.getByPlaceholderText("Write your response to this dispute...")).toBeTruthy();
     });
 
-    expect(screen.getByText("Submit Response")).toBeTruthy();
+    expect(screen.getByText("Save Response")).toBeTruthy();
   });
 
   /**
@@ -153,8 +196,8 @@ describe("VendorDisputeDetailPage – response form visibility", () => {
       expect(screen.getByText("Read Only")).toBeTruthy();
     });
 
-    expect(screen.queryByPlaceholderText("Provide your explanation or response to this dispute...")).toBeNull();
-    expect(screen.queryByText("Submit Response")).toBeNull();
+    expect(screen.queryByPlaceholderText("Write your response to this dispute...")).toBeNull();
+    expect(screen.queryByText("Save Response")).toBeNull();
   });
 
   /**
@@ -171,22 +214,22 @@ describe("VendorDisputeDetailPage – response form visibility", () => {
       expect(screen.getByText("Read Only")).toBeTruthy();
     });
 
-    expect(screen.queryByPlaceholderText("Provide your explanation or response to this dispute...")).toBeNull();
-    expect(screen.queryByText("Submit Response")).toBeNull();
+    expect(screen.queryByPlaceholderText("Write your response to this dispute...")).toBeNull();
+    expect(screen.queryByText("Save Response")).toBeNull();
   });
 
   /**
    * Validates: Requirement 9.6
    * When dispute status is "closed" and no vendorResponse,
-   * shows "No response was submitted for this dispute".
+   * shows "No response submitted." message.
    */
-  it('shows "No response was submitted" message when closed with no vendorResponse', async () => {
+  it('shows "No response submitted" message when closed with no vendorResponse', async () => {
     mockGetDisputeDetail.mockResolvedValue(createMockDispute({ status: "closed", vendorResponse: null }));
 
     render(<VendorDisputeDetailPage />);
 
     await waitFor(() => {
-      expect(screen.getByText("No response was submitted for this dispute")).toBeTruthy();
+      expect(screen.getByText("No response submitted.")).toBeTruthy();
     });
   });
 });

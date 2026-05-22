@@ -691,6 +691,12 @@ const createAdvertisement = async (data: {
   description: string;
   imageUrl: string;
   adType: string;
+  promoConfig?: {
+    mode: "none" | "flat" | "percentage" | "per_variant";
+    flatPrice?: number;
+    percentageDiscount?: number;
+    variantPrices?: Array<{ optionId: string; price: number }>;
+  };
 }) => {
   const { vendorId, ...body } = data;
   const response = await fetchWithAuth(`${API_BASE_URL}/advertisements/${vendorId}`, {

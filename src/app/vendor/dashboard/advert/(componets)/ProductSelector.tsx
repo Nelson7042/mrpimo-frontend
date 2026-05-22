@@ -99,9 +99,26 @@ const ProductSelector: React.FC<Props> = ({ products, onSelect }) => {
                   <td className=" p-2">{product.name || 'N/A'}</td>
                   <td className=" p-2">{getCategoryName(product)}</td>
                   <td className=" p-2 font-medium">
-                    {product.inventory?.listing?.type === "auction"
-                      ? `${product.variants?.[0]?.options?.[0]?.price || 'N/A'}`
-                      : "N/A"}
+                    {(() => {
+                      if (product.inventory?.listing?.type === "auction") {
+                        return product.inventory.listing.auction?.startBidPrice 
+                          ? `${product.inventory.listing.auction.startBidPrice}` 
+                          : 'N/A';
+                      }
+                      // For instant products, show variant prices
+                      const hasVariants = product.variants && product.variants.length > 0;
+                      if (hasVariants) {
+                        const allOptions = product.variants.flatMap((v: any) => v.options) || [];
+                        const prices = allOptions
+                          .map((o: any) => (o.salePrice && o.salePrice > 0) ? o.salePrice : o.price)
+                          .filter((p: any) => p > 0);
+                        if (prices.length === 0) return 'N/A';
+                        const min = Math.min(...prices);
+                        const max = Math.max(...prices);
+                        return min === max ? `${min}` : `${min} - ${max}`;
+                      }
+                      return product.inventory?.listing?.instant?.price?.toLocaleString() || 'N/A';
+                    })()}
                   </td>
                 </tr>
               );

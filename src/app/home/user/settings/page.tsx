@@ -45,6 +45,14 @@ import { API_BASE_URL } from "@/utils/config";
 import TwoFactorSetup from "@/app/vendor/dashboard/settings/components/TwoFactorSetup";
 import DisableTwoFactor from "@/app/vendor/dashboard/settings/components/DisableTwoFactor";
 import { useWalletDisplay } from "@/hooks/useWalletBalance";
+import SessionManagement from "@/components/settings/SessionManagement";
+import LoginHistory from "@/components/settings/LoginHistory";
+import PhoneVerification from "@/components/settings/PhoneVerification";
+import SecurityEventLog from "@/components/settings/SecurityEventLog";
+import AccountDeletion from "@/components/settings/AccountDeletion";
+import DataExport from "@/components/settings/DataExport";
+import NotificationFrequency from "@/components/settings/NotificationFrequency";
+import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 
 type SettingsSection =
   | "main"
@@ -158,17 +166,35 @@ export default function SettingsPage() {
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profileSaving, setProfileSaving] = useState(false);
 
+  // Saved values for unsaved changes tracking
+  const [savedFormData, setSavedFormData] = useState({
+    firstName: "",
+    middleName: "",
+    lastName: "",
+    email: "",
+    phoneNumber: "",
+  });
+
   // Sync formData when profileData loads
   const profileLoaded = profileData?.user;
   if (profileLoaded && !formData.firstName && !isEditingProfile) {
-    setFormData({
+    const initialData = {
       firstName: profileLoaded.profile?.firstName || "",
       middleName: profileLoaded.profile?.middleName || "",
       lastName: profileLoaded.profile?.lastName || "",
       email: profileLoaded.email || "",
       phoneNumber: profileLoaded.profile?.phoneNumber || "",
-    });
+    };
+    setFormData(initialData);
+    setSavedFormData(initialData);
   }
+
+  // Unsaved changes warning for profile form
+  const { isDirty: isProfileDirty, isDialogOpen, confirmLeave, cancelLeave } = useUnsavedChanges({
+    currentValues: formData,
+    savedValues: savedFormData,
+    enabled: isEditingProfile,
+  });
 
   // Sync notification preferences when profileData loads
   if (profileLoaded && !preferencesInitialized) {
@@ -250,6 +276,7 @@ export default function SettingsPage() {
       if (data.success) {
         toast.success(data.message || "Profile updated successfully");
         setIsEditingProfile(false);
+        setSavedFormData(formData);
         // Update the user store so other components see the change
         if (user) {
           setUser({
@@ -754,6 +781,16 @@ export default function SettingsPage() {
               </div>
             </div>
           </div>
+
+          {/* Data Export */}
+          <div className="border-t pt-4">
+            <DataExport />
+          </div>
+
+          {/* Account Deletion */}
+          <div className="border-t pt-4">
+            <AccountDeletion />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1250,6 +1287,11 @@ export default function SettingsPage() {
               </p>
             )}
           </div>
+
+          {/* Notification Frequency Preferences */}
+          <div className="border-t pt-4">
+            <NotificationFrequency />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1411,6 +1453,29 @@ export default function SettingsPage() {
               </p>
             </div>
           )}
+
+          {/* Phone Verification */}
+          <div className="border-t pt-4">
+            <PhoneVerification
+              phoneNumber={profileData?.user?.profile?.phoneNumber}
+              isVerified={profileData?.user?.phoneVerified}
+            />
+          </div>
+
+          {/* Session Management */}
+          <div className="border-t pt-4">
+            <SessionManagement />
+          </div>
+
+          {/* Login History */}
+          <div className="border-t pt-4">
+            <LoginHistory />
+          </div>
+
+          {/* Security Event Log */}
+          <div className="border-t pt-4">
+            <SecurityEventLog />
+          </div>
         </div>
       </CardContent>
     </Card>
@@ -1441,6 +1506,26 @@ export default function SettingsPage() {
         className="mb-4"
       />
       <div>{renderCurrentSection()}</div>
+
+      {/* Unsaved Changes Confirmation Dialog */}
+      {isDialogOpen && (
+        <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg p-6 max-w-sm w-full shadow-xl">
+            <h3 className="text-sm font-semibold text-gray-900 mb-2">Unsaved Changes</h3>
+            <p className="text-sm text-gray-600 mb-4">
+              You have unsaved changes. Leave anyway?
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={cancelLeave}>
+                Stay
+              </Button>
+              <Button size="sm" onClick={confirmLeave} className="bg-red-600 hover:bg-red-700 text-white">
+                Leave
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

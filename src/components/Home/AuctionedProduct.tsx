@@ -316,7 +316,7 @@ const AuctionedProduct = () => {
   return (
     <div className="max-w-screen-2xl mx-auto px-4 md:px-6 lg:px-8 xl:px-12 py-8 md:py-10 lg:py-10">
       <div className="flex flex-row items-center justify-between mb-6 sm:mb-8 gap-4">
-          <h2 className="text-base md:text-xl lg:text-4xl font-semibold text-gray-900">
+          <h2 className="text-base md:text-xl lg:text-2xl font-semibold text-gray-900">
             Auction Products
           </h2>
         <div className="flex items-center gap-1 md:gap-2">

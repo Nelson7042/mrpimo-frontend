@@ -207,16 +207,18 @@ export default function VoluntaryCancellation({
         )}
 
         {/* Cancel Button */}
-        <button
-          type="button"
-          onClick={handleOpenDialog}
-          className="w-full py-2.5 rounded-lg text-sm font-medium transition-all bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 hover:border-red-300"
-        >
-          <span className="inline-flex items-center gap-2">
-            <XCircle className="h-4 w-4" />
-            Can&apos;t Fulfill Order
-          </span>
-        </button>
+        <div className="flex justify-center">
+          <button
+            type="button"
+            onClick={handleOpenDialog}
+            className="px-4 py-2 rounded-lg text-xs font-medium transition-all bg-red-600 text-white hover:bg-red-700 shadow-sm"
+          >
+            <span className="inline-flex items-center gap-2">
+              <XCircle className="h-3.5 w-3.5" />
+              Can&apos;t Fulfill Order
+            </span>
+          </button>
+        </div>
 
         <p className="text-xs text-gray-500 text-center">
           Voluntary cancellation — no strike will be issued

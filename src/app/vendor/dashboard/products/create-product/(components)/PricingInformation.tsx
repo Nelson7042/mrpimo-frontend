@@ -11,6 +11,7 @@ import { useUserStore } from "@/stores/useUserStore";
 
 type Props = {
   onSaveDraft?: () => void;
+  priceLocked?: boolean;
 };
 
 const PricingInformation = (props: Props) => {
@@ -515,6 +516,7 @@ const PricingInformation = (props: Props) => {
           }}
           required={true}
           helperText="The market price of the product."
+          disabled={props.priceLocked}
         />
         <Input
           label="Sale Price"
@@ -541,6 +543,7 @@ const PricingInformation = (props: Props) => {
           error={errors.salePrice}
           required={true}
           helperText="The price at which you are willing to sell."
+          disabled={props.priceLocked}
         />
         <Input
           label="Store quantity"

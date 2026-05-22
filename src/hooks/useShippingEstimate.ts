@@ -32,7 +32,9 @@ const fetchShippingEstimate = async (): Promise<ShippingEstimateResponse> => {
     const data = await response.json().catch(() => ({}));
     throw new Error(data.message || "Failed to fetch shipping estimate");
   }
-  return response.json();
+  const data = await response.json();
+  console.log("[ShippingEstimate] Raw response:", JSON.stringify(data, null, 2));
+  return data;
 };
 
 export const useShippingEstimate = (enabled: boolean = true) => {

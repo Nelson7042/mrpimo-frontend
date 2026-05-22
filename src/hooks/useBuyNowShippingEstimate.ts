@@ -30,6 +30,7 @@ interface BuyNowShippingEstimateResponse {
 const fetchBuyNowShippingEstimate = async (
   params: BuyNowShippingEstimateParams
 ): Promise<BuyNowShippingEstimateResponse> => {
+  console.log("[BuyNowShipping] Request params:", JSON.stringify(params, null, 2));
   const response = await fetchWithAuth(
     `${API_BASE_URL}/checkout/buy-now/shipping-estimate`,
     {
@@ -43,12 +44,15 @@ const fetchBuyNowShippingEstimate = async (
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
+    console.error("[BuyNowShipping] Error response:", JSON.stringify(errorData, null, 2));
     throw new Error(
       errorData.message || "Failed to fetch shipping estimate"
     );
   }
 
-  return response.json();
+  const data = await response.json();
+  console.log("[BuyNowShipping] Raw response:", JSON.stringify(data, null, 2));
+  return data;
 };
 
 export const useBuyNowShippingEstimate = () => {

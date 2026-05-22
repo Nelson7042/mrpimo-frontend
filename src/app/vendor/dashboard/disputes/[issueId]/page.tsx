@@ -1,24 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { disputeService } from "@/services/disputeService";
-import { fetchWithAuth } from "@/utils/fetchWithAuth";
-import { API_BASE_URL } from "@/utils/config";
 import {
   Loader2,
   ArrowLeft,
-  Send,
   Image as ImageIcon,
-  MessageSquare,
   FileText,
   AlertTriangle,
   CheckCircle,
-  Clock,
 } from "lucide-react";
 import { format } from "date-fns";
+import DisputeChatPaginated from "@/components/disputes/DisputeChatPaginated";
+import EscalationIndicator from "@/components/disputes/EscalationIndicator";
+import VendorResponseEditor from "@/components/disputes/VendorResponseEditor";
+import DisputeTemplateSelector from "@/components/disputes/DisputeTemplateSelector";
+import { useUserStore } from "@/stores/useUserStore";
 
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
@@ -48,163 +48,7 @@ const getPriorityBadgeClass = (priority: string) => {
   }
 };
 
-/* ─── DisputeChat Component (embedded) ─── */
-function DisputeChat({ issueId, chatStatus }: { issueId: string; chatStatus?: string }) {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [isLoadingChat, setIsLoadingChat] = useState(true);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchMessages = async () => {
-    try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/dispute-chat/${issueId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data?.data?.messages || []);
-      }
-    } catch {
-      setChatError("Failed to load chat messages");
-    } finally {
-      setIsLoadingChat(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMessages();
-  }, [issueId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || isSending) return;
-
-    setIsSending(true);
-    try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/dispute-chat/${issueId}/messages`, {
-        method: "POST",
-        body: JSON.stringify({ text: newMessage.trim() }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setMessages((prev) => [...prev, data.data]);
-        setNewMessage("");
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const isClosed = chatStatus === "closed";
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-4 border-b border-gray-200 flex items-center gap-2">
-        <MessageSquare className="w-5 h-5 text-blue-600" />
-        <h3 className="font-semibold text-sm text-gray-900">Dispute Chat</h3>
-        {isClosed && (
-          <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100 ml-auto">
-            <span className="text-xs">Chat Closed</span>
-          </Badge>
-        )}
-      </div>
-
-      {/* Messages */}
-      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50">
-        {isLoadingChat ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-          </div>
-        ) : chatError ? (
-          <p className="text-sm text-red-500 text-center">{chatError}</p>
-        ) : messages.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center">No messages yet</p>
-        ) : (
-          messages.map((msg: any) => {
-            const senderName =
-              msg.senderId?.profile?.firstName ||
-              msg.senderId?.email ||
-              "Unknown";
-            return (
-              <div key={msg._id} className="space-y-0.5">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-semibold text-gray-700">
-                    {senderName}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {msg.createdAt
-                      ? format(new Date(msg.createdAt), "MMM dd, h:mm a")
-                      : ""}
-                  </span>
-                </div>
-                {msg.text && (
-                  <p className="text-sm text-gray-800 bg-white rounded-lg px-3 py-2 inline-block border border-gray-100">
-                    {msg.text}
-                  </p>
-                )}
-                {msg.attachment?.url && (
-                  <div className="mt-1">
-                    {msg.messageType === "image" ? (
-                      <img
-                        src={msg.attachment.url}
-                        alt="attachment"
-                        className="max-w-[200px] rounded-lg border border-gray-200"
-                      />
-                    ) : (
-                      <a
-                        href={msg.attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 underline"
-                      >
-                        {msg.attachment.fileName || "View attachment"}
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Send Message */}
-      {!isClosed && (
-        <form
-          onSubmit={handleSendMessage}
-          className="p-3 border-t border-gray-200 flex gap-2"
-        >
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!newMessage.trim() || isSending}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isSending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
-        </form>
-      )}
-    </div>
-  );
-}
 
 /* ─── Evidence Gallery Component ─── */
 function EvidenceGallery({ urls, title }: { urls: string[]; title: string }) {
@@ -257,18 +101,15 @@ export default function VendorDisputeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const issueId = params.issueId as string;
+  const { user } = useUserStore();
 
   const [dispute, setDispute] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Vendor response form state
-  const [responseText, setResponseText] = useState("");
-  const [evidenceUrl, setEvidenceUrl] = useState("");
-  const [evidenceUrls, setEvidenceUrls] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
-  const [submitSuccess, setSubmitSuccess] = useState(false);
+  // Template content state for wiring DisputeTemplateSelector to VendorResponseEditor
+  const [templateContent, setTemplateContent] = useState<string | undefined>(undefined);
+  const [currentResponseText, setCurrentResponseText] = useState("");
 
   useEffect(() => {
     const fetchDetail = async () => {
@@ -288,39 +129,9 @@ export default function VendorDisputeDetailPage() {
   const isEditable =
     dispute?.status === "open" || dispute?.status === "in-progress";
 
-  const handleAddEvidenceUrl = () => {
-    const trimmed = evidenceUrl.trim();
-    if (trimmed && !evidenceUrls.includes(trimmed)) {
-      setEvidenceUrls((prev) => [...prev, trimmed]);
-      setEvidenceUrl("");
-    }
-  };
-
-  const handleRemoveEvidenceUrl = (url: string) => {
-    setEvidenceUrls((prev) => prev.filter((u) => u !== url));
-  };
-
-  const handleSubmitResponse = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!responseText.trim() || isSubmitting) return;
-
-    setIsSubmitting(true);
-    setSubmitError(null);
-    setSubmitSuccess(false);
-    try {
-      await disputeService.submitVendorResponse(issueId, {
-        responseText: responseText.trim(),
-        evidenceUrls: evidenceUrls.length > 0 ? evidenceUrls : undefined,
-      });
-      setSubmitSuccess(true);
-      // Refresh dispute data to reflect status change
-      const data: any = await disputeService.getDisputeDetail(issueId);
-      setDispute(data?.data || data?.issue || data);
-    } catch (err: any) {
-      setSubmitError(err.message || "Failed to submit response");
-    } finally {
-      setIsSubmitting(false);
-    }
+  const handleTemplateSelect = (content: string) => {
+    setTemplateContent(content);
+    setCurrentResponseText(content);
   };
 
   if (isLoading) {
@@ -369,6 +180,9 @@ export default function VendorDisputeDetailPage() {
               : "—"}
           </p>
         </div>
+
+        {/* Escalation Banner */}
+        <EscalationIndicator escalatedAt={dispute.escalatedAt} variant="banner" />
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Left Column — Info + Evidence + Response Form */}
@@ -481,7 +295,7 @@ export default function VendorDisputeDetailPage() {
               )}
             </div>
 
-            {/* Vendor Response Form / Read-only Response */}
+            {/* Vendor Response Editor with Template Selector */}
             <div className="bg-white rounded-xl border border-gray-200 p-5">
               <div className="flex items-center gap-2 mb-4">
                 <FileText className="w-5 h-5 text-blue-600" />
@@ -495,148 +309,36 @@ export default function VendorDisputeDetailPage() {
                 )}
               </div>
 
-              {/* Show existing response if already submitted */}
-              {dispute.vendorResponse && (
-                <div className="mb-4 p-4 bg-gray-50 rounded-lg border border-gray-100">
-                  <p className="text-sm text-gray-700">{dispute.vendorResponse}</p>
-                  {dispute.vendorRespondedAt && (
-                    <p className="text-xs text-gray-400 mt-2">
-                      Responded on{" "}
-                      {format(
-                        new Date(dispute.vendorRespondedAt),
-                        "MMM dd, yyyy 'at' h:mm a"
-                      )}
-                    </p>
-                  )}
-                  {/* Vendor Evidence */}
-                  {dispute.vendorEvidenceUrls &&
-                    dispute.vendorEvidenceUrls.length > 0 && (
-                      <div className="mt-3">
-                        <EvidenceGallery
-                          urls={dispute.vendorEvidenceUrls}
-                          title="Your Evidence"
-                        />
-                      </div>
-                    )}
+              {/* Template Selector — shown when editable and composing */}
+              {isEditable && (
+                <div className="mb-4">
+                  <DisputeTemplateSelector
+                    onSelectTemplate={handleTemplateSelect}
+                    currentContent={currentResponseText}
+                  />
                 </div>
               )}
 
-              {/* Editable form when dispute is open/in-progress and no response yet */}
-              {isEditable && !dispute.vendorResponse && !submitSuccess && (
-                <form onSubmit={handleSubmitResponse} className="space-y-4">
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Response <span className="text-red-500">*</span>
-                    </label>
-                    <textarea
-                      value={responseText}
-                      onChange={(e) => setResponseText(e.target.value)}
-                      placeholder="Provide your explanation or response to this dispute..."
-                      rows={4}
-                      maxLength={2000}
-                      className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent resize-none"
-                    />
-                    <p className="text-xs text-gray-400 mt-1 text-right">
-                      {responseText.length}/2000
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="block text-xs text-gray-600 mb-1">
-                      Evidence URL (optional)
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        value={evidenceUrl}
-                        onChange={(e) => setEvidenceUrl(e.target.value)}
-                        placeholder="https://example.com/evidence.jpg"
-                        className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-                      />
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddEvidenceUrl}
-                        disabled={!evidenceUrl.trim()}
-                      >
-                        Add
-                      </Button>
-                    </div>
-                    {evidenceUrls.length > 0 && (
-                      <div className="mt-2 space-y-1">
-                        {evidenceUrls.map((url, idx) => (
-                          <div
-                            key={idx}
-                            className="flex items-center gap-2 text-xs bg-gray-50 rounded px-2 py-1"
-                          >
-                            <span className="truncate flex-1 text-gray-600">
-                              {url}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveEvidenceUrl(url)}
-                              className="text-red-500 hover:text-red-700 text-xs font-medium"
-                            >
-                              Remove
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-
-                  {submitError && (
-                    <p className="text-sm text-red-600">{submitError}</p>
-                  )}
-
-                  <Button
-                    type="submit"
-                    disabled={!responseText.trim() || isSubmitting}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    {isSubmitting ? (
-                      <>
-                        <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                        Submitting...
-                      </>
-                    ) : (
-                      "Submit Response"
-                    )}
-                  </Button>
-                </form>
-              )}
-
-              {/* Success message after submission */}
-              {submitSuccess && (
-                <div className="p-4 bg-green-50 rounded-lg border border-green-200 text-center">
-                  <CheckCircle className="w-6 h-6 text-green-600 mx-auto mb-2" />
-                  <p className="text-sm text-green-800 font-medium">
-                    Response submitted successfully
-                  </p>
-                </div>
-              )}
-
-              {/* No response yet and not editable */}
-              {!isEditable && !dispute.vendorResponse && (
-                <div className="text-center py-6">
-                  <Clock className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <p className="text-sm text-gray-400">
-                    No response was submitted for this dispute
-                  </p>
-                </div>
-              )}
+              {/* Vendor Response Editor */}
+              <VendorResponseEditor
+                issueId={issueId}
+                initialResponse={dispute.vendorResponse || ""}
+                initialEvidenceUrls={dispute.vendorEvidenceUrls || []}
+                vendorRespondedAt={dispute.vendorRespondedAt}
+                lastEditedAt={dispute.vendorResponseLastEditedAt}
+                isEditable={isEditable}
+                templateContent={templateContent}
+                onResponseTextChange={(text) => setCurrentResponseText(text)}
+              />
             </div>
           </div>
 
           {/* Right Column — Chat */}
           <div className="lg:col-span-1">
             <div className="lg:sticky lg:top-4">
-              <DisputeChat
+              <DisputeChatPaginated
                 issueId={issueId}
-                chatStatus={
-                  dispute.status === "closed" ? "closed" : "active"
-                }
+                currentUserId={user?._id || ""}
               />
             </div>
           </div>

@@ -9,7 +9,7 @@ export default function Cta() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-7 lg:gap-12 items-center">
           {/* Left Content */}
           <div className="text-white py-8 md:py-10 lg:py-10">
-            <h2 className="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-bold leading-tight mb-4 md:mb-6">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl xl:text-4xl font-bold leading-tight mb-4 md:mb-6">
               Enjoy Maximum Shopping Experience Today
             </h2>
             <p className="text-sm md:text-base lg:text-base text-blue-100 leading-relaxed mb-4 md:mb-8">
@@ -18,7 +18,7 @@ export default function Cta() {
             <div className="md:pt-2">
               <Button
                 size="lg"
-                className="bg-white text-black  hover:bg-gray-50 text-lg px-8 md:px-14 py-2 md:py-3 rounded-md font-normal transition-all duration-300 hover:scale-105"
+                className="bg-white text-black  hover:bg-gray-50 text-sm px-8 md:px-14 py-2 md:py-3 rounded-md font-normal transition-all duration-300 hover:scale-105"
               >
                 Shop Now
               </Button>

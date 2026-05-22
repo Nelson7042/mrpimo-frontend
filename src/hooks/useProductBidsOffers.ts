@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchWithAuth } from '@/utils/fetchWithAuth';
+import { fetchPublic } from '@/utils/fetchPublic';
 import { API_BASE_URL } from '@/utils/config';
 
 interface Bid {
@@ -44,7 +45,7 @@ interface Offer {
 
 const bidsApi = {
   getBidsForProduct: async (productId: string) => {
-    const response = await fetchWithAuth(`${API_BASE_URL}/products/${productId}/bids`);
+    const response = await fetchPublic(`${API_BASE_URL}/products/${productId}/bids`);
     if (!response.ok) throw new Error('Failed to fetch bids');
     const data = await response.json();
     // Return full response so auctionInfo and priceInfo are available

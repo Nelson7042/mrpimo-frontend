@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { Breadcrumbs, BreadcrumbItem } from "@/components/BreadCrumbs";
 import Pagination from "@/components/Pagination";
 import { disputeService } from "@/services/disputeService";
-import { Loader2, AlertTriangle } from "lucide-react";
+import { Loader2, AlertTriangle, Plus } from "lucide-react";
 import { format } from "date-fns";
+import CreateDisputeModal from "@/components/disputes/CreateDisputeModal";
 
 const STATUS_TABS = ["all", "open", "in-progress", "resolved", "closed"] as const;
 
@@ -59,6 +60,7 @@ export default function BuyerDisputesPage() {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [total, setTotal] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   const breadcrumbs: BreadcrumbItem[] = [
     { label: "Dashboard", href: "/home/user" },
@@ -128,6 +130,14 @@ export default function BuyerDisputesPage() {
             <p className="text-sm text-gray-500 mt-1">Track and manage your dispute cases</p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setIsCreateModalOpen(true)}
+              size="sm"
+              className="gap-1"
+            >
+              <Plus className="w-4 h-4" />
+              Create Dispute
+            </Button>
             <label className="text-xs text-gray-500">Show:</label>
             <select
               value={itemsPerPage}
@@ -289,6 +299,13 @@ export default function BuyerDisputesPage() {
           </div>
         )}
       </div>
+
+      {/* Create Dispute Modal */}
+      <CreateDisputeModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onSuccess={fetchDisputes}
+      />
     </div>
   );
 }

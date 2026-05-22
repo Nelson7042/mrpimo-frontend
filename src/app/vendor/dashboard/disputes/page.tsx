@@ -8,6 +8,8 @@ import Pagination from "@/components/Pagination";
 import { disputeService } from "@/services/disputeService";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { format } from "date-fns";
+import EscalationIndicator from "@/components/disputes/EscalationIndicator";
+import DisputeMetricsPanel from "@/components/disputes/DisputeMetricsPanel";
 
 const STATUS_TABS = ["all", "open", "in-progress", "resolved", "closed"] as const;
 const PRIORITY_OPTIONS = ["all", "low", "medium", "high"] as const;
@@ -103,6 +105,9 @@ export default function VendorDisputesPage() {
   return (
     <div className="bg-[#f6f6f6] rounded-lg shadow-md p-2 md:p-4 lg:p-6 font-roboto min-h-screen">
       <div className="px-2 lg:px-5">
+        {/* Dispute Metrics Summary - Requirement 5.1 */}
+        <DisputeMetricsPanel />
+
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-base md:text-lg font-semibold">Disputes</h1>
@@ -206,9 +211,12 @@ export default function VendorDisputesPage() {
                           {dispute.createdAt ? format(new Date(dispute.createdAt), "MMM dd, yyyy") : "—"}
                         </p>
                       </div>
-                      <Badge className={getStatusBadgeClass(dispute.status)}>
-                        <span className="capitalize text-xs">{dispute.status}</span>
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <EscalationIndicator escalatedAt={dispute.escalatedAt} variant="badge" />
+                        <Badge className={getStatusBadgeClass(dispute.status)}>
+                          <span className="capitalize text-xs">{dispute.status}</span>
+                        </Badge>
+                      </div>
                     </div>
                     <div className="flex justify-between items-center text-xs text-gray-600">
                       <span>Order: #{dispute.orderId?._id?.slice(-8) || dispute.orderId?.toString().slice(-8) || "—"}</span>
@@ -234,9 +242,12 @@ export default function VendorDisputesPage() {
                       <p className="text-xs text-gray-600 truncate">{dispute.reason}</p>
                     </div>
                     <div className="col-span-2">
-                      <Badge className={getStatusBadgeClass(dispute.status)}>
-                        <span className="capitalize text-xs">{dispute.status}</span>
-                      </Badge>
+                      <div className="flex items-center gap-1.5">
+                        <Badge className={getStatusBadgeClass(dispute.status)}>
+                          <span className="capitalize text-xs">{dispute.status}</span>
+                        </Badge>
+                        <EscalationIndicator escalatedAt={dispute.escalatedAt} variant="badge" />
+                      </div>
                     </div>
                     <div className="col-span-2">
                       <Badge className={getPriorityBadgeClass(dispute.priority)}>

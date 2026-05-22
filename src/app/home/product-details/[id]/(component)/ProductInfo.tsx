@@ -235,6 +235,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   const auction = productData?.inventory?.listing?.auction;
   const handleMessageSeller = async () => {
     if (!user) {
+      sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
       openModal();
       return;
     }
@@ -350,6 +351,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
 
   const handleBuyNow = async () => {
     if (!user) {
+      sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
       openModal();
       return;
     }
@@ -450,11 +452,8 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
   };
 
   const handlePlaceBidClicked = async () => {
-    if (!user || !user._id) {
-      openModal();
-      return;
-    }
-    setIsBidModalOpen(true);
+    // Navigate to auction room directly — guests can view, auth required only to bid
+    router.push(`/home/auction/${productData?._id}`);
   };
 
   const handleSubmitBid = async (bidAmount: number) => {
@@ -560,7 +559,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
     ));
   };
 
-  if (totalQuantity === 0) {
+  if (totalQuantity === 0 && saleType !== "auction") {
     return (
       <div className="p-3 md:p-5 lg:p-6 md:border rounded-lg border-[#ADADAD4D]">
         <div className="flex items-center justify-center min-h-[400px]">
@@ -849,22 +848,27 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                       (bid: any) => bid.isWinning
                     );
                     // auctionInfo.startBidPrice is already in USD from backend
+                    // Fallback chain: winningBid → auctionInfoApi.startBidPrice → productData startBidPrice → 0
                     const highestBidUSD = winningBid
                       ? winningBid.currentAmount
-                      : auctionInfoApi?.startBidPrice || 0;
+                      : auctionInfoApi?.startBidPrice || productData?.inventory?.listing?.auction?.startBidPrice || 0;
                     const isAuctionStarted = auction?.isStarted;
 
                     // For local currency equivalent:
                     // - If there's a winning bid (USD), use USD→user rate from priceInfo
                     // - If no bids, use exact vendor start price × vendorToUserRate
-                    const usdToUserRate = (bids as any)?.priceInfo?.exchangeRate || 1;
+                    // - If bids data is unavailable, use productData.priceInfo.exchangeRate as fallback
+                    const bidsDataAvailable = !!(bids as any)?.priceInfo;
+                    const usdToUserRate = (bids as any)?.priceInfo?.exchangeRate || (productData as any)?.priceInfo?.exchangeRate || 1;
                     const v2uRate = auctionInfoApi?.vendorToUserRate || 1;
                     const vendorStartBid = auctionInfoApi?.vendorStartBidPrice || 0;
                     const localEquivalent = winningBid
                       ? highestBidUSD * usdToUserRate
-                      : vendorStartBid * v2uRate;
-                    const userCurrencyCode = (bids as any)?.priceInfo?.userCurrency || "USD";
-                    const currSymbol = (bids as any)?.priceInfo?.displayCurrency || "$";
+                      : bidsDataAvailable
+                        ? vendorStartBid * v2uRate
+                        : highestBidUSD * usdToUserRate;
+                    const userCurrencyCode = (bids as any)?.priceInfo?.userCurrency || (productData as any)?.priceInfo?.displayCurrency || "USD";
+                    const currSymbol = (bids as any)?.priceInfo?.displayCurrency || (productData as any)?.priceInfo?.currencySymbol || "$";
                     const isNonUSD = userCurrencyCode.toUpperCase() !== "USD";
 
                     return (
@@ -951,6 +955,7 @@ const ProductInfo: React.FC<ProductInfoProps> = ({ productData }) => {
                     <div
                       onClick={() => {
                         if (!user) {
+                          sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
                           openModal();
                           return;
                         }

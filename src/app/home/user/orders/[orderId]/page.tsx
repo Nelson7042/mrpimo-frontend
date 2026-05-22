@@ -26,6 +26,7 @@ import {
   CreditCard,
   Star,
   AlertCircle,
+  ArrowLeft,
   Upload,
   X,
   Clock,
@@ -278,23 +279,23 @@ export default function OrderDetailsPage() {
 
         <div className="grid lg:grid-cols-3 gap-4 md:gap-6">
           {/* Order Details */}
-          <div className="lg:col-span-2 space-y-3 md:space-y-6">
+          <div className="lg:col-span-2 space-y-3 md:space-y-4">
             {/* Order Header */}
-            <Card className="shadow-lg border-t-4 border-t-blue-500">
-              <CardHeader>
+            <Card className="shadow-sm border-t-4 border-t-blue-500">
+              <CardHeader className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-base md:text-lg">
+                    <CardTitle className="font-roboto text-sm md:text-base font-semibold">
                       Order #{order._id?.slice(-8) || "N/A"}
                     </CardTitle>
-                    <p className="text-gray-600 mt-1 text-sm md:text-base">
+                    <p className="font-roboto text-gray-600 mt-1 text-xs">
                       Placed on{" "}
                       {order.createdAt
                         ? format(new Date(order.createdAt), "MMMM dd, yyyy")
                         : "N/A"}
                     </p>
                   </div>
-                  <Badge className={getStatusColor(order.status)}>
+                  <Badge className={`${getStatusColor(order.status)} text-xs`}>
                     <span className="flex items-center gap-1">
                       {getStatusIcon(order.status)}
                       {order.status}
@@ -305,17 +306,17 @@ export default function OrderDetailsPage() {
             </Card>
 
             {/* Order Items with Shipping */}
-            <Card className="shadow-lg">
-              <CardHeader>
-                <CardTitle>Order Items</CardTitle>
+            <Card className="shadow-sm">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="font-roboto text-sm font-semibold">Order Items</CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="p-4 pt-0">
                 {order.items?.[0]?.deliveryAddress && (
-                  <div className="mb-4 p-3 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg flex items-start gap-2 border border-blue-100">
-                    <MapPin className="w-4 h-4 text-gray-500 mt-0.5" />
-                    <div className="text-sm">
-                      <p className="font-medium">Delivery Address</p>
-                      <p className="text-gray-600">
+                  <div className="mb-3 p-2.5 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg flex items-start gap-2 border border-blue-100">
+                    <MapPin className="w-3.5 h-3.5 text-gray-500 mt-0.5" />
+                    <div>
+                      <p className="font-roboto font-medium text-xs">Delivery Address</p>
+                      <p className="font-roboto text-xs text-gray-600">
                         {order.items[0].deliveryAddress.street}, {order.items[0].deliveryAddress.city}, {order.items[0].deliveryAddress.state}, {order.items[0].deliveryAddress.country} {order.items[0].deliveryAddress.postalCode}
                       </p>
                     </div>
@@ -325,13 +326,13 @@ export default function OrderDetailsPage() {
                 <div className="hidden md:block overflow-x-auto">
                   <table className="w-full">
                     <thead className="border-b bg-gradient-to-r from-gray-50 to-blue-50">
-                      <tr className="text-left text-sm text-gray-700 font-semibold">
+                      <tr className="text-left text-xs text-gray-700">
                         <th className="p-2 pl-4 font-medium">Product</th>
-                        <th className=" p-2 font-medium text-center">Price</th>
-                        <th className=" p-2 font-medium text-center">Qty</th>
-                        <th className=" p-2 font-medium text-center">Total</th>
-                        <th className=" p-2 font-medium">Shipping</th>
-                        {order.status === "delivered" && <th className=" pr-4 p-2 font-medium text-center">Action</th>}
+                        <th className="p-2 font-medium text-center">Price</th>
+                        <th className="p-2 font-medium text-center">Qty</th>
+                        <th className="p-2 font-medium text-center">Total</th>
+                        <th className="p-2 font-medium">Shipping</th>
+                        {order.status === "delivered" && <th className="pr-4 p-2 font-medium text-center">Action</th>}
                       </tr>
                     </thead>
                     <tbody>
@@ -344,50 +345,50 @@ export default function OrderDetailsPage() {
                         );
                         return (
                           <tr key={index} className="border-b last:border-0">
-                            <td className="py-4 pl-4">
+                            <td className="py-3 pl-4">
                               <div className="flex items-center gap-3">
                                 <Link href={`/home/product-details/${item?.productId._id}`}>
                                   <Image
                                     src={item.productId?.images?.[0] || "/placeholder.svg"}
                                     alt={item.productId?.name || "Product"}
-                                    width={60}
-                                    height={60}
+                                    width={50}
+                                    height={50}
                                     className="rounded-lg object-cover"
                                   />
                                 </Link>
                                 <div>
-                                  <p className="font-medium">{item.productId?.name}</p>
+                                  <p className="font-roboto font-medium text-xs">{item.productId?.name}</p>
                                 </div>
                               </div>
                             </td>
-                            <td className="py-4 text-center">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2) || "0.00"}</td>
-                            <td className="py-4 text-center">{item.quantity}</td>
-                            <td className="py-4 font-medium text-center">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{((item.metadata?.amountPaidByUser || item.price) * item.quantity)?.toFixed(2) || "0.00"}</td>
-                            <td className="py-4 px-2">
+                            <td className="py-3 text-center font-roboto text-xs">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2) || "0.00"}</td>
+                            <td className="py-3 text-center font-roboto text-xs">{item.quantity}</td>
+                            <td className="py-3 font-roboto font-medium text-xs text-center">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{((item.metadata?.amountPaidByUser || item.price) * item.quantity)?.toFixed(2) || "0.00"}</td>
+                            <td className="py-3 px-2">
                               {shipment?.shipping ? (
-                                <div className="text-sm space-y-1">
-                                  <p className="flex items-center gap-1">
+                                <div className="space-y-0.5">
+                                  <p className="font-roboto text-xs flex items-center gap-1">
                                     <Truck className="w-3 h-3" />
                                     <span className="text-blue-600">{shipment.shipping.trackingNumber}</span>
                                   </p>
-                                  <p className="text-gray-600 capitalize">{shipment.shipping.carrier}</p>
-                                  <p className="text-gray-500">
+                                  <p className="font-roboto text-xs text-gray-600 capitalize">{shipment.shipping.carrier}</p>
+                                  <p className="font-roboto text-xs text-gray-500">
                                     {shipment.shipping.estimatedDelivery
                                       ? format(new Date(shipment.shipping.estimatedDelivery), "MMM dd")
                                       : "TBD"}
                                   </p>
                                 </div>
                               ) : (
-                                <span className="text-gray-400 text-sm">Pending</span>
+                                <span className="font-roboto text-gray-400 text-xs">Pending</span>
                               )}
                             </td>
                             {order.status === "delivered" && (
-                              <td className="py-4 pr-4 text-center">
+                              <td className="py-3 pr-4 text-center">
                                 <Button
                                   size="sm"
                                   variant="outline"
                                   onClick={() => handleOpenReviewModal(item.productId)}
-                                  className="flex items-center gap-1 mx-auto"
+                                  className="font-roboto flex items-center gap-1 mx-auto text-xs h-7"
                                 >
                                   <Star className="w-3 h-3" />
                                   Review
@@ -401,7 +402,7 @@ export default function OrderDetailsPage() {
                   </table>
                 </div>
 
-                <div className="md:hidden space-y-4">
+                <div className="md:hidden space-y-3">
                   {order.items?.map((item: any, index: number) => {
                     const shipment = order.shipments?.find((s: any) =>
                       s.items?.some((si: any) => {
@@ -410,25 +411,25 @@ export default function OrderDetailsPage() {
                       })
                     );
                     return (
-                      <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div key={index} className="border rounded-lg p-3 space-y-2">
                         <div className="flex gap-3">
                           <Link href={`/home/product-details/${item?.productId._id}`}>
                             <Image
                               src={item.productId?.images?.[0] || "/placeholder.svg"}
                               alt={item.productId?.name || "Product"}
-                              width={80}
-                              height={80}
+                              width={60}
+                              height={60}
                               className="rounded-lg object-cover"
                             />
                           </Link>
                           <div className="flex-1">
-                            <p className="font-medium">{item.productId?.name}</p>
-                            <p className="text-sm text-gray-600 mt-1">Qty: {item.quantity}</p>
-                            <p className="text-blue-600 font-medium mt-1">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2)}</p>
+                            <p className="font-roboto font-medium text-xs">{item.productId?.name}</p>
+                            <p className="font-roboto text-xs text-gray-600 mt-1">Qty: {item.quantity}</p>
+                            <p className="font-roboto text-blue-600 font-medium text-xs mt-1">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{(item.metadata?.amountPaidByUser || item.price)?.toFixed(2)}</p>
                           </div>
                         </div>
                         <Separator />
-                        <div className="space-y-2 text-sm">
+                        <div className="space-y-1.5 font-roboto text-xs">
                           <div className="flex justify-between">
                             <span className="text-gray-600">Total:</span>
                             <span className="font-medium">{getCurrencySymbol(item.metadata?.userCurrency || 'USD')}{((item.metadata?.amountPaidByUser || item.price) * item.quantity)?.toFixed(2)}</span>
@@ -459,7 +460,7 @@ export default function OrderDetailsPage() {
                             size="sm"
                             variant="outline"
                             onClick={() => handleOpenReviewModal(item.productId)}
-                            className="w-full flex items-center justify-center gap-1"
+                            className="w-full flex items-center justify-center gap-1 font-roboto text-xs h-7"
                           >
                             <Star className="w-3 h-3" />
                             Review
@@ -473,101 +474,84 @@ export default function OrderDetailsPage() {
             </Card>
 
             {/* Order Actions */}
-            <Card className="shadow-lg">
-              <CardContent className="pt-6">
+            <Card className="shadow-sm">
+              <CardContent className="p-4">
                 <div className="flex flex-col md:flex-row gap-3">
-                  {(order.status === "pending" ||
-                    order.status === "pending_payment" ||
-                    order.status === "processing") && (
+                  {order.status === "pending_payment" && (
                     <Button
                       variant="destructive"
                       onClick={handleCancelOrder}
                       disabled={cancelOrderMutation.isPending}
+                      className="flex items-center gap-2"
                     >
                       {cancelOrderMutation.isPending ? (
                         <>
-                          <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                          <Loader2 className="w-4 h-4 animate-spin" />
                           Cancelling...
                         </>
                       ) : (
-                        "Cancel Order"
+                        <>
+                          <XCircle className="w-4 h-4" />
+                          Cancel Order
+                        </>
                       )}
                     </Button>
                   )}
 
-                  {order.status === "delivered" && (
-                    <Button
-                      variant="outline"
-                      onClick={() => setShowRefundForm(!showRefundForm)}
-                    >
-                      Request Refund
-                    </Button>
+                  {order.shipments?.some((s: any) => s.shipping?.status?.toLowerCase() === 'delivered') && (
+                    <>
+                      {/* Show 48h dispute window countdown */}
+                      {(() => {
+                        const deliveryDates = order.shipments
+                          ?.filter((s: any) => s.shipping?.actualDelivery || s.shipping?.status?.toLowerCase() === 'delivered')
+                          .map((s: any) => s.shipping?.actualDelivery ? new Date(s.shipping.actualDelivery).getTime() : Date.now());
+                        const latestDelivery = deliveryDates?.length ? Math.max(...deliveryDates) : null;
+                        if (!latestDelivery) return null;
+                        const disputeDeadline = latestDelivery + (48 * 60 * 60 * 1000);
+                        const remaining = disputeDeadline - Date.now();
+                        if (remaining <= 0) return null;
+                        const hours = Math.floor(remaining / (1000 * 60 * 60));
+                        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+                        return (
+                          <div className="flex items-center gap-2 px-3 py-2 bg-orange-50 border border-orange-200 rounded-lg text-xs text-orange-700">
+                            <Clock className="w-4 h-4" />
+                            <span>Dispute window: <strong>{hours}h {minutes}m</strong> remaining</span>
+                          </div>
+                        );
+                      })()}
+                      <Button
+                        variant="outline"
+                        onClick={() => setShowIssueModal(true)}
+                        className="flex items-center gap-2"
+                      >
+                        <AlertCircle className="w-4 h-4" />
+                        Report Issue
+                      </Button>
+                    </>
                   )}
 
-                  <Button
-                    variant="outline"
-                    onClick={() => setShowIssueModal(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <AlertCircle className="w-4 h-4" />
-                    Report Issue
-                  </Button>
-
                   <Button variant="outline" asChild>
-                    <Link href={`/home/user/orders`}>Back to Orders</Link>
+                    <Link href={`/home/user/orders`} className="flex items-center gap-2 bg-green-100 text-green-600">
+                      <Package className="w-4 h-4" />
+                      Back to Orders
+                    </Link>
                   </Button>
                 </div>
 
-                {/* Refund Form */}
-                {showRefundForm && (
-                  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-                    <h4 className="font-medium mb-2">Request Refund</h4>
-                    <textarea
-                      className="w-full p-3 border rounded-lg resize-none"
-                      rows={3}
-                      placeholder="Please provide a reason for the refund..."
-                      value={refundReason}
-                      onChange={(e) => setRefundReason(e.target.value)}
-                    />
-                    <div className="flex gap-2 mt-3">
-                      <Button
-                        size="sm"
-                        onClick={handleRequestRefund}
-                        disabled={requestRefundMutation.isPending}
-                      >
-                        {requestRefundMutation.isPending ? (
-                          <>
-                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                            Submitting...
-                          </>
-                        ) : (
-                          "Submit Request"
-                        )}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setShowRefundForm(false)}
-                      >
-                        Cancel
-                      </Button>
-                    </div>
-                  </div>
-                )}
               </CardContent>
             </Card>
           </div>
 
           {/* Order Summary */}
           <div className="lg:col-span-1">
-            <Card className="shadow-lg bg-gradient-to-br from-white to-blue-50">
-              <CardHeader>
-                <CardTitle>Order Summary</CardTitle>
+            <Card className="shadow-sm bg-gradient-to-br from-white to-blue-50">
+              <CardHeader className="p-4 pb-2">
+                <CardTitle className="font-roboto text-sm font-semibold">Order Summary</CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
+              <CardContent className="p-4 pt-0">
+                <div className="space-y-2 font-roboto text-xs">
                   <div className="flex justify-between">
-                    <span>Subtotal:</span>
+                    <span className="text-gray-600">Subtotal:</span>
                     <span>
                       {getCurrencySymbol(order.items?.[0]?.metadata?.userCurrency || 'USD')}
                       {order.items
@@ -581,7 +565,7 @@ export default function OrderDetailsPage() {
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Total:</span>
+                    <span className="text-gray-600">Total:</span>
                     <span className="font-bold">
                       {getCurrencySymbol(order.items?.[0]?.metadata?.userCurrency || 'USD')}
                       {(
@@ -597,17 +581,17 @@ export default function OrderDetailsPage() {
                   </div>
                 </div>
 
-                <Separator className="my-4 bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
+                <Separator className="my-3 bg-gradient-to-r from-transparent via-blue-200 to-transparent" />
 
                 {/* Payment Information */}
                 <div>
-                  <h4 className="font-medium mb-3 flex items-center gap-2 text-blue-700">
-                    <CreditCard className="w-4 h-4 text-blue-600" />
+                  <h4 className="font-roboto font-medium text-xs mb-2 flex items-center gap-2 text-blue-700">
+                    <CreditCard className="w-3.5 h-3.5 text-blue-600" />
                     Payment Information
                   </h4>
-                  <div className="space-y-2 text-sm">
+                  <div className="space-y-1.5 font-roboto text-xs">
                     <div className="flex justify-between">
-                      <span>Payment ID:</span>
+                      <span className="text-gray-600">Payment ID:</span>
                       <span className="text-blue-600">
                         #
                         {order.paymentId?._id?.slice(-8) ||
@@ -616,8 +600,8 @@ export default function OrderDetailsPage() {
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Status:</span>
-                      <Badge variant="secondary">Paid</Badge>
+                      <span className="text-gray-600">Status:</span>
+                      <Badge variant="secondary" className="text-[10px] h-5">Paid</Badge>
                     </div>
                   </div>
                 </div>

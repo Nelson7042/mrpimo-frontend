@@ -16,6 +16,8 @@ import { useVendorStore } from "@/stores/useVendorStore";
 import KybModal from "@/components/KybModal";
 import { useKybStore } from "@/stores/useKybStore";
 import { useUserStore } from "@/stores/useUserStore";
+import DeletionBanner from "@/components/settings/DeletionBanner";
+import { useUserProfile } from "@/hooks/useUser";
 
 export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
@@ -28,6 +30,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const { vendor } = useVendorStore();
   const { user } = useUserStore();
   const { setFormData, resetForm } = useKybStore();
+
+  // Fetch user profile to check for pending deletion
+  const { data: profileData } = useUserProfile();
 
   const handleSellClick = () => {
     if (!vendor) {
@@ -154,7 +159,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </Button>
           </div>
 
-          <main className="p-4 md:p-6">{children}</main>
+          <main className="p-4 md:p-6">
+            {/* Deletion Banner - visible across all pages when deletion is pending */}
+            {profileData?.user?.deletionScheduledAt && (
+              <div className="mb-4">
+                <DeletionBanner deletionScheduledAt={profileData.user.deletionScheduledAt} />
+              </div>
+            )}
+            {children}
+          </main>
         </div>
 
         <LogoutModal

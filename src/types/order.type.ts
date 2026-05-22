@@ -29,6 +29,8 @@ export interface IClientShipment {
     optionId?: string;
     quantity: number;
     price: number;
+    handoffStatus?: 'pending' | 'vendor_claimed' | 'confirmed' | 'rejected';
+    handoffClaimedAt?: string;
   }>;
   origin: {
     vendor?: {

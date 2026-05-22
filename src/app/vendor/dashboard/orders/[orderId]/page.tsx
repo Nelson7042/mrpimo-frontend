@@ -22,6 +22,8 @@ import { useUpdateOrderStatus } from "@/hooks/useVendor";
 import { useEffect } from "react";
 import { useVendorStore } from "@/stores/useVendorStore";
 import FulfillmentActionPanel from "@/components/vendor/FulfillmentActionPanel";
+import VoluntaryCancellation from "@/components/vendor/VoluntaryCancellation";
+import VendorHandoffClaim from "@/components/vendor/VendorHandoffClaim";
 import { IClientShipment } from "@/types/order.type";
 import { toast } from "react-hot-toast";
 
@@ -186,7 +188,7 @@ export default function OrderDetailsPage() {
   };
 
   return (
-    <div className="bg-white p-4 md:p-4 lg:p-10 h-full w-full">
+    <div className="bg-white p-4 md:p-4 lg:p-10 h-full w-full font-roboto">
       <button
         onClick={() => router.back()}
         className="flex items-center text-xs text-gray-600 hover:text-gray-800 mb-4 cursor-pointer hover:underline"
@@ -245,6 +247,7 @@ export default function OrderDetailsPage() {
           </div>
         </div>
         <div className="self-start lg:self-auto">
+          {order?.status?.toLowerCase() !== 'cancelled' && (
           <div className="bg-primary text-white rounded-md text-xs font-medium">
             <div className="flex items-center relative">
               <div className="p-2 border-r whitespace-nowrap">
@@ -284,8 +287,33 @@ export default function OrderDetailsPage() {
               )}
             </div>
           </div>
+          )}
         </div>
       </div>
+
+      {/* Cancellation Reason */}
+      {order?.status?.toLowerCase() === 'cancelled' && order?.cancellationReason && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-4">
+          <h3 className="text-sm font-medium text-red-900 mb-1 flex items-center gap-2">
+            <span className="w-1.5 h-1.5 bg-red-500 rounded-full"></span>
+            Order Cancelled
+          </h3>
+          <p className="text-xs text-red-700">
+            <span className="font-medium">Reason:</span> {order.cancellationReason}
+          </p>
+          {order?.cancelledAt && (
+            <p className="text-xs text-red-600 mt-1">
+              Cancelled on {new Date(order.cancelledAt).toLocaleDateString("en-US", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Auction Metadata Section */}
       {order?.metadata?.isBidCheckout && (
@@ -321,6 +349,30 @@ export default function OrderDetailsPage() {
         </div>
       )}
 
+      {/* Fulfillment Countdown & Voluntary Cancellation — hidden for cancelled orders */}
+      {order?.status?.toLowerCase() !== 'cancelled' && order?.shipments?.some((s: any) => {
+        const vendorId = s.vendorId?._id || s.vendorId?.toString() || s.vendorId;
+        return vendorId === vendor?._id && s.fulfillmentDeadline;
+      }) && (
+        <div className="mb-4">
+          {order.shipments
+            .filter((s: any) => {
+              const vendorId = s.vendorId?._id || s.vendorId?.toString() || s.vendorId;
+              return vendorId === vendor?._id && s.fulfillmentDeadline;
+            })
+            .map((shipment: any) => (
+              <VoluntaryCancellation
+                key={shipment._id}
+                orderId={orderId}
+                shipmentStatus={shipment.shipping?.status || "pending"}
+                fulfillmentDeadline={shipment.fulfillmentDeadline}
+                onCancellationComplete={() => refetch()}
+              />
+            ))}
+        </div>
+      )}
+
+      {order?.status?.toLowerCase() !== 'cancelled' && (
       <Card>
         <CardContent className="space-y-2">
           <div className="flex flex-col justify-between md:text-sm sm:flex-row bg-[#f1f4f9] rounded-t-[20px] px-4 py-2 border-b border-gray-300 text-xs">
@@ -404,6 +456,7 @@ export default function OrderDetailsPage() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       <section className="mb-4">
         <h2 className="text-lg font-semibold mt-4 mb-2 border-b border-gray-200 pb-2">
@@ -463,8 +516,8 @@ export default function OrderDetailsPage() {
         })}
       </section>
 
-      {/* Shipment Fulfillment Section */}
-      {order?.shipments && order.shipments.length > 0 && (
+      {/* Shipment Fulfillment Section — hidden for cancelled orders */}
+      {order?.status?.toLowerCase() !== 'cancelled' && order?.shipments && order.shipments.length > 0 && (
         <section className="mb-4">
           <h2 className="text-lg font-semibold mt-4 mb-2 border-b border-gray-200 pb-2">
             <Package className="h-5 w-5 text-gray-600 mr-1 inline-block" />{" "}
@@ -497,6 +550,18 @@ export default function OrderDetailsPage() {
                     shipment={shipment}
                     vendorId={vendor?._id || ""}
                     onFulfillmentComplete={() => refetch()}
+                  />
+                )}
+
+                {/* Show handoff claim button for preparing_shipment status */}
+                {shippingStatus === "preparing_shipment" && (
+                  <VendorHandoffClaim
+                    orderId={orderId}
+                    shipmentId={shipment._id || ""}
+                    shipmentStatus={shipment.shipping?.status || ""}
+                    fulfillmentMethod={fulfillmentMethod || "pickup"}
+                    handoffStatus={shipment.items?.[0]?.handoffStatus || "pending"}
+                    onHandoffComplete={() => refetch()}
                   />
                 )}
 
@@ -580,9 +645,9 @@ export default function OrderDetailsPage() {
       )}
 
       {/* Payment Details section */}
-      <section className="space-y-4 w-full">
-        <h2 className="text-lg font-semibold">
-          <CreditCard className="h-6 w-6 text-gray-600 mr-1 inline-block" />{" "}
+      <section className="space-y-3 w-full">
+        <h2 className="font-roboto text-sm font-semibold">
+          <CreditCard className="h-4 w-4 text-gray-600 mr-1 inline-block" />{" "}
           Payment Details
         </h2>
 
@@ -596,7 +661,7 @@ export default function OrderDetailsPage() {
               label: "Payment Status",
               value: (
                 <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${getPaymentStatusColor(
+                  className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${getPaymentStatusColor(
                     order?.paymentId?.status
                   )}`}
                 >
@@ -621,7 +686,7 @@ export default function OrderDetailsPage() {
               label: "Order Status",
               value: (
                 <span
-                  className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusColor(
+                  className={`px-2 py-0.5 text-[11px] font-medium rounded-full ${getStatusColor(
                     order?.status
                   )}`}
                 >
@@ -636,12 +701,12 @@ export default function OrderDetailsPage() {
           ].map((item, index) => (
             <div
               key={item.label}
-              className={`flex items-center justify-between px-4 py-3 ${
+              className={`flex items-center justify-between px-4 py-2.5 ${
                 index % 2 === 0 ? "bg-gray-50" : "bg-white"
-              } ${index < 4 ? "border-b border-gray-200" : ""} ${index === 0 ? "rounded-t-lg" : ""} ${index === 4 ? "rounded-b-lg" : ""}`}
+              } ${index < 5 ? "border-b border-gray-200" : ""} ${index === 0 ? "rounded-t-lg" : ""} ${index === 5 ? "rounded-b-lg" : ""}`}
             >
-              <p className="text-sm font-medium text-gray-600">{item.label}</p>
-              <p className="font-medium text-gray-900">{item.value}</p>
+              <p className="font-roboto text-xs text-gray-600">{item.label}</p>
+              <p className="font-roboto text-xs font-medium text-gray-900">{item.value}</p>
             </div>
           ))}
         </div>

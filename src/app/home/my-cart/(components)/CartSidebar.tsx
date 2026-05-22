@@ -149,6 +149,7 @@ const CartSidebar = (props: Props) => {
           <Button
             onClick={async () => {
               if (!props.user) {
+                sessionStorage.setItem('redirectAfterLogin', window.location.pathname);
                 props.openModal();
                 return;
               }

@@ -2,7 +2,7 @@
 
 import { useUserStore } from "@/stores/useUserStore";
 import { useVendorStore } from "@/stores/useVendorStore";
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import TwoFactorSetup from "./components/TwoFactorSetup";
 import DisableTwoFactor from "./components/DisableTwoFactor";
 import PushNotification from "./components/PushNotification";
@@ -13,6 +13,7 @@ import { toast } from "react-toastify";
 import { toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
 import KybModal from "@/components/KybModal";
 import { useKybStore } from "@/stores/useKybStore";
+import { ConfirmationDialog } from "@/components/ui/ConfirmationDialog";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL;
 
@@ -37,6 +38,39 @@ const page = () => {
     setCurrentStep(2);
     setShowKybModal(true);
   };
+
+  const handleBusinessUpgradeSuccess = useCallback(() => {
+    // Show success message confirming the upgrade (Requirement 13.4)
+    toast.success(
+      "Your account has been upgraded to a business account! Starting KYB verification...",
+      toastConfigSuccess
+    );
+
+    // Auto-open KYB modal within 2 seconds (Requirements 13.1, 13.2)
+    setTimeout(() => {
+      try {
+        setCurrentStep(2);
+        setShowKybModal(true);
+      } catch {
+        // If modal fails to open, show toast with manual link (Requirement 13.3)
+        toast.info(
+          <span>
+            Could not open KYB verification automatically.{" "}
+            <button
+              onClick={() => {
+                setCurrentStep(2);
+                setShowKybModal(true);
+              }}
+              className="underline text-blue-600 hover:text-blue-800"
+            >
+              Click here to start KYB verification
+            </button>
+          </span>,
+          { ...toastConfigError, autoClose: false }
+        );
+      }
+    }, 2000);
+  }, [setCurrentStep]);
 
   const getVerificationBadge = (status: string | undefined | null) => {
     if (status === "verified") {
@@ -81,6 +115,11 @@ const page = () => {
   });
   const [savingOrderSettings, setSavingOrderSettings] = useState(false);
 
+  // Confirmation dialog state
+  const [showAutoAcceptDialog, setShowAutoAcceptDialog] = useState(false);
+  const [showMinOrderDialog, setShowMinOrderDialog] = useState(false);
+  const [pendingMinOrderAmount, setPendingMinOrderAmount] = useState<number | null>(null);
+
   const handleNotifPrefChange = async (key: string, value: boolean) => {
     const previousPrefs = { ...notifPrefs };
     const updated = { ...notifPrefs, [key]: value };
@@ -123,10 +162,51 @@ const page = () => {
     }
   };
 
+  // Confirmation dialog handlers for auto-accept orders
+  const handleAutoAcceptToggle = (checked: boolean) => {
+    if (!checked && orderSettings.autoAcceptOrders) {
+      // Disabling auto-accept: show confirmation dialog
+      setShowAutoAcceptDialog(true);
+    } else {
+      // Enabling auto-accept: apply immediately (not destructive)
+      setOrderSettings(prev => ({ ...prev, autoAcceptOrders: checked }));
+    }
+  };
+
+  const handleConfirmDisableAutoAccept = () => {
+    setOrderSettings(prev => ({ ...prev, autoAcceptOrders: false }));
+    setShowAutoAcceptDialog(false);
+  };
+
+  const handleCancelDisableAutoAccept = () => {
+    // Revert: keep autoAcceptOrders as true (no change, no API call)
+    setShowAutoAcceptDialog(false);
+  };
+
+  // Confirmation dialog handlers for minimum order amount
+  const handleMinOrderAmountChange = (value: number) => {
+    setPendingMinOrderAmount(value);
+    setShowMinOrderDialog(true);
+  };
+
+  const handleConfirmMinOrderAmount = () => {
+    if (pendingMinOrderAmount !== null) {
+      setOrderSettings(prev => ({ ...prev, minOrderAmount: pendingMinOrderAmount }));
+    }
+    setPendingMinOrderAmount(null);
+    setShowMinOrderDialog(false);
+  };
+
+  const handleCancelMinOrderAmount = () => {
+    // Revert: discard pending value (no change, no API call)
+    setPendingMinOrderAmount(null);
+    setShowMinOrderDialog(false);
+  };
+
   return (
     <div className="flex justify-center items-center flex-col p-4 md:p-6">
       {/* Upgrade to Business Account Section */}
-      <UpgradeToBusinessAccount />
+      <UpgradeToBusinessAccount onSuccess={handleBusinessUpgradeSuccess} />
 
       {/* Verification Status Section */}
       <div className="w-full max-w-2xl mb-8 bg-white rounded-lg shadow p-6">
@@ -208,7 +288,7 @@ const page = () => {
               <input
                 type="checkbox"
                 checked={orderSettings.autoAcceptOrders}
-                onChange={(e) => setOrderSettings(prev => ({ ...prev, autoAcceptOrders: e.target.checked }))}
+                onChange={(e) => handleAutoAcceptToggle(e.target.checked)}
                 className="sr-only peer"
               />
               <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
@@ -220,7 +300,7 @@ const page = () => {
               type="number"
               min="0"
               value={orderSettings.minOrderAmount}
-              onChange={(e) => setOrderSettings(prev => ({ ...prev, minOrderAmount: parseFloat(e.target.value) || 0 }))}
+              onChange={(e) => handleMinOrderAmountChange(parseFloat(e.target.value) || 0)}
               className="w-full mt-1 p-2 border border-gray-300 rounded text-sm"
             />
           </div>
@@ -324,6 +404,26 @@ const page = () => {
 
       {/* KYB Modal */}
       <KybModal isOpen={showKybModal} onClose={() => setShowKybModal(false)} />
+
+      {/* Confirmation Dialog: Disable Auto-Accept Orders */}
+      <ConfirmationDialog
+        isOpen={showAutoAcceptDialog}
+        title="Disable Auto-Accept Orders"
+        description="You are about to disable automatic order acceptance. This means you will need to manually review and accept each incoming order."
+        consequences="Orders will not be processed until you manually accept them. This may lead to delays and potential order cancellations if not reviewed promptly."
+        onConfirm={handleConfirmDisableAutoAccept}
+        onCancel={handleCancelDisableAutoAccept}
+      />
+
+      {/* Confirmation Dialog: Change Minimum Order Amount */}
+      <ConfirmationDialog
+        isOpen={showMinOrderDialog}
+        title="Change Minimum Order Amount"
+        description={`You are about to change the minimum order amount to ${pendingMinOrderAmount !== null ? `$${pendingMinOrderAmount.toFixed(2)}` : ''}.`}
+        consequences="This change may affect existing product listings. Orders below this amount will be rejected, which could impact your sales."
+        onConfirm={handleConfirmMinOrderAmount}
+        onCancel={handleCancelMinOrderAmount}
+      />
     </div>
   );
 };

@@ -203,7 +203,7 @@ export default function OrdersPage() {
                         >
                           View
                         </Button>
-                        {(order.status === 'pending' || order.status === 'pending_payment' || order.status === 'processing') && (
+                        {order.status === 'pending_payment' && (
                           <Button 
                             size="sm" 
                             variant="outline"
@@ -212,6 +212,16 @@ export default function OrdersPage() {
                             disabled={cancelOrderMutation.isPending}
                           >
                             Cancel Order
+                          </Button>
+                        )}
+                        {order.shipments?.some((s: any) => s.shipping?.status?.toLowerCase() === 'delivered') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="col-span-2 border-orange-300 text-orange-600 hover:bg-orange-50"
+                            onClick={() => router.push(`/home/user/orders/${order._id}?action=dispute`)}
+                          >
+                            Report Issue
                           </Button>
                         )}
                       </div>
@@ -254,7 +264,7 @@ export default function OrdersPage() {
                         >
                           View
                         </Button>
-                        {(order.status === 'pending' || order.status === 'pending_payment' || order.status === 'processing') && (
+                        {order.status === 'pending_payment' && (
                           <Button
                             size="sm"
                             variant="outline"
@@ -263,6 +273,16 @@ export default function OrdersPage() {
                             disabled={cancelOrderMutation.isPending}
                           >
                             Cancel
+                          </Button>
+                        )}
+                        {order.shipments?.some((s: any) => s.shipping?.status?.toLowerCase() === 'delivered') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="font-roboto h-6 px-2 text-xs border-orange-300 text-orange-600 hover:bg-orange-50"
+                            onClick={() => router.push(`/home/user/orders/${order._id}?action=dispute`)}
+                          >
+                            Report Issue
                           </Button>
                         )}
                       </div>

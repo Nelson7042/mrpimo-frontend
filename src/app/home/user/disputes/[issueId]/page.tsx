@@ -1,25 +1,24 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Breadcrumbs, BreadcrumbItem } from "@/components/BreadCrumbs";
 import { disputeService } from "@/services/disputeService";
-import { fetchWithAuth } from "@/utils/fetchWithAuth";
-import { API_BASE_URL } from "@/utils/config";
 import {
   Loader2,
   ArrowLeft,
-  Send,
   Image as ImageIcon,
-  MessageSquare,
   FileText,
   DollarSign,
-  Clock,
   AlertTriangle,
 } from "lucide-react";
 import { format } from "date-fns";
+import DisputeChatPaginated from "@/components/disputes/DisputeChatPaginated";
+import EvidenceUploadSection from "@/components/disputes/EvidenceUploadSection";
+import DisputeEscalateButton from "@/components/disputes/DisputeEscalateButton";
+import { useUserStore } from "@/stores/useUserStore";
 
 const getStatusBadgeClass = (status: string) => {
   switch (status) {
@@ -48,164 +47,6 @@ const getPriorityBadgeClass = (priority: string) => {
       return "bg-gray-50 text-gray-700 hover:bg-gray-50";
   }
 };
-
-/* ─── DisputeChat Component (embedded) ─── */
-function DisputeChat({ issueId, chatStatus }: { issueId: string; chatStatus?: string }) {
-  const [messages, setMessages] = useState<any[]>([]);
-  const [newMessage, setNewMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [isLoadingChat, setIsLoadingChat] = useState(true);
-  const [chatError, setChatError] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  const fetchMessages = async () => {
-    try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/dispute-chat/${issueId}`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data?.data?.messages || []);
-      }
-    } catch {
-      setChatError("Failed to load chat messages");
-    } finally {
-      setIsLoadingChat(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMessages();
-  }, [issueId]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newMessage.trim() || isSending) return;
-
-    setIsSending(true);
-    try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/dispute-chat/${issueId}/messages`, {
-        method: "POST",
-        body: JSON.stringify({ text: newMessage.trim() }),
-      });
-      if (res.ok) {
-        const data = await res.json();
-        setMessages((prev) => [...prev, data.data]);
-        setNewMessage("");
-      }
-    } catch {
-      // silently fail
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const isClosed = chatStatus === "closed";
-
-  return (
-    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div className="p-4 border-b border-gray-200 flex items-center gap-2">
-        <MessageSquare className="w-5 h-5 text-blue-600" />
-        <h3 className="font-semibold text-sm text-gray-900">Dispute Chat</h3>
-        {isClosed && (
-          <Badge className="bg-gray-100 text-gray-600 hover:bg-gray-100 ml-auto">
-            <span className="text-xs">Chat Closed</span>
-          </Badge>
-        )}
-      </div>
-
-      {/* Messages */}
-      <div className="h-64 overflow-y-auto p-4 space-y-3 bg-gray-50">
-        {isLoadingChat ? (
-          <div className="flex items-center justify-center h-full">
-            <Loader2 className="w-5 h-5 animate-spin text-gray-400" />
-          </div>
-        ) : chatError ? (
-          <p className="text-sm text-red-500 text-center">{chatError}</p>
-        ) : messages.length === 0 ? (
-          <p className="text-sm text-gray-400 text-center">No messages yet</p>
-        ) : (
-          messages.map((msg: any) => {
-            const senderName =
-              msg.senderId?.profile?.firstName ||
-              msg.senderId?.email ||
-              "Unknown";
-            return (
-              <div key={msg._id} className="space-y-0.5">
-                <div className="flex items-baseline gap-2">
-                  <span className="text-xs font-semibold text-gray-700">
-                    {senderName}
-                  </span>
-                  <span className="text-xs text-gray-400">
-                    {msg.createdAt
-                      ? format(new Date(msg.createdAt), "MMM dd, h:mm a")
-                      : ""}
-                  </span>
-                </div>
-                {msg.text && (
-                  <p className="text-sm text-gray-800 bg-white rounded-lg px-3 py-2 inline-block border border-gray-100">
-                    {msg.text}
-                  </p>
-                )}
-                {msg.attachment?.url && (
-                  <div className="mt-1">
-                    {msg.messageType === "image" ? (
-                      <img
-                        src={msg.attachment.url}
-                        alt="attachment"
-                        className="max-w-[200px] rounded-lg border border-gray-200"
-                      />
-                    ) : (
-                      <a
-                        href={msg.attachment.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-xs text-blue-600 underline"
-                      >
-                        {msg.attachment.fileName || "View attachment"}
-                      </a>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-
-      {/* Send Message */}
-      {!isClosed && (
-        <form
-          onSubmit={handleSendMessage}
-          className="p-3 border-t border-gray-200 flex gap-2"
-        >
-          <input
-            type="text"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            placeholder="Type a message..."
-            className="flex-1 px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-transparent"
-          />
-          <Button
-            type="submit"
-            size="sm"
-            disabled={!newMessage.trim() || isSending}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            {isSending ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
-          </Button>
-        </form>
-      )}
-    </div>
-  );
-}
 
 /* ─── Evidence Gallery Component ─── */
 function EvidenceGallery({ urls, title }: { urls: string[]; title: string }) {
@@ -258,6 +99,7 @@ export default function BuyerDisputeDetailPage() {
   const params = useParams();
   const router = useRouter();
   const issueId = params.issueId as string;
+  const { user } = useUserStore();
 
   const [dispute, setDispute] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -467,6 +309,19 @@ export default function BuyerDisputeDetailPage() {
                 )}
             </div>
 
+            {/* Evidence Upload Section */}
+            <EvidenceUploadSection
+              issueId={issueId}
+              disputeStatus={dispute.status}
+              existingEvidence={dispute.evidenceUrls}
+              onEvidenceAdded={(urls) => {
+                setDispute((prev: any) => ({
+                  ...prev,
+                  evidenceUrls: [...(prev.evidenceUrls || []), ...urls],
+                }));
+              }}
+            />
+
             {/* Vendor Response */}
             {dispute.vendorResponse && (
               <div className="bg-white rounded-xl border border-gray-200 p-5">
@@ -487,14 +342,28 @@ export default function BuyerDisputeDetailPage() {
             )}
           </div>
 
-          {/* Right Column — Chat */}
+          {/* Right Column — Chat + Escalation */}
           <div className="lg:col-span-1">
-            <div className="lg:sticky lg:top-40">
-              <DisputeChat
+            <div className="lg:sticky lg:top-40 space-y-4">
+              {/* Escalate Button */}
+              <DisputeEscalateButton
                 issueId={issueId}
-                chatStatus={
-                  dispute.status === "closed" ? "closed" : "active"
-                }
+                disputeCreatedAt={dispute.createdAt}
+                disputeStatus={dispute.status}
+                escalatedAt={dispute.escalatedAt}
+                onEscalated={(escalatedAt) => {
+                  setDispute((prev: any) => ({
+                    ...prev,
+                    escalatedAt,
+                    priority: "high",
+                  }));
+                }}
+              />
+
+              {/* Paginated Chat */}
+              <DisputeChatPaginated
+                issueId={issueId}
+                currentUserId={user?._id || ""}
               />
             </div>
           </div>

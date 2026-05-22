@@ -90,6 +90,7 @@ export default function WalletPage() {
   const userCurrency = user?.preferences?.currency || 'USD';
   const { rate: exchangeRate, convertFromUSD, formatConverted } = useExchangeRate(userCurrency);
 
+  // Format amount for display — uses the transaction's own currency
   // Format amount in user's currency (converts from USD if needed)
   const formatAmount = (usdAmount: number): string => {
     if (userCurrency === 'USD') return `$${usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -98,9 +99,7 @@ export default function WalletPage() {
     const symbols: Record<string, string> = { NGN: '₦', GHS: '₵', EUR: '€', GBP: '£', KES: 'KSh', ZAR: 'R' };
     const symbol = symbols[userCurrency] || userCurrency + ' ';
     return `${symbol}${converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };
-
-  const handleRefresh = () => {
+  };  const handleRefresh = () => {
     refetchWallet()
   }
 
@@ -179,7 +178,7 @@ export default function WalletPage() {
               <p className="text-blue-100 text-sm">Available Balance</p>
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <p className="text-2xl sm:text-3xl font-bold break-all">
-                  {showBalance ? balanceUSD : "$****.**"}
+                  {showBalance ? `$${balanceUSD}` : "****.**"}
                 </p>
                 <Button variant="ghost" size="sm" onClick={() => setShowBalance(!showBalance)}>
                   {showBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

@@ -10,15 +10,17 @@ import PromotionalCollections from "@/components/Home/PromotionalCollections";
 import PromotionalBanners from "@/components/Home/PromotionalBanners";
 import MarketplaceSection from "@/components/Home/Hero";
 import CustomerReviews from "@/components/Home/Review";
+import SponsoredProducts from "@/components/Home/SponsoredProducts";
 import React from "react";
 
 export default function HomeClient() {
   return (
-    <div className="font-roboto ">
+     <div className="font-roboto ">
       <MarketplaceSection />
       <BestDeals />
       <ShopCategoriesComponent />
       <FeaturedProducts />
+      <SponsoredProducts />
       <PromotionalCollections />
       <AuctionedProduct />
       <PromotionalBanners />

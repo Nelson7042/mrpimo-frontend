@@ -28,9 +28,10 @@ type Variant = {
 
 type Props = {
   onSaveDraft?: () => void;
+  priceLocked?: boolean;
 };
 
-export default function ProductVariants({ onSaveDraft }: Props) {
+export default function ProductVariants({ onSaveDraft, priceLocked }: Props) {
   const { productDetails, updateProductDetails } = useProductListing();
   const { data: countries = [] } = useCountries();
   const { user } = useUserStore();
@@ -484,6 +485,7 @@ export default function ProductVariants({ onSaveDraft }: Props) {
                               `variant-${variantIndex}-option-${optionIndex}-price`
                             ]
                           }
+                          disabled={priceLocked}
                         />
                       </div>
                       <div className="w-[120px]">
@@ -506,6 +508,7 @@ export default function ProductVariants({ onSaveDraft }: Props) {
                               `variant-${variantIndex}-option-${optionIndex}-salePrice`
                             ]
                           }
+                          disabled={priceLocked}
                         />
                       </div>
                       <div className="w-[120px]">
