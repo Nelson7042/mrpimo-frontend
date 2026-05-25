@@ -91,16 +91,13 @@ export default function WalletPage() {
   const { rate: exchangeRate, convertFromUSD, formatConverted } = useExchangeRate(userCurrency);
 
   // Format amount for display — uses the transaction's own currency
-  // Format amount in user's currency (converts from USD if needed)
-  const formatAmount = (usdAmount: number): string => {
-    if (userCurrency === 'USD') return `$${usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const converted = convertFromUSD(usdAmount);
-    if (converted === null) return `$${usdAmount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-    const symbols: Record<string, string> = { NGN: '₦', GHS: '₵', EUR: '€', GBP: '£', KES: 'KSh', ZAR: 'R' };
-    const symbol = symbols[userCurrency] || userCurrency + ' ';
-    return `${symbol}${converted.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  };  const handleRefresh = () => {
-    refetchWallet()
+  // Format amount for display — wallet balance is already in the wallet's native currency
+  const formatAmount = (amount: number): string => {
+    const walletCurrency = walletData?.wallet?.currency || userCurrency || 'USD';
+    const symbols: Record<string, string> = { USD: '$', NGN: '₦', GHS: '₵', EUR: '€', GBP: '£', KES: 'KSh', ZAR: 'R', CAD: 'C$', AUD: 'A$' };
+    const symbol = symbols[walletCurrency] || walletCurrency + ' ';
+    return `${symbol}${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  };  const handleRefresh = () => {    refetchWallet()
   }
 
   // Listen for payment methods modal trigger
@@ -178,7 +175,7 @@ export default function WalletPage() {
               <p className="text-blue-100 text-sm">Available Balance</p>
               <div className="flex items-center space-x-2 sm:space-x-4">
                 <p className="text-2xl sm:text-3xl font-bold break-all">
-                  {showBalance ? `$${balanceUSD}` : "****.**"}
+                  {showBalance ? balanceUSD : "****.**"}
                 </p>
                 <Button variant="ghost" size="sm" onClick={() => setShowBalance(!showBalance)}>
                   {showBalance ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}

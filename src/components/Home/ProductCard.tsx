@@ -45,9 +45,24 @@ export const ProductCard = ({
 }) => {
   const [isLiked, setIsLiked] = useState(false);
 
-  const discountPercent = product.priceInfo?.originalPrice && product.priceInfo?.displayPrice
-    ? Math.round(((product.priceInfo.originalPrice - product.priceInfo.displayPrice) / product.priceInfo.originalPrice) * 100)
-    : 0;
+  const discountPercent = (() => {
+    // Calculate discount from the variant's price vs salePrice (same currency, no conversion needed)
+    const option = product?.variants?.find((v) => v?.name === "Default")?.options?.[0] 
+      || product?.variants?.[0]?.options?.[0];
+    if (option?.salePrice && option?.price && option.salePrice < option.price) {
+      return Math.round(((option.price - option.salePrice) / option.price) * 100);
+    }
+    return 0;
+  })();
+
+  // Calculate the original price in user's display currency
+  const originalPriceDisplay = (() => {
+    const option = product?.variants?.find((v) => v?.name === "Default")?.options?.[0]
+      || product?.variants?.[0]?.options?.[0];
+    if (!option?.price || !option?.salePrice || option.salePrice >= option.price) return null;
+    const exchangeRate = (product as any)?.priceInfo?.exchangeRate || 1;
+    return parseFloat((option.price * exchangeRate).toFixed(2));
+  })();
 
   return (
     <Link
@@ -139,9 +154,9 @@ export const ProductCard = ({
                   product.priceInfo?.originalPrice.toLocaleString()
                 }`}
               </span>
-              {discountPercent > 0 && (
+              {discountPercent > 0 && originalPriceDisplay && (
                 <span className="text-xs text-gray-400 line-through">
-                  {product?.priceInfo?.currencySymbol || "₦"}{product.priceInfo?.originalPrice.toLocaleString()}
+                  {product?.priceInfo?.currencySymbol || "₦"}{originalPriceDisplay.toLocaleString()}
                 </span>
               )}
             </div>

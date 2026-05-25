@@ -21,7 +21,7 @@ import DeliveryOptions, { DeliveryOptionItem } from "@/components/checkout/Deliv
 import { useAddAddress, useAddresses, useUpdateAddress } from "@/hooks/useAddress";
 import { useCountries } from "@/hooks/useCountries";
 import { useUserCurrency } from "@/hooks/useUserCurrency";
-import { useInvalidateWalletBalance } from "@/hooks/useWallet";
+import { useInvalidateWalletBalance, useWalletBalance } from "@/hooks/useWallet";
 import { Country, State } from "country-state-city";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { getCountryFromCurrency } from "@/utils/currency";
@@ -83,6 +83,7 @@ export default function CheckoutPage() {
   const buyNowShippingMutation = useBuyNowShippingEstimate();
   const buyNowCheckout = useBuyNowCheckout();
   const invalidateWalletBalance = useInvalidateWalletBalance();
+  const { data: walletData } = useWalletBalance();
 
   // Check if user is authorized to access checkout.
   // Only runs after sessionStorage has been read so buyNowData is accurate.
@@ -882,16 +883,15 @@ export default function CheckoutPage() {
     }
   };
 
-  // Auto-detect payment method and provider on page load
+  // Auto-detect payment method: always prefer wallet (backend checks balance and falls back to card if insufficient)
   useEffect(() => {
     const detectedCurrency = userCurrencyData?.currency || currency;
-    if (detectedCurrency) {
+    if (detectedCurrency && !fiatProvider) {
       setPaymentCategory('fiat');
       setPaymentMethod('fiat');
-      const provider = getProviderByCurrency(detectedCurrency.toLowerCase());
-      setFiatProvider(provider);
+      setFiatProvider('wallet');
     }
-  }, [currency, userCurrencyData]);
+  }, [currency, userCurrencyData, walletData]);
 
   // Show loading while checking authorization
   if (!isAuthorized) {

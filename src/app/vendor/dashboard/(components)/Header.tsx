@@ -185,7 +185,7 @@ const Header = (props: Props) => {
                 <div className="px-4 py-2 border-b border-gray-100">
                   <p className="text-xs text-gray-500">Wallet Balance</p>
                   <p className="text-sm font-semibold text-gray-900">
-                    ${balanceUSD}
+                    {balanceUSD}
                   </p>
                   {balanceApprox && <p className="text-xs text-gray-500">{balanceApprox}</p>}
                 </div>
