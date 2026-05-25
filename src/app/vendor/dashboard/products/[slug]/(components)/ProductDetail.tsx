@@ -202,9 +202,26 @@ const ProductDetail = ({ slug }: Props) => {
                 </div>
                 {product?.inventory?.listing?.type === "auction" && (
                   <div className="mt-2 bg-purple-50 rounded-lg p-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <Gavel className="w-4 h-4 text-purple-600" />
-                      <span className="text-sm font-semibold text-purple-900">Auction Details</span>
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Gavel className="w-4 h-4 text-purple-600" />
+                        <span className="text-sm font-semibold text-purple-900">Auction Details</span>
+                      </div>
+                      {/* Auction Status Badge */}
+                      {product?.inventory?.listing?.auction?.isExpired ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-200 text-gray-700">
+                          Ended
+                        </span>
+                      ) : product?.inventory?.listing?.auction?.isStarted ? (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700 animate-pulse">
+                          ● Live
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-700">
+                          <Clock className="w-3 h-3" />
+                          Scheduled
+                        </span>
+                      )}
                     </div>
                     <div className="space-y-1 text-xs">
                       <div className="flex justify-between">
@@ -216,15 +233,28 @@ const ProductDetail = ({ slug }: Props) => {
                         <span className="font-medium">{getCurrencySymbol(product?.country?.currency)}{product?.inventory?.listing?.auction?.reservePrice}</span>
                       </div>
                       {auctionData && (
+                        <>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Current Bid:</span>
+                            <span className="font-semibold text-purple-700">{getCurrencySymbol(product?.country?.currency)}{auctionData.highestBid}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-gray-600">Total Bids:</span>
+                            <span className="font-medium">{auctionData.totalBids}</span>
+                          </div>
+                        </>
+                      )}
+                      {product?.inventory?.listing?.auction?.endTime && (
                         <div className="flex justify-between">
-                          <span className="text-gray-600">Current Bid:</span>
-                          <span className="font-semibold text-purple-700">{getCurrencySymbol(product?.country?.currency)}{auctionData.highestBid}</span>
+                          <span className="text-gray-600">{product?.inventory?.listing?.auction?.isExpired ? "Ended:" : "Ends:"}</span>
+                          <span className="font-medium">{new Date(product.inventory.listing.auction.endTime).toLocaleString()}</span>
                         </div>
                       )}
-                      <div className="flex justify-between">
-                        <span className="text-gray-600">Total Bids:</span>
-                        <span className="font-medium">{auctionData?.totalBids || 0}</span>
-                      </div>
+                      {product?.inventory?.listing?.auction?.isExpired && auctionData?.reservePriceMet === false && (
+                        <div className="mt-2 bg-amber-50 border border-amber-200 rounded p-2 text-xs text-amber-800">
+                          Reserve price was not met. You can relist this item.
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
@@ -247,7 +277,7 @@ const ProductDetail = ({ slug }: Props) => {
                     <div className="flex items-center gap-2">
                       <Gavel className="w-3 h-3 text-gray-400" />
                       <span className="text-xs text-gray-600">
-                        {new Date(bid.createdAt).toLocaleString()}
+                        {new Date(bid.updatedAt || bid.createdAt).toLocaleString()}
                       </span>
                     </div>
                     <div className="flex items-center gap-2">

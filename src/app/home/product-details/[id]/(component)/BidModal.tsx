@@ -225,7 +225,7 @@ export const BidModal1 = ({
                         ≈ {currencySymbol}{usdToLocal(userBid.currentAmount).toFixed(2)} {userCurrency.toUpperCase()}
                       </p>
                     )}
-                    <p className="text-xs text-gray-500">{new Date(userBid.createdAt).toLocaleString()}</p>
+                    <p className="text-xs text-gray-500">{new Date(userBid.updatedAt || userBid.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
               )}
@@ -246,7 +246,7 @@ export const BidModal1 = ({
                           ≈ {currencySymbol}{usdToLocal(bid.currentAmount).toFixed(2)} {userCurrency.toUpperCase()}
                         </p>
                       )}
-                      <p className="text-xs text-gray-500">{new Date(bid.createdAt).toLocaleString()}</p>
+                      <p className="text-xs text-gray-500">{new Date(bid.updatedAt || bid.createdAt).toLocaleString()}</p>
                     </div>
                   </div>
                 ))}

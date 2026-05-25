@@ -325,8 +325,8 @@ export class ProductFormValidator {
         }
       }
 
-      if (!auction.bidIncrement || auction.bidIncrement < 1) {
-        errors.bidIncrement = "Bid increment must be at least $1";
+      if (!auction.bidIncrement || auction.bidIncrement < 0.01) {
+        errors.bidIncrement = "Bid increment must be at least 0.01";
       }
     }
 

@@ -95,7 +95,14 @@ export const settingsService = {
    */
   async getLoginHistory(page: number = 1): Promise<PaginatedResponse<LoginEvent>> {
     const response = await fetchWithAuth(`${API_BASE_URL}/users/login-history?page=${page}`);
-    return handleApiResponse<PaginatedResponse<LoginEvent>>(response, 'Failed to fetch login history');
+    const data = await handleApiResponse<{ events: LoginEvent[]; pagination: { currentPage: number; totalPages: number; totalEvents: number; hasMore: boolean } }>(response, 'Failed to fetch login history');
+    return {
+      events: data.events,
+      total: data.pagination.totalEvents,
+      page: data.pagination.currentPage,
+      totalPages: data.pagination.totalPages,
+      hasMore: data.pagination.hasMore,
+    };
   },
 
   /**

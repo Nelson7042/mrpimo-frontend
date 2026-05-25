@@ -14,7 +14,7 @@ export interface BidUser {
   };
 }
 
-export type PaymentStatus = 'none' | 'payment_pending' | 'paid' | 'expired';
+export type PaymentStatus = 'none' | 'payment_pending' | 'paid' | 'expired' | 'reserve_not_met';
 
 export interface UserBid {
   productId: string;
@@ -25,6 +25,7 @@ export interface UserBid {
   currency: string;
   isWinning: boolean;
   createdAt: string;
+  updatedAt?: string;
   auctionEnded: boolean;
   paymentStatus?: PaymentStatus;
   paymentDeadline?: string | null;

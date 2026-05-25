@@ -342,7 +342,11 @@ export default function UserBidsPage() {
                               {bid.currency}
                             </span>
                           </span>
-                          {bid.isWinning && bid.auctionEnded ? (
+                          {bid.paymentStatus === "reserve_not_met" && bid.auctionEnded ? (
+                            <Badge className="bg-gray-100 text-gray-800 hover:bg-gray-100 px-2 py-0.5">
+                              <span className="text-xs font-medium">Auction ended — no winner</span>
+                            </Badge>
+                          ) : bid.isWinning && bid.auctionEnded ? (
                             <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100 px-2 py-0.5">
                               <span className="flex items-center gap-1 text-xs font-medium">
                                 <Trophy className="w-3 h-3" />
@@ -368,7 +372,7 @@ export default function UserBidsPage() {
                               <span className="text-xs font-medium">Ended</span>
                             </Badge>
                           )}
-                          {bid.isWinning && bid.auctionEnded && bid.paymentStatus && bid.paymentStatus !== "none" && (
+                          {bid.isWinning && bid.auctionEnded && bid.paymentStatus && bid.paymentStatus !== "none" && bid.paymentStatus !== "reserve_not_met" && (
                             <PaymentStatusBadge status={bid.paymentStatus} />
                           )}
                         </div>
@@ -378,7 +382,7 @@ export default function UserBidsPage() {
                         </p>
                         <p className="text-xs text-gray-500 flex items-center gap-1">
                           <Clock className="w-3 h-3" />
-                          {format(new Date(bid.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+                          {format(new Date(bid.updatedAt || bid.createdAt), "MMM dd, yyyy 'at' h:mm a")}
                         </p>
                         <BidPaymentActions bid={bid} />
                       </div>

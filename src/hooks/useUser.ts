@@ -22,6 +22,14 @@ interface UserProfile {
     marketing?: boolean;
     [key: string]: any;
   };
+  socialLogins?: Array<{ provider: string; providerId: string }>;
+  activity?: {
+    lastLogin?: string;
+    lastPurchase?: string;
+    totalOrders?: number;
+    totalSpent?: number;
+  };
+  password?: string;
   phoneVerified?: boolean;
   deletionScheduledAt?: string | null;
   deletionRequestedAt?: string | null;
@@ -174,9 +182,13 @@ const userApi = {
   },
 
   getCards: async (): Promise<{ cards: Card[]; defaultGateway: string }> => {
-    const response = await fetchWithAuth(`${API_BASE}/users/cards`);
-    if (!response.ok) throw new Error('Failed to fetch cards');
-    return response.json();
+    try {
+      const response = await fetchWithAuth(`${API_BASE}/users/cards`);
+      if (!response.ok) return { cards: [], defaultGateway: 'stripe' };
+      return response.json();
+    } catch {
+      return { cards: [], defaultGateway: 'stripe' };
+    }
   },
 
   getRecentActivities: async (page = 1, limit = 10) => {

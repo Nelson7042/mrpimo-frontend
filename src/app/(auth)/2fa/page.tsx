@@ -12,6 +12,7 @@ export default function TwoFactorPage() {
   const [code, setCode] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isUsingBackupCode, setIsUsingBackupCode] = useState(false);
+  const [trustDevice, setTrustDevice] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const provider = searchParams.get('provider'); // "google", "apple", or null
@@ -38,7 +39,7 @@ export default function TwoFactorPage() {
     setIsLoading(true);
     
     try {
-      const body = isUsingBackupCode ? { backupCode: code } : { code };
+      const body = isUsingBackupCode ? { backupCode: code, trustDevice } : { code, trustDevice };
       const response = await fetch(`${API_BASE_URL}/auth/2fa/verify`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -102,6 +103,21 @@ export default function TwoFactorPage() {
               onChange={(e) => setCode(e.target.value)}
               maxLength={isUsingBackupCode ? 20 : 6}
             />
+          </div>
+
+          {/* Trust this device checkbox */}
+          <div className="flex items-center">
+            <input
+              id="trust-device-2fa"
+              type="checkbox"
+              checked={trustDevice}
+              onChange={(e) => setTrustDevice(e.target.checked)}
+              className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+              aria-label="Trust this device for 30 days"
+            />
+            <label htmlFor="trust-device-2fa" className="ml-2 block text-sm text-gray-700">
+              Trust this device for 30 days
+            </label>
           </div>
 
           <div>

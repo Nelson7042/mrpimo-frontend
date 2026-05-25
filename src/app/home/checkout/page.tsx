@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Image from "next/image";
-import {  Copy, Check, Loader2, CreditCard } from "lucide-react";
+import {  Copy, Check, Loader2, CreditCard, Wallet, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -618,7 +618,16 @@ export default function CheckoutPage() {
             if (p.shipping !== undefined) setCalculatedShipping(p.shipping);
           }
 
-          if (fiatProvider === 'paystack') {
+          // Route based on payment type returned by backend
+          if (piResponse.paymentData?.type === 'wallet') {
+            // Wallet has sufficient balance — confirm payment immediately
+            const walletSuccess = await buyNowCheckout.handleWalletPayment(piResponse);
+            if (walletSuccess) {
+              invalidateWalletBalance();
+              toast.success("Payment successful! Your order is being processed.");
+              router.push('/home/user/orders');
+            }
+          } else if (fiatProvider === 'paystack') {
             // Paystack redirect flow
             await buyNowCheckout.initializePaystackPayment(piResponse);
           } else {
@@ -1320,86 +1329,66 @@ export default function CheckoutPage() {
                 {/* Payment Method - Auto-detected */}
                 <div className="mt-6">
                   <h3 className="text-sm font-semibold mb-1">Payment Method</h3>
-                  {fiatProvider ? (
-                    <div className="p-3 bg-blue-50 rounded-lg border border-blue-200 flex items-center gap-2">
-                      <CreditCard className="w-4 h-4 text-blue-600" />
-                      <p className="text-sm text-gray-700">
-                        Paying with <span className="font-semibold capitalize">{fiatProvider}</span>
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 flex items-center gap-2">
-                      <Loader2 className="w-4 h-4 animate-spin text-gray-400" />
-                      <p className="text-sm text-gray-500">Detecting payment provider...</p>
-                    </div>
-                  )}
+                  <div className="space-y-2">
+                    {/* Wallet option */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentCategory('fiat');
+                        setPaymentMethod('fiat');
+                        setFiatProvider('wallet');
+                      }}
+                      className={`w-full p-3 rounded-lg border flex items-center gap-3 transition-colors ${
+                        fiatProvider === 'wallet'
+                          ? 'bg-green-50 border-green-300 ring-1 ring-green-300'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${fiatProvider === 'wallet' ? 'bg-green-100' : 'bg-gray-100'}`}>
+                        <Wallet className="w-4 h-4 text-green-600" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-medium text-gray-900">Pay with Wallet</p>
+                        <p className="text-xs text-gray-500">Use your Mprimo wallet balance</p>
+                      </div>
+                      {fiatProvider === 'wallet' && (
+                        <CheckCircle className="w-4 h-4 text-green-600" />
+                      )}
+                    </button>
 
-                  {/* Bank Transfer Details */}
-                  {/* {paymentMethod === "bank-transfer" && (
-                    <div className="bg-gray-50 rounded-lg p-6">
-                      <div className="text-center mb-4">
-                        <p className="font-medium">
-                          Transfer ₦{total.toLocaleString()} to Vendor's
-                          Checkout
+                    {/* Card/Paystack/Stripe option */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPaymentCategory('fiat');
+                        setPaymentMethod('fiat');
+                        const detectedCurrency = userCurrencyData?.currency || currency;
+                        setFiatProvider(getProviderByCurrency(detectedCurrency.toLowerCase()));
+                      }}
+                      className={`w-full p-3 rounded-lg border flex items-center gap-3 transition-colors ${
+                        fiatProvider && fiatProvider !== 'wallet'
+                          ? 'bg-blue-50 border-blue-300 ring-1 ring-blue-300'
+                          : 'bg-white border-gray-200 hover:bg-gray-50'
+                      }`}
+                    >
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${fiatProvider && fiatProvider !== 'wallet' ? 'bg-blue-100' : 'bg-gray-100'}`}>
+                        <CreditCard className="w-4 h-4 text-blue-600" />
+                      </div>
+                      <div className="text-left flex-1">
+                        <p className="text-sm font-medium text-gray-900">Pay with Card</p>
+                        <p className="text-xs text-gray-500 capitalize">
+                          {(() => {
+                            const detectedCurrency = userCurrencyData?.currency || currency;
+                            const provider = getProviderByCurrency(detectedCurrency.toLowerCase());
+                            return provider === 'paystack' ? 'Paystack (Card, Bank Transfer)' : 'Stripe (Card)';
+                          })()}
                         </p>
                       </div>
-                      <div className="space-y-4">
-                        <div>
-                          <Label className="text-sm font-medium">
-                            Bank Name
-                          </Label>
-                          <div className="mt-1 p-3 bg-white rounded border">
-                            Vendor's Account
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">
-                            Account Number
-                          </Label>
-                          <div className="mt-1 p-3 bg-white rounded border flex items-center justify-between">
-                            <span>0202020202020</span>
-                            <Button variant="ghost" size="sm">
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                        <div>
-                          <Label className="text-sm font-medium">Amount</Label>
-                          <div className="mt-1 p-3 bg-white rounded border flex items-center justify-between">
-                            <span>₦ {total.toLocaleString()}</span>
-                            <Button variant="ghost" size="sm">
-                              <Copy className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                      <p className="text-sm text-blue-600 mt-4">
-                        This account is for this transaction only and expires in
-                        29:00
-                      </p>
-                    </div>
-                  )} */}
-
-                  {/* Card Payment Details */}
-                  {/* {paymentMethod === "card" && (
-                    <div className="bg-gray-50 rounded-lg p-6">
-                      <div className="flex items-center justify-between mb-4">
-                        <h4 className="font-medium">Card Payment</h4>
-                        <Button
-                          variant="link"
-                          className="text-blue-600 p-0 h-auto"
-                        >
-                          Change
-                        </Button>
-                      </div>
-                      <div className="flex items-center space-x-3 p-3 bg-white rounded border">
-                        <div className="w-8 h-8 bg-red-500 rounded flex items-center justify-center text-white text-xs font-bold">
-                          MC
-                        </div>
-                        <span>123 **** **** **** **65</span>
-                      </div>
-                    </div>
-                  )} */}
+                      {fiatProvider && fiatProvider !== 'wallet' && (
+                        <CheckCircle className="w-4 h-4 text-blue-600" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

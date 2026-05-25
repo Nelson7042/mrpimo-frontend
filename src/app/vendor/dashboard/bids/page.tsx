@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import { useVendorBids, VendorBid, VendorBidFilter } from "@/hooks/useBids";
 import Pagination from "@/components/Pagination";
 import { getCurrencySymbol } from "@/utils/currency";
-import { Loader2, Gavel, Trophy, Clock } from "lucide-react";
+import { Loader2, Gavel, Trophy, Clock, ChevronDown, ChevronRight, Users } from "lucide-react";
 import { format } from "date-fns";
 import Image from "next/image";
 
@@ -28,6 +28,131 @@ const getBidderName = (bidder: VendorBid["bidder"]): string => {
   return `${firstName || ""} ${lastName || ""}`.trim() || "Unknown Bidder";
 };
 
+interface ProductGroup {
+  productId: string;
+  productName: string;
+  productImage?: string;
+  auctionEnded: boolean;
+  highestBid: number;
+  currency: string;
+  bidCount: number;
+  bids: VendorBid[];
+}
+
+function BidStatusBadge({ bid }: { bid: VendorBid }) {
+  if (bid.paymentStatus === "reserve_not_met" && bid.auctionEnded) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-amber-100 text-amber-800 whitespace-nowrap">
+        Reserve not met
+      </span>
+    );
+  }
+  if (bid.isWinning) {
+    return (
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800 whitespace-nowrap">
+        <Trophy className="w-3 h-3" />
+        {bid.auctionEnded ? "Won" : "Winning"}
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800 whitespace-nowrap">
+      Outbid
+    </span>
+  );
+}
+
+function ProductBidGroup({ group }: { group: ProductGroup }) {
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  return (
+    <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
+      {/* Product Header — clickable to expand/collapse */}
+      <button
+        onClick={() => setIsExpanded(!isExpanded)}
+        className="w-full flex items-center gap-3 md:gap-4 p-3 md:p-4 hover:bg-gray-50 transition-colors cursor-pointer text-left"
+      >
+        {group.productImage && (
+          <div className="w-12 h-12 md:w-14 md:h-14 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+            <Image
+              src={group.productImage}
+              alt={group.productName}
+              width={56}
+              height={56}
+              className="w-full h-full object-cover"
+            />
+          </div>
+        )}
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-sm md:text-base text-gray-900 truncate">
+            {group.productName}
+          </h3>
+          <div className="flex items-center gap-2 mt-1 flex-wrap">
+            <span className="text-xs text-gray-500 flex items-center gap-1">
+              <Users className="w-3 h-3" />
+              {group.bidCount} bid{group.bidCount !== 1 ? "s" : ""}
+            </span>
+            <span className="text-xs font-medium text-gray-700">
+              Highest: {getCurrencySymbol(group.currency)}{group.highestBid.toFixed(2)}
+            </span>
+            {group.auctionEnded && (
+              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
+                Ended
+              </span>
+            )}
+          </div>
+        </div>
+        <div className="flex-shrink-0 text-gray-400">
+          {isExpanded ? <ChevronDown className="w-5 h-5" /> : <ChevronRight className="w-5 h-5" />}
+        </div>
+      </button>
+
+      {/* Expanded Bids Table */}
+      {isExpanded && (
+        <div className="border-t border-gray-100">
+          <div className="overflow-x-auto overflow-y-auto max-h-[400px]">
+            <table className="w-full min-w-[500px]">
+              <thead className="bg-gray-50 sticky top-0 z-10">
+                <tr>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Bidder</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Current Bid</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Max Bid</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Status</th>
+                  <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">Time</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {group.bids.map((bid, idx) => (
+                  <tr key={idx} className="hover:bg-gray-50 transition-colors">
+                    <td className="px-4 py-3 text-sm text-gray-900 whitespace-nowrap">
+                      {getBidderName(bid.bidder)}
+                    </td>
+                    <td className="px-4 py-3 text-sm font-medium text-gray-900 whitespace-nowrap">
+                      {getCurrencySymbol(bid.currency)}{bid.currentAmount.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3 text-sm text-gray-600 whitespace-nowrap">
+                      {getCurrencySymbol(bid.currency)}{bid.maxAmount.toFixed(2)}
+                    </td>
+                    <td className="px-4 py-3">
+                      <BidStatusBadge bid={bid} />
+                    </td>
+                    <td className="px-4 py-3 text-xs text-gray-500 whitespace-nowrap">
+                      <span className="flex items-center gap-1">
+                        <Clock className="w-3 h-3" />
+                        {format(new Date(bid.updatedAt || bid.createdAt), "MMM dd, yyyy h:mm a")}
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function VendorBidsPage() {
   const [activeFilter, setActiveFilter] = useState<VendorBidFilter>("all");
   const [currentPage, setCurrentPage] = useState(1);
@@ -36,6 +161,37 @@ export default function VendorBidsPage() {
 
   const bids = data?.bids || [];
   const pagination = data?.pagination;
+
+  // Group bids by product
+  const productGroups: ProductGroup[] = useMemo(() => {
+    const groupMap = new Map<string, ProductGroup>();
+
+    for (const bid of bids) {
+      const key = bid.productId;
+      if (!groupMap.has(key)) {
+        groupMap.set(key, {
+          productId: bid.productId,
+          productName: bid.productName,
+          productImage: bid.productImage,
+          auctionEnded: bid.auctionEnded,
+          highestBid: bid.currentAmount,
+          currency: bid.currency,
+          bidCount: 0,
+          bids: [],
+        });
+      }
+      const group = groupMap.get(key)!;
+      group.bids.push(bid);
+      group.bidCount++;
+      if (bid.currentAmount > group.highestBid) {
+        group.highestBid = bid.currentAmount;
+      }
+      // If any bid shows auction ended, mark the group as ended
+      if (bid.auctionEnded) group.auctionEnded = true;
+    }
+
+    return Array.from(groupMap.values());
+  }, [bids]);
 
   const handleFilterChange = (filter: VendorBidFilter) => {
     setActiveFilter(filter);
@@ -92,7 +248,7 @@ export default function VendorBidsPage() {
           <div className="flex items-center justify-center py-20">
             <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
           </div>
-        ) : bids.length === 0 ? (
+        ) : productGroups.length === 0 ? (
           <div className="bg-white rounded-xl border border-gray-200 p-12 text-center">
             <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-gray-100 mb-4">
               <Gavel className="w-8 h-8 text-gray-400" />
@@ -107,69 +263,8 @@ export default function VendorBidsPage() {
         ) : (
           <>
             <div className="space-y-3">
-              {bids.map((bid, index) => (
-                <div
-                  key={`${bid.productId}-${index}`}
-                  className="bg-white rounded-xl border border-gray-200 p-4 md:p-5"
-                >
-                  <div className="flex gap-4">
-                    {bid.productImage && (
-                      <div className="w-16 h-16 md:w-20 md:h-20 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                        <Image
-                          src={bid.productImage}
-                          alt={bid.productName}
-                          width={80}
-                          height={80}
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
-                        <div className="space-y-1">
-                          <h3 className="font-semibold text-sm md:text-base text-gray-900 truncate">
-                            {bid.productName}
-                          </h3>
-                          <p className="text-sm text-gray-600">
-                            Bidder: {getBidderName(bid.bidder)}
-                          </p>
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-semibold text-gray-900">
-                              {getCurrencySymbol(bid.currency)}
-                              {bid.currentAmount.toFixed(2)}{" "}
-                              <span className="text-xs font-normal text-gray-500">
-                                {bid.currency}
-                              </span>
-                            </span>
-                            {bid.isWinning ? (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                                <Trophy className="w-3 h-3" />
-                                {bid.auctionEnded ? "Won" : "Winning"}
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Outbid
-                              </span>
-                            )}
-                            {bid.auctionEnded && (
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-800">
-                                Ended
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-gray-500">
-                            Max bid: {getCurrencySymbol(bid.currency)}
-                            {bid.maxAmount.toFixed(2)}
-                          </p>
-                          <p className="text-xs text-gray-500 flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
-                            {format(new Date(bid.createdAt), "MMM dd, yyyy 'at' h:mm a")}
-                          </p>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+              {productGroups.map((group) => (
+                <ProductBidGroup key={group.productId} group={group} />
               ))}
             </div>
 

@@ -2,12 +2,12 @@
 
 import LoginForm from "@/components/LoginForm";
 import Link from "next/link";
-import React, { useState, Suspense } from "react";
-import { X } from "lucide-react";
+import React, { useState, useEffect, Suspense } from "react";
+import { X, Fingerprint } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useUserStore } from "@/stores/useUserStore";
 import { toast } from "react-toastify";
-import { toastConfigInfo } from "@/app/config/toast.config";
+import { toastConfigInfo, toastConfigError, toastConfigSuccess } from "@/app/config/toast.config";
 import TwoFactorVerification from "@/components/TwoFactorVerification";
 import OTPModal from "@/app/(auth)/(component)/Otp";
 import { useProductStore } from "@/stores/useProductStore";
@@ -18,12 +18,34 @@ const LoginPage = () => {
   const [requiresEmailVerification, setRequiresEmailVerification] = useState(false);
   const [userId, setUserId] = useState("");
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [isBiometricAvailable, setIsBiometricAvailable] = useState(false);
+  const [isBiometricLoading, setIsBiometricLoading] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, setUser } = useUserStore();
   const { setVendor } = useProductStore();
 
   const returnUrl = searchParams.get('returnUrl') || '/';
+
+  // Check if biometric login is available
+  useEffect(() => {
+    const checkBiometric = async () => {
+      try {
+        if (
+          typeof window !== "undefined" &&
+          window.PublicKeyCredential &&
+          typeof window.PublicKeyCredential.isConditionalMediationAvailable === "function"
+        ) {
+          const available =
+            await window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+          setIsBiometricAvailable(available);
+        }
+      } catch {
+        setIsBiometricAvailable(false);
+      }
+    };
+    checkBiometric();
+  }, []);
 
   if (user && user.role === "user" && !user.isEmailVerified) {
     router.push("/email-verification");
@@ -37,6 +59,69 @@ const LoginPage = () => {
     const googleAuthUrl = `${API_BASE_URL}/auth/google`;
     
     window.location.href = googleAuthUrl;
+  };
+
+  const handleBiometricLogin = async () => {
+    setIsBiometricLoading(true);
+    try {
+      const { startAuthentication } = await import("@simplewebauthn/browser");
+
+      // Get discoverable authentication options (no userId needed)
+      const optionsRes = await fetch(`${API_BASE_URL}/webauthn/authenticate/discoverable/options`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+      });
+
+      if (!optionsRes.ok) {
+        const errData = await optionsRes.json().catch(() => ({}));
+        throw new Error(errData.message || "Failed to get authentication options");
+      }
+
+      const optionsData = await optionsRes.json();
+
+      // Start WebAuthn authentication ceremony with discoverable credentials
+      const authResponse = await startAuthentication({ optionsJSON: optionsData.options });
+
+      // Verify with discoverable endpoint
+      const verifyRes = await fetch(`${API_BASE_URL}/webauthn/authenticate/discoverable/verify`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ challengeId: optionsData.challengeId, response: authResponse }),
+      });
+
+      if (!verifyRes.ok) {
+        const errData = await verifyRes.json().catch(() => ({}));
+        throw new Error(errData.message || "Biometric authentication failed");
+      }
+
+      const data = await verifyRes.json();
+
+      if (data.success && data.user) {
+        // Store tokens in localStorage (same as normal login flow)
+        if (data.accessToken) {
+          localStorage.setItem('accessToken', data.accessToken);
+        }
+        if (data.refreshToken) {
+          localStorage.setItem('refreshToken', data.refreshToken);
+        }
+        setUser(data.user);
+        if (data.vendor) setVendor(data.vendor);
+        toast.success("Signed in with biometrics!", toastConfigSuccess);
+        router.push(returnUrl);
+      } else {
+        throw new Error(data.message || "Authentication failed");
+      }
+    } catch (err: any) {
+      if (err.name === "NotAllowedError") {
+        toast.error("Biometric authentication was cancelled.", toastConfigError);
+      } else {
+        toast.error(err.message || "Biometric authentication failed", toastConfigError);
+      }
+    } finally {
+      setIsBiometricLoading(false);
+    }
   };
 
   const handleLoginSuccess = (userData: any) => {
@@ -151,6 +236,21 @@ const LoginPage = () => {
               </svg>
               <span className="ml-2">Sign in with Apple</span>
             </button>
+
+            {/* Biometric Login Button - conditionally shown */}
+            {isBiometricAvailable && (
+              <button
+                onClick={handleBiometricLogin}
+                disabled={isBiometricLoading}
+                className="w-full py-2 md:py-3 text-sm text-center px-4 flex items-center justify-center border border-[#F6B76F] text-[#121212] rounded-md hover:bg-gray-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Sign in with biometrics"
+              >
+                <Fingerprint className="w-5 h-5" />
+                <span className="ml-2">
+                  {isBiometricLoading ? "Authenticating..." : "Sign in with Biometrics"}
+                </span>
+              </button>
+            )}
           </div>
 
           {/* Sign Up Link */}

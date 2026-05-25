@@ -10,8 +10,16 @@ type ReviewsProps = {
 export default function ReviewsPage({product}: ReviewsProps) {
   const [selectedTimeFilter, setSelectedTimeFilter] = useState('All time');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'highest' | 'lowest'>('newest');
+  const [isSortOpen, setIsSortOpen] = useState(false);
 
   const timeFilters = ['All time', 'Last 30 days', 'Last 3 months', 'Last 6 months', 'Last year'];
+  const sortOptions = [
+    { label: 'Newest first', value: 'newest' },
+    { label: 'Oldest first', value: 'oldest' },
+    { label: 'Highest rated', value: 'highest' },
+    { label: 'Lowest rated', value: 'lowest' },
+  ];
 
   // Calculate review statistics from actual product data
   const reviewData = useMemo(() => {
@@ -41,14 +49,28 @@ export default function ReviewsPage({product}: ReviewsProps) {
   }, [product]);
 
   const reviews = useMemo(() => {
-    return (product?.reviews || []).map((review: any) => ({
-      id: review._id || review.id,
-      rating: review.rating,
-      author: review.userId?.profile?.firstName || review.userId?.email?.substring(0, 1) + '****' + review.userId?.email?.slice(-1) || 'Anonymous',
-      date: review.createdAt ? format(new Date(review.createdAt), 'dd MMMM yyyy') : 'N/A',
-      comment: review.comment || 'No comment provided'
-    }));
-  }, [product]);
+    const mapped = (product?.reviews || [])
+      .filter((review: any) => !review.isHidden)
+      .map((review: any) => ({
+        id: review._id || review.id,
+        rating: review.rating,
+        author: review.userId?.profile?.firstName || review.userId?.email?.substring(0, 1) + '****' + review.userId?.email?.slice(-1) || 'Anonymous',
+        date: review.createdAt ? format(new Date(review.createdAt), 'dd MMMM yyyy') : 'N/A',
+        createdAt: review.createdAt,
+        comment: review.comment || 'No comment provided',
+        helpfulCount: review.helpful?.length || 0,
+        isVerifiedPurchase: review.isVerifiedPurchase ?? true,
+      }));
+
+    // Sort
+    switch (sortBy) {
+      case 'newest': return mapped.sort((a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      case 'oldest': return mapped.sort((a: any, b: any) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime());
+      case 'highest': return mapped.sort((a: any, b: any) => b.rating - a.rating);
+      case 'lowest': return mapped.sort((a: any, b: any) => a.rating - b.rating);
+      default: return mapped;
+    }
+  }, [product, sortBy]);
 
 interface RenderStarsProps {
     rating: number;
@@ -136,6 +158,7 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
             <h3 className="font-roboto text-xs font-semibold text-gray-900">Feedback history</h3>
             
             {/* Time Filter Dropdown */}
+            <div className="flex items-center">
             <div className="relative">
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
@@ -161,6 +184,35 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Sort Dropdown */}
+            <div className="relative ml-2">
+              <button
+                onClick={() => setIsSortOpen(!isSortOpen)}
+                className="font-roboto flex items-center justify-between w-full sm:w-36 px-4 py-1 text-xs text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none"
+              >
+                <span>{sortOptions.find(o => o.value === sortBy)?.label}</span>
+                <ChevronDown className="w-4 h-4 ml-2" />
+              </button>
+              
+              {isSortOpen && (
+                <div className="absolute right-0 z-10 w-full sm:w-36 mt-1 bg-white border border-gray-300 rounded-md shadow-lg">
+                  {sortOptions.map((option) => (
+                    <button
+                      key={option.value}
+                      onClick={() => {
+                        setSortBy(option.value as any);
+                        setIsSortOpen(false);
+                      }}
+                      className="font-roboto block w-full px-4 py-2 text-xs text-left text-gray-700 hover:bg-gray-100"
+                    >
+                      {option.label}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
             </div>
           </div>
 
@@ -196,6 +248,11 @@ const renderOverallStars = (rating: RenderOverallStarsProps['rating']): JSX.Elem
                 </div>
                 <div className="font-roboto flex flex-col sm:flex-row sm:items-center sm:space-x-4 text-xs text-gray-600">
                   <span>By {review.author}</span>
+                  {review.isVerifiedPurchase && (
+                    <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-800">
+                      ✓ Verified Purchase
+                    </span>
+                  )}
                   <span className="hidden sm:inline">•</span>
                   <span>{review.date}</span>
                 </div>

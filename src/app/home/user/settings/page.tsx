@@ -52,6 +52,8 @@ import SecurityEventLog from "@/components/settings/SecurityEventLog";
 import AccountDeletion from "@/components/settings/AccountDeletion";
 import DataExport from "@/components/settings/DataExport";
 import NotificationFrequency from "@/components/settings/NotificationFrequency";
+import TrustedDevices from "@/components/settings/TrustedDevices";
+import BiometricSetup from "@/components/settings/BiometricSetup";
 import { useUnsavedChanges } from "@/hooks/useUnsavedChanges";
 
 type SettingsSection =
@@ -470,7 +472,9 @@ export default function SettingsPage() {
       });
       const data = await response.json();
       if (data.success && data.avatarUrl) {
-        setUser({ ...user, profile: { ...user?.profile, avatar: data.avatarUrl } });
+        if (user) {
+          setUser({ ...user, profile: { ...user.profile, avatar: data.avatarUrl } });
+        }
         queryClient.invalidateQueries({ queryKey: ["userProfile"] });
         toast.success("Avatar updated");
       } else {
@@ -1349,12 +1353,12 @@ export default function SettingsPage() {
           {/* Password Change */}
           <div className="border-t pt-4">
             <Label className="font-roboto text-sm font-medium">
-              {profileData?.user?.socialLogins?.length > 0 && !profileData?.user?.password
+              {(profileData?.user?.socialLogins?.length ?? 0) > 0 && !profileData?.user?.password
                 ? "Set Password"
                 : "Change Password"}
             </Label>
             <div className="space-y-3 mt-2">
-              {!(profileData?.user?.socialLogins?.length > 0 && !profileData?.user?.password) && (
+              {!((profileData?.user?.socialLogins?.length ?? 0) > 0 && !profileData?.user?.password) && (
                 <div>
                   <Label htmlFor="currentPassword" className="font-roboto text-xs">Current Password</Label>
                   <Input
@@ -1465,6 +1469,16 @@ export default function SettingsPage() {
           {/* Session Management */}
           <div className="border-t pt-4">
             <SessionManagement />
+          </div>
+
+          {/* Trusted Devices */}
+          <div className="border-t pt-4">
+            <TrustedDevices />
+          </div>
+
+          {/* Biometric Authentication */}
+          <div className="border-t pt-4">
+            <BiometricSetup />
           </div>
 
           {/* Login History */}

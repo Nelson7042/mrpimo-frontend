@@ -583,6 +583,15 @@ const ProductsPage = () => {
                             {lockedProductIds.has(product._id!) && (
                               <Lock size={14} className="text-amber-600" title="Prices locked — active promotion" />
                             )}
+                            {product.inventory?.listing?.type === "auction" && (
+                              product.inventory.listing.auction?.isExpired ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-200 text-gray-600">Ended</span>
+                              ) : product.inventory.listing.auction?.isStarted ? (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-green-100 text-green-700">Live</span>
+                              ) : (
+                                <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-blue-100 text-blue-700">Scheduled</span>
+                              )
+                            )}
                           </span>
                         </td>
 

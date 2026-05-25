@@ -4,6 +4,7 @@ import { useState, useCallback } from "react";
 import type { DocsManifest, DocSection } from "./page";
 import DocsSidebar from "./DocsSidebar";
 import DocsContent from "./DocsContent";
+import ApiSandbox from "./ApiSandbox";
 import { loadSectionContent } from "./actions";
 
 interface DocsLayoutProps {
@@ -152,11 +153,19 @@ export default function DocsLayout({ manifest, initialContent }: DocsLayoutProps
               <div className="text-gray-500 text-sm">Loading...</div>
             </div>
           ) : (
-            <DocsContent
-              markdown={content}
-              sectionId={currentSectionId}
-              onInternalLinkClick={handleInternalLinkClick}
-            />
+            <>
+              <DocsContent
+                markdown={content}
+                sectionId={currentSectionId}
+                onInternalLinkClick={handleInternalLinkClick}
+              />
+              {/* API Sandbox — always visible at the bottom */}
+              <div className="mt-10 pt-8 border-t border-gray-200">
+                <h2 className="text-lg font-semibold text-gray-900 mb-3">API Sandbox</h2>
+                <p className="text-sm text-gray-600 mb-4">Test API endpoints directly. Enter your auth token, set parameters, and send requests.</p>
+                <ApiSandbox baseUrl={process.env.NEXT_PUBLIC_API_BASE_URL || ""} />
+              </div>
+            </>
           )}
         </div>
       </main>

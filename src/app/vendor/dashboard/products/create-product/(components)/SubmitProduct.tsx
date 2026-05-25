@@ -139,7 +139,7 @@ export const useProductMapper = () => {
               startTime: new Date(productDetails.pricingInformation?.auction?.startTime),
               endTime: new Date(productDetails.pricingInformation?.auction?.endTime),
               quantity: Number(productDetails.pricingInformation?.storeQuantity),
-              bidIncrement: 1.0,
+              bidIncrement: country?.bidIncrement || 1.0,
             } : undefined,
           },
         },

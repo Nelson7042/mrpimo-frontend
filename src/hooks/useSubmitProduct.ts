@@ -1,9 +1,16 @@
 import { useProductListing } from '@/contexts/ProductLisitngContext';
 import { useCreateProduct } from '@/hooks/useCreateProduct';
+import { useCountries } from '@/hooks/useCountries';
 
 export const useSubmitProduct = () => {
   const { productDetails } = useProductListing();
   const createProductMutation = useCreateProduct();
+  const { data: countries } = useCountries();
+
+  // Look up the country to get its bidIncrement
+  const country = countries?.find(
+    (c: any) => c.name === productDetails.shippingDetails?.productLocation
+  );
 
   const handleSubmit = async () => {
     try {
@@ -37,7 +44,7 @@ export const useSubmitProduct = () => {
               startTime: new Date(productDetails.pricingInformation?.auction?.startTime),
               endTime: new Date(productDetails.pricingInformation?.auction?.endTime),
               quantity: Number(productDetails.pricingInformation?.storeQuantity),
-              bidIncrement: 1.00,
+              bidIncrement: country?.bidIncrement || 1.00,
             } : undefined,
           },
         },

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useParams } from "next/navigation";
-import { useUpdateProduct } from "@/hooks/useVendor";
+import { updateProduct } from "@/hooks/useProducts";
 import { useProductListing } from "@/contexts/ProductLisitngContext";
 import { toast } from "react-toastify";
 import {
@@ -26,7 +26,6 @@ export default function EditProductPage() {
   const slug = params.slug as string;
   const { productDetails, setProductDetails } = useProductListing();
   const [promoLockExpiry, setPromoLockExpiry] = useState<string | null>(null);
-  const updateProductMutation = useUpdateProduct();
 
   const { data: productData, isLoading } = useFetchProductBySlug(slug);
   const product = productData?.product;
@@ -85,19 +84,14 @@ export default function EditProductPage() {
       return;
     }
 
-    updateProductMutation.mutate(
-      { productId: product._id, productData: productDetails },
-      {
-        onSuccess: () => {
-          toast.success("Product updated successfully", toastConfigSuccess);
-          router.push("/vendor/dashboard/products");
-        },
-        onError: (error: any) => {
-          toast.error(error.message || "Failed to update product", toastConfigError);
-          console.error(error);
-        },
-      }
-    );
+    try {
+      await updateProduct(product._id, productDetails);
+      toast.success("Product updated successfully", toastConfigSuccess);
+      router.push("/vendor/dashboard/products");
+    } catch (error) {
+      toast.error("Failed to update product", toastConfigError);
+      console.error(error);
+    }
   };
 
   if (isLoading || !product || !productDetails.productName) {

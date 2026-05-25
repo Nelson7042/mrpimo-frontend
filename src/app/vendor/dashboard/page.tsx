@@ -17,6 +17,8 @@ import AddBankDetailsModal from "@/components/AddBankDetailsModal";
 import OrderLimitIndicator from "@/components/vendor/OrderLimitIndicator";
 import OrderLimitWarningBanner from "@/components/vendor/OrderLimitWarningBanner";
 import OrderLimitUpgradeModal from "@/components/vendor/OrderLimitUpgradeModal";
+import SecurityScoreBadge from "@/components/vendor/SecurityScoreBadge";
+import TwoFactorEnrollmentBanner from "@/components/vendor/TwoFactorEnrollmentBanner";
 import { fetchWithAuth } from "@/utils/fetchWithAuth";
 import { API_BASE_URL } from "@/utils/config";
 
@@ -180,6 +182,14 @@ const Page = (props: Props) => {
             </button>
           </div>
         )}
+
+        {/* 2FA Enrollment Prompt Banner */}
+        <TwoFactorEnrollmentBanner />
+
+        {/* Security Score Badge */}
+        <div className="mb-5">
+          <SecurityScoreBadge />
+        </div>
 
         {/* Analytics Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-5">

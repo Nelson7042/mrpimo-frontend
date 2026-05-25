@@ -209,124 +209,159 @@ export default function VendorOffersPage() {
                     </div>
                   </div>
                   <div className="divide-y divide-gray-100">
-                    {group.offers.map((offer) => (
-                      <div key={offer._id} className="p-4 md:p-5">
-                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                          <div className="space-y-1">
-                            <p className="text-sm font-medium text-gray-700">{getBuyerName(offer.userId)}</p>
-                            <div className="flex items-center gap-2">
-                              <span className="font-semibold text-gray-900">
-                                {getCurrencySymbol(offer.displayCurrency)}{offer.displayAmount.toFixed(2)}{" "}
-                                <span className="text-xs font-normal text-gray-500">{offer.displayCurrency}</span>
-                              </span>
-                              <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(offer.status)}`}>
-                                {getStatusIcon(offer.status)}
-                                <span className="capitalize">{offer.status}</span>
-                              </span>
-                            </div>
-                            <p className="text-xs text-gray-500">
-                              Received {format(new Date(offer.createdAt), "MMM dd, yyyy 'at' h:mm a")}
-                            </p>
-                            {offer.expiresAt && (
-                              <p className="text-xs text-gray-400">
-                                Expires {format(new Date(offer.expiresAt), "MMM dd, yyyy")}
-                              </p>
-                            )}
-                          </div>
-                          {offer.status === "pending" && (
-                            <div className="flex gap-2 flex-wrap">
-                              <button
-                                onClick={() => handleAcceptOffer(offer._id)}
-                                disabled={actionLoading === `accept-${offer._id}`}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md disabled:opacity-50 cursor-pointer"
-                              >
-                                {actionLoading === `accept-${offer._id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
-                                Accept
-                              </button>
-                              <button
-                                onClick={() => handleRejectOffer(offer._id)}
-                                disabled={actionLoading === `reject-${offer._id}`}
-                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 text-xs font-medium rounded-md disabled:opacity-50 cursor-pointer"
-                              >
-                                {actionLoading === `reject-${offer._id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
-                                Reject
-                              </button>
-                              <button
-                                onClick={() =>
-                                  setCounterOfferState(
-                                    counterOfferState?.offerId === offer._id ? null : { offerId: offer._id, amount: "" }
-                                  )
-                                }
-                                className="inline-flex items-center gap-1 px-3 py-1.5 border border-blue-300 text-blue-600 hover:bg-blue-50 text-xs font-medium rounded-md cursor-pointer"
-                              >
-                                <Send className="w-3 h-3" />
-                                Counter Offer
-                              </button>
-                            </div>
-                          )}
-                          {offer.status === "payment_pending" && (
-                            <div className="flex items-center gap-2">
-                              <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-md">
-                                <Clock className="w-3 h-3" />
-                                Sale Pending — Awaiting buyer payment
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        {counterOfferState?.offerId === offer._id && (
-                          <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
-                            <div className="flex flex-col sm:flex-row sm:items-center gap-2">
-                              <label className="text-sm font-medium text-blue-900">
-                                Counter offer amount ({offer.displayCurrency}):
-                              </label>
-                              <div className="flex gap-2 flex-1">
-                                <input
-                                  type="number"
-                                  min="0"
-                                  step="0.01"
-                                  placeholder="Enter amount"
-                                  value={counterOfferState.amount}
-                                  onChange={(e) => setCounterOfferState({ ...counterOfferState, amount: e.target.value })}
-                                  className="flex-1 px-3 py-1.5 border border-blue-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                />
-                                <button
-                                  onClick={() => handleSubmitCounterOffer(group.productId, offer)}
-                                  disabled={actionLoading === `counter-${offer._id}` || !counterOfferState.amount}
-                                  className="inline-flex items-center gap-1 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md disabled:opacity-50 cursor-pointer"
-                                >
-                                  {actionLoading === `counter-${offer._id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
-                                  Submit
-                                </button>
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    ))}
-                    {group.counterOffers.length > 0 &&
-                      group.counterOffers.map((co) => (
-                        <div key={co._id} className="p-4 md:p-5 bg-gray-50">
-                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                    {group.offers.map((offer) => {
+                      const pendingCounter = group.counterOffers.find(
+                        (co) => co.status === "pending"
+                      );
+                      const hasActiveCounter = !!pendingCounter;
+
+                      return (
+                        <div key={offer._id} className="p-4 md:p-5">
+                          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                             <div className="space-y-1">
-                              <p className="text-xs font-medium text-gray-500 uppercase">Counter Offer</p>
-                              <p className="text-sm font-medium text-gray-700">{getBuyerName(co.userId)}</p>
+                              <p className="text-sm font-medium text-gray-700">{getBuyerName(offer.userId)}</p>
                               <div className="flex items-center gap-2">
                                 <span className="font-semibold text-gray-900">
-                                  {getCurrencySymbol(co.displayCurrency)}{co.displayAmount.toFixed(2)}{" "}
-                                  <span className="text-xs font-normal text-gray-500">{co.displayCurrency}</span>
+                                  {getCurrencySymbol(offer.displayCurrency)}{offer.displayAmount.toFixed(2)}{" "}
+                                  <span className="text-xs font-normal text-gray-500">{offer.displayCurrency}</span>
                                 </span>
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(co.status)}`}>
-                                  {getStatusIcon(co.status)}
-                                  <span className="capitalize">{co.status}</span>
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(offer.status)}`}>
+                                  {getStatusIcon(offer.status)}
+                                  <span className="capitalize">{offer.status}</span>
                                 </span>
                               </div>
                               <p className="text-xs text-gray-500">
-                                Sent {format(new Date(co.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+                                Received {format(new Date(offer.createdAt), "MMM dd, yyyy 'at' h:mm a")}
                               </p>
+                              {offer.expiresAt && (
+                                <p className="text-xs text-gray-400">
+                                  Expires {format(new Date(offer.expiresAt), "MMM dd, yyyy")}
+                                </p>
+                              )}
                             </div>
+                            {offer.status === "pending" && !hasActiveCounter && (
+                              <div className="flex gap-2 flex-wrap">
+                                <button
+                                  onClick={() => handleAcceptOffer(offer._id)}
+                                  disabled={actionLoading === `accept-${offer._id}`}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-md disabled:opacity-50 cursor-pointer"
+                                >
+                                  {actionLoading === `accept-${offer._id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <CheckCircle className="w-3 h-3" />}
+                                  Accept
+                                </button>
+                                <button
+                                  onClick={() => handleRejectOffer(offer._id)}
+                                  disabled={actionLoading === `reject-${offer._id}`}
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 border border-red-300 text-red-600 hover:bg-red-50 text-xs font-medium rounded-md disabled:opacity-50 cursor-pointer"
+                                >
+                                  {actionLoading === `reject-${offer._id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <XCircle className="w-3 h-3" />}
+                                  Reject
+                                </button>
+                                <button
+                                  onClick={() =>
+                                    setCounterOfferState(
+                                      counterOfferState?.offerId === offer._id ? null : { offerId: offer._id, amount: "" }
+                                    )
+                                  }
+                                  className="inline-flex items-center gap-1 px-3 py-1.5 border border-blue-300 text-blue-600 hover:bg-blue-50 text-xs font-medium rounded-md cursor-pointer"
+                                >
+                                  <Send className="w-3 h-3" />
+                                  Counter Offer
+                                </button>
+                              </div>
+                            )}
+                            {offer.status === "payment_pending" && (
+                              <div className="flex items-center gap-2">
+                                <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-blue-100 text-blue-800 text-xs font-medium rounded-md">
+                                  <Clock className="w-3 h-3" />
+                                  Sale Pending — Awaiting buyer payment
+                                </span>
+                              </div>
+                            )}
                           </div>
+
+                          {/* Counter offer input */}
+                          {counterOfferState?.offerId === offer._id && (
+                            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-100">
+                              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
+                                <label className="text-sm font-medium text-blue-900">
+                                  Counter offer amount ({offer.displayCurrency}):
+                                </label>
+                                <div className="flex gap-2 flex-1">
+                                  <input
+                                    type="number"
+                                    min="0"
+                                    step="0.01"
+                                    placeholder="Enter amount"
+                                    value={counterOfferState.amount}
+                                    onChange={(e) => setCounterOfferState({ ...counterOfferState, amount: e.target.value })}
+                                    className="flex-1 px-3 py-1.5 border border-blue-200 rounded-md text-sm focus:outline-none focus:ring-1 focus:ring-blue-500"
+                                  />
+                                  <button
+                                    onClick={() => handleSubmitCounterOffer(group.productId, offer)}
+                                    disabled={actionLoading === `counter-${offer._id}` || !counterOfferState.amount}
+                                    className="inline-flex items-center gap-1 px-4 py-1.5 bg-blue-600 hover:bg-blue-700 text-white text-xs font-medium rounded-md disabled:opacity-50 cursor-pointer"
+                                  >
+                                    {actionLoading === `counter-${offer._id}` ? <Loader2 className="w-3 h-3 animate-spin" /> : <Send className="w-3 h-3" />}
+                                    Submit
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Inline counter-offer display (like user's page) */}
+                          {hasActiveCounter && (
+                            <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-200">
+                              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                <div>
+                                  <p className="text-sm font-medium text-amber-900">
+                                    Your Counter Offer: {getCurrencySymbol(pendingCounter.displayCurrency)}
+                                    {pendingCounter.displayAmount.toFixed(2)}{" "}
+                                    <span className="text-xs font-normal text-amber-600">
+                                      {pendingCounter.displayCurrency}
+                                    </span>
+                                  </p>
+                                  <p className="text-xs text-amber-600 mt-0.5">
+                                    Sent {format(new Date(pendingCounter.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+                                  </p>
+                                </div>
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-md">
+                                  <Clock className="w-3 h-3" />
+                                  Awaiting buyer response
+                                </span>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Show non-pending (resolved) counter-offers inline */}
+                          {group.counterOffers
+                            .filter((co) => co.status !== "pending")
+                            .map((co) => (
+                              <div key={co._id} className="mt-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                  <div>
+                                    <p className="text-sm font-medium text-gray-700">
+                                      Counter Offer: {getCurrencySymbol(co.displayCurrency)}
+                                      {co.displayAmount.toFixed(2)}{" "}
+                                      <span className="text-xs font-normal text-gray-500">
+                                        {co.displayCurrency}
+                                      </span>
+                                    </p>
+                                    <p className="text-xs text-gray-500 mt-0.5">
+                                      Sent {format(new Date(co.createdAt), "MMM dd, yyyy 'at' h:mm a")}
+                                    </p>
+                                  </div>
+                                  <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(co.status)}`}>
+                                    {getStatusIcon(co.status)}
+                                    <span className="capitalize">{co.status}</span>
+                                  </span>
+                                </div>
+                              </div>
+                            ))}
                         </div>
-                      ))}
+                      );
+                    })}
                   </div>
                 </div>
               ))}

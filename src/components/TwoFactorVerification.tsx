@@ -22,6 +22,7 @@ const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
   const [verificationCode, setVerificationCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isUsingBackupCode, setIsUsingBackupCode] = useState(false);
+  const [trustDevice, setTrustDevice] = useState(false);
   const [error, setError] = useState("");
 
   const router = useRouter();
@@ -37,7 +38,6 @@ const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
     setIsLoading(true);
 
     try {
-      setIsLoading(true);
       const endpoint = isUsingBackupCode
         ? `${API_BASE_URL}/two-factor/verify-backup`
         : `${API_BASE_URL}/two-factor/verify`;
@@ -46,6 +46,7 @@ const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
         method: "POST",
         body: JSON.stringify({
           [isUsingBackupCode ? "backupCode" : "token"]: verificationCode,
+          trustDevice,
         }),
       });
 
@@ -96,6 +97,26 @@ const TwoFactorVerification: React.FC<TwoFactorVerificationProps> = ({
             {isUsingBackupCode
               ? "Enter one of your backup codes"
               : "Enter the 6-digit code from your authenticator app"}
+          </p>
+        </div>
+
+        {/* Trust this device checkbox */}
+        <div className="mb-6">
+          <label className="flex items-center gap-2 cursor-pointer" htmlFor="trust-device">
+            <input
+              id="trust-device"
+              type="checkbox"
+              checked={trustDevice}
+              onChange={(e) => setTrustDevice(e.target.checked)}
+              className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              aria-label="Trust this device for 30 days"
+            />
+            <span className="text-sm text-gray-700">
+              Trust this device for 30 days
+            </span>
+          </label>
+          <p className="text-xs text-gray-500 mt-1 ml-6">
+            You won&apos;t be asked for a 2FA code on this device for 30 days.
           </p>
         </div>
 
